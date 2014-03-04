@@ -1,4 +1,9 @@
+---
+title: Gaia GPS Release Notes
+---
+
 <!DOCTYPE html>
+
 <html>
 
   <head>
@@ -16,41 +21,30 @@
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
-          <a id="forkme_banner" href="https://github.com/trailbehind/release-notes">View on GitHub</a>
-
           <h1 id="project_title">Gaia GPS Release Notes</h1>
-          <h2 id="project_tagline">Information about software updates</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/trailbehind/release-notes/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/trailbehind/release-notes/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
+          <h2 id="project_tagline">iOS, Android, and Web (cloud.gaiagps.com)</h2>
+         </header>
     </div>
 
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>
-<a name="platforms" class="anchor" href="#platforms"><span class="octicon octicon-link"></span></a>Platforms</h3>
 
 <ul>
-<li>iOS</li>
-<li>Android</li>
-<li>gaiagps.com</li>
+  {% for category in site.categories %}
+  <h1>
+    {{category[0] | capitalize}}
+  </h1>
+  {% for post in category.last %}
+    <li>
+      <a href="{{ post.url }}">{{ post.title }}</a>
+    </li>
+  {% endfor %}
+  {% endfor %}
 </ul>
       </section>
     </div>
 
     <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Gaia GPS Release Notes maintained by <a href="https://github.com/trailbehind">trailbehind</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-    
-
   </body>
 </html>
