@@ -6,4 +6,4 @@
 
  * We make "drafts" for unpublished release notes: http://jekyllrb.com/docs/drafts/
 
-Site is served live here: trailbehind.github.io/release-notes
+Site is served live here: http://updates.gaiagps.com/ (CNAME for http://trailbehind.github.io/release-notes)
