@@ -30,18 +30,18 @@ title: Gaia GPS Release Notes
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 
-<ul>
   {% for category in site.categories %}
   <h1>
     {{category[0] | capitalize}}
   </h1>
+<ul>
   {% for post in category.last %}
     <li>
       <a href="{{ post.url }}">{{ post.title }}</a>
     </li>
   {% endfor %}
-  {% endfor %}
 </ul>
+  {% endfor %}
       </section>
     </div>
 
