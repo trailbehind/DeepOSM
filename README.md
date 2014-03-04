@@ -1,5 +1,9 @@
-Get started for local development here: https://help.github.com/articles/using-jekyll-with-pages
+*Dev Instructions* 
 
-Added part of the directory structure here: http://jekyllrb.com/docs/structure/
+ * Get started for local development here: https://help.github.com/articles/using-jekyll-with-pages
 
-We make "drafts" for unpublished release notes: http://jekyllrb.com/docs/drafts/
+ * Added part of the directory structure here: http://jekyllrb.com/docs/structure/
+
+ * We make "drafts" for unpublished release notes: http://jekyllrb.com/docs/drafts/
+
+Site is served live here: trailbehind.github.io/release-notes
