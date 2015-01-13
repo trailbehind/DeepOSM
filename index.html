@@ -22,7 +22,7 @@ title: Gaia GPS Release Notes
     <div id="header_wrap" class="outer">
         <header class="inner">
           <h1 id="project_title">Gaia GPS Release Notes</h1>
-          <h2 id="project_tagline">iOS, Android, and Web (cloud.gaiagps.com)</h2>
+          <h2 id="project_tagline">iOS, Android, and Web (gaiagps.com)</h2>
          </header>
     </div>
 
@@ -32,7 +32,10 @@ title: Gaia GPS Release Notes
 
   {% for category in site.categories %}
   <h1>
-    {{category[0]}}
+    {% assign words = category | first | split: ' ' %}
+  {% for word in words %}
+    {{ word | capitalize | replace: 'Ios','iOS' }}
+  {% endfor %}
   </h1>
 <ul>
   {% for post in category.last %}
