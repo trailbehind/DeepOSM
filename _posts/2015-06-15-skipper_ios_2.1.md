@@ -1,6 +1,6 @@
 ---
 title: 2.1 - June 15 2015
-category: iOS
+category: Skipper for iOS
 layout: ios
 ---
 
