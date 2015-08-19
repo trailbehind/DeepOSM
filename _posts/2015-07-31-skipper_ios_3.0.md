@@ -1,5 +1,5 @@
 ---
-title: 2.1 - July 31 2015
+title: 3.0 - July 31 2015
 category: Skipper for iOS
 layout: ios
 ---
