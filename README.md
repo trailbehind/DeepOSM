@@ -4,11 +4,15 @@ There's nothing to see here, move along. None of this code probably works. Still
 
 # Install Requirements
 
-pip install -r requirements.txt 
+    pip install -r requirements.txt 
+
+Install globalmaptiles.py
+
+    git clone git@gist.github.com:1193577.git
 
 For using the MNIST data, clone the tensorflow repo, and add the mnist example to your PYTHONPATH:
 
-    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/tensorflow/tensorflow/examples/tutorials/mnist/
+    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/tensorflow/tensorflow/examples/tutorials/mnist/:/PATH_TO_REPO/lib/global_map
 
 # Trail Detection
 
