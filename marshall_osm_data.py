@@ -126,6 +126,7 @@ class OSMDataNormalizer:
       api_key = MAPZEN_VECTOR_TILES_API_KEY
       filename = '{}.{}'.format(tile.x,format)
       url = base_url + '{}/{}/{}/{}?api_key={}'.format(layers,tile.z,tile.y,filename,api_key)
+      print url
       return url 
 
   def osm_url_for_tile(self, tile):
@@ -205,14 +206,10 @@ class OSMDataNormalizer:
       end_pixel = gm.LatLngToRaster(next_point_obj.lat,
                                     next_point_obj.lon, zoom)
       end_pixel_obj = Pixel(end_pixel[0]%self.tile_size, end_pixel[1]%self.tile_size)
-      try:
-        pixels = self.pixels_between(start_pixel_obj, end_pixel_obj)
-        print "found some pixels {}".format(len(pixels))
-      except:
-        print "cant find pixels between {} {}".format(start_pixel_obj, end_pixel_obj)
-        continue
+      pixels = self.pixels_between(start_pixel_obj, end_pixel_obj)
 
       for p in pixels:
+        print '{}, {}'.format(p.x,p.y)
         tile_matrix[p.x][p.y] = 1
       count += 1
 
@@ -220,11 +217,22 @@ class OSMDataNormalizer:
 
 
   def pixels_between(self, start_pixel, end_pixel):
+    pixels = []
+ 
+    if end_pixel.x - start_pixel.x == 0:
+      for y in range(min(end_pixel.y, start_pixel.y),
+                     max(end_pixel.y, start_pixel.y)):
+        p = Pixel()
+        p.x = end_pixel.x
+        p.y = y
+        pixels.append(p) 
+      return pixels
+      
     slope = (end_pixel.y - start_pixel.y)/(end_pixel.x - start_pixel.x)
     offset = end_pixel.y - slope*end_pixel.x
     
-    pixels = []
-    for x in range(end_pixel.x, start_pixel.x):
+    for x in range(min(end_pixel.x, start_pixel.x),
+                   max(end_pixel.x, start_pixel.x)):
       p = Pixel()
       p.x = int(x)
       p.y = int(slope*x + offset)
