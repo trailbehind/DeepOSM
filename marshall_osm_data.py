@@ -172,10 +172,14 @@ class OSMDataNormalizer:
   def linestrings_for_tile(self, file_data):
     features = json.loads(file_data.read())['features']
     linestrings = []          
+    count = 0
     for f in features:
       if f['geometry']['type'] == 'LineString':
         linestring = f['geometry']['coordinates']
-        linestrings.append(linestring)          
+        linestrings.append(linestring)   
+      if f['geometry']['type'] == 'MultiLineString':
+        for ls in f['geometry']['coordinates']:
+          linestrings.append(ls)   
     return linestrings
 
   def add_linestring_to_matrix(self, linestring, tile, matrix):
