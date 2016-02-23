@@ -153,7 +153,7 @@ class OSMDataNormalizer:
     rootdir = self.vector_tiles_dir
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
-        if os.path.join(folder, filename) != 'data/vector-tiles/12/687/1582.json':
+        if os.path.join(folder, filename) != 'data/vector-tiles/12/685/1583.json':
           continue
         with open(os.path.join(folder, filename), 'r') as src:
           linestrings = self.linestrings_for_tile(src)
@@ -217,7 +217,7 @@ class OSMDataNormalizer:
     count = 0
     for current_point in linestring:
       # stop at 2 to prevent wrapping, sinc geojson is closed loops?
-      if count == len(linestring) - 2:
+      if count == len(linestring) - 1:
         break
       next_point = linestring[count+1]
       current_point_obj = Coordinate(current_point[1], current_point[0])
@@ -257,7 +257,7 @@ class OSMDataNormalizer:
     for x in range(min(end_pixel.x, start_pixel.x),
                    max(end_pixel.x, start_pixel.x)):
       p = Pixel()
-      p.x = int(x)
+      p.x = int(x+1)
       p.y = int(slope*x + offset) % self.tile_size
       pixels.append(p) 
 

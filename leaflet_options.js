@@ -2,8 +2,8 @@ var style = {
         "clickable": true,
         "color": "#00D",
         "fillColor": "#00D",
-        "weight": 2.0,
-        "opacity": 0.3,
+        "weight": 6.0,
+        "opacity": 1,
         "fillOpacity": 0.2,
     };
     var hoverStyle = {
@@ -24,3 +24,8 @@ var style = {
         }
     );
     map.addLayer(geojsonTileLayer);
+
+    var osmUrl='http://b.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png';
+    var osm = new L.TileLayer(osmUrl, {minZoom: 8, maxZoom: 12});       
+
+    map.addLayer(osm);
