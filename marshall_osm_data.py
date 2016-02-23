@@ -243,8 +243,8 @@ class OSMDataNormalizer:
       for y in range(min(end_pixel.y, start_pixel.y),
                      max(end_pixel.y, start_pixel.y)):
         p = Pixel()
-        p.x = end_pixel.x
-        p.y = y
+        p.y = end_pixel.x
+        p.x = y
         pixels.append(p) 
       print "VERTICAL LINE of length {}".format(len(pixels))
       return pixels
@@ -255,8 +255,8 @@ class OSMDataNormalizer:
     for x in range(min(end_pixel.x, start_pixel.x),
                    max(end_pixel.x, start_pixel.x)):
       p = Pixel()
-      p.x = int(x)
-      p.y = int(slope*x + offset) % self.tile_size
+      p.y = int(x)
+      p.x = int(slope*x + offset) % self.tile_size
       pixels.append(p) 
     return pixels
 
