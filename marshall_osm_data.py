@@ -1,4 +1,4 @@
-
+import numpy as np
 
 '''
     1) download geojson road tiles from mapzen
@@ -153,6 +153,8 @@ class OSMDataNormalizer:
     rootdir = self.vector_tiles_dir
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
+        if os.path.join(folder, filename) != 'data/vector-tiles/12/687/1582.json':
+          continue
         with open(os.path.join(folder, filename), 'r') as src:
           linestrings = self.linestrings_for_tile(src)
         tile_matrix = self.empty_tile_matrix()
@@ -186,7 +188,7 @@ class OSMDataNormalizer:
     return matrix
 
   def print_matrix(self, matrix):
-    for row in matrix:
+    for row in np.rot90(np.fliplr(matrix)):
       row_str = ''
       for cell in row:
         row_str += str(cell)
@@ -243,21 +245,29 @@ class OSMDataNormalizer:
       for y in range(min(end_pixel.y, start_pixel.y),
                      max(end_pixel.y, start_pixel.y)):
         p = Pixel()
-        p.y = end_pixel.x
-        p.x = y
+        p.x = end_pixel.x
+        p.y = y
         pixels.append(p) 
       print "VERTICAL LINE of length {}".format(len(pixels))
       return pixels
       
-    slope = (end_pixel.y - start_pixel.y)/((end_pixel.x - start_pixel.x)*1.0)
+    slope = (end_pixel.y - start_pixel.y)/float(end_pixel.x - start_pixel.x)
     offset = end_pixel.y - slope*end_pixel.x
     
     for x in range(min(end_pixel.x, start_pixel.x),
                    max(end_pixel.x, start_pixel.x)):
       p = Pixel()
-      p.y = int(x)
-      p.x = int(slope*x + offset) % self.tile_size
+      p.x = int(x)
+      p.y = int(slope*x + offset) % self.tile_size
       pixels.append(p) 
+
+    for y in range(min(end_pixel.y, start_pixel.y),
+                   max(end_pixel.y, start_pixel.y)):
+      p = Pixel()
+      p.x = int((y - offset)/slope)
+      p.y = int(y)
+      pixels.append(p) 
+
     return pixels
 
 odn = OSMDataNormalizer()
