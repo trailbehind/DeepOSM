@@ -1,6 +1,8 @@
-# Learning Project
+# Deep Trails
 
-There's nothing to see here, move along. None of this code probably works. Still working on tutorials to learn deep learning, so I can apply to OSM and satellite imagery.
+Detect roads/trails in satellite imagery by training a convnet with OSM ways data.
+
+Work in progress.
 
 # Install Requirements
 
@@ -8,17 +10,17 @@ There's nothing to see here, move along. None of this code probably works. Still
 
 Install globalmaptiles.py
 
-    git clone git@gist.github.com:1193577.git
+    mkdir lib
+    cd lib
+    git clone git@gist.github.com:1193577.git 
+    cd ..
+    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/lib/global_map
 
-For using the MNIST data, clone the tensorflow repo, and add the mnist example to your PYTHONPATH:
-
-    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/tensorflow/tensorflow/examples/tutorials/mnist/:/PATH_TO_REPO/lib/global_map
-
-# Trail Detection
+# Road/Trail Detection
 
 ## Overview
 
-Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train the neural net using MapQuest open imagery, and an OSM extract of San Francisco
+Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train the neural net using MapQuest open imagery, and an OSM ways.
 
 ## Background
 
@@ -29,7 +31,6 @@ Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train
     * all the other links to Nielsen’s book and [Colah’s blog](http://colah.github.io/posts/2015-08-Backprop/)
 * Deep Background
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
-
 
 
 ## Methodology
@@ -72,3 +73,12 @@ Accuracy
 
 * mimic Hinton’s methods, esp. for getting real road geometries
 * see if we can identify trails nearly as well as roads
+
+# Learning Project
+
+There's nothing to see here, move along. None of this code probably works. Still working on tutorials to learn deep learning, so I can apply to OSM and satellite imagery.
+
+For using the MNIST data, clone the tensorflow repo, and add the mnist example to your PYTHONPATH:
+
+    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/tensorflow/tensorflow/examples/tutorials/mnist/
+
