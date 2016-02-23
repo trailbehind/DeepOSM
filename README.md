@@ -34,27 +34,24 @@ Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train
 
 ## Methodology
 
-Multilayer Convolutional Network, softmax, same as MNIST TensorFlow example to start
+Multilayer Convolutional Network
 
 ### Train
 
 * Download a chunk of satellite imagery from MapQuest at max resolution, in 256x256px PNGs
-* Download ways (i.e. road/trails) for that area from OSM
-* Generate training and evaluation data in the same form as the MNIST data
+* Download ways (i.e. road/trails) for that area from OSM 
+* Generate training and evaluation data
 
 ### Test 
 
 * Download a different set of training imagery and OSM ways, and see if we can predict the ways from the imagery
 
+## **Marshal Test Data**
 
+### MapZen vector gepjson tiles are convenient
 
-## **Marshal San Francisco Test Data**
-
-### download [MapZen SF extract](https://mapzen.com/data/metro-extracts/)
-
-* clip it into squares that align with image tiles
-    * write some Python to do the clipping, using clipper, 
-* then flatten it into matrices of trail/no trail
+* flatten it into matrices of trail/no trail
+* check tiles visually 
 
 ### download imagery data
 
