@@ -12,7 +12,7 @@ Install globalmaptiles.py
 
     mkdir lib
     cd lib
-    git clone git@gist.github.com:1193577.git 
+    git clone git@gist.github.com:1193577.git global_map
     cd ..
     export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/lib/global_map
 

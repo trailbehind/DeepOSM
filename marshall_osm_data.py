@@ -154,27 +154,43 @@ class OSMDataNormalizer:
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
         with open(os.path.join(folder, filename), 'r') as src:
-          features = json.loads(src.read())['features']
-          tile_matrix = self.empty_tile_matrix()
-          for f in features:
-            if f['geometry']['type'] == 'LineString':
-              linestring = f['geometry']['coordinates']
-              print "adding a line string with {} points".format(len(linestring))
-              dir_string = folder.split(self.vector_tiles_dir)
-              z, y = dir_string[1].split('/')
-              x = filename.split('.')[0]
-              tile = MercatorTile(int(x), int(y), int(z))
-              line_matrix = self.pixel_matrix_for_linestring(linestring, tile)
-              for x in range(0,255):
-                for y in range(0,255):
-                  tile_matrix[x][y] = tile_matrix[x][y] or line_matrix[x][y] 
+          linestrings = self.linestrings_for_tile(src)
+        tile_matrix = self.empty_tile_matrix()
+        tile = self.tile_for_folder_and_filename(folder, filename)
+        for linestring in linestrings:
+          tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
+        self.print_matrix(tile_matrix)
 
-          for row in tile_matrix:
-            row_str = ''
-            for cell in row:
-              row_str += str(cell)
-            print row_str
+  def tile_for_folder_and_filename(self, folder, filename):
+    dir_string = folder.split(self.vector_tiles_dir)
+    z, y = dir_string[1].split('/')
+    x = filename.split('.')[0]
+    return MercatorTile(int(x), int(y), int(z))
 
+  def linestrings_for_tile(self, file_data):
+    features = json.loads(file_data.read())['features']
+    linestrings = []          
+    for f in features:
+      if f['geometry']['type'] == 'LineString':
+        linestring = f['geometry']['coordinates']
+        linestrings.append(linestring)          
+    return linestrings
+
+  def add_linestring_to_matrix(self, linestring, tile, matrix):
+    print "adding a line string with {} points".format(len(linestring))
+    line_matrix = self.pixel_matrix_for_linestring(linestring, tile)
+    for x in range(0,self.tile_size):
+      for y in range(0,self.tile_size):
+        if line_matrix[x][y]:
+          matrix[x][y] = line_matrix[x][y] 
+    return matrix
+
+  def print_matrix(self, matrix):
+    for row in matrix:
+      row_str = ''
+      for cell in row:
+        row_str += str(cell)
+      print row_str
 
   def empty_tile_matrix(self):
     # initialize the array to all zeroes
@@ -185,40 +201,44 @@ class OSMDataNormalizer:
         tile_matrix[x].append(0)     
     return tile_matrix
 
-
   def pixel_matrix_for_linestring(self, linestring, tile):
-    tile_matrix = self.empty_tile_matrix()
+    '''
+       set pixel_matrix to 1 for every point between all points on the line string
+    '''
+
+    line_matrix = self.empty_tile_matrix()
     zoom = tile.z
+
     print self.osm_url_for_tile(tile)
-    # set pixel_matrix to 1 for every point between all points on the line string
     gm = GlobalMercator()
 
     count = 0
     for current_point in linestring:
-      if count == len(linestring) - 1:
+      # stop at 2 to prevent wrapping, sinc geojson is closed loops?
+      if count == len(linestring) - 2:
         break
       next_point = linestring[count+1]
       current_point_obj = Coordinate(current_point[1], current_point[0])
       next_point_obj = Coordinate(next_point[1], next_point[0])
+      
       start_pixel = gm.LatLngToRaster(current_point_obj.lat,
                                       current_point_obj.lon, zoom)
       start_pixel_obj = Pixel(start_pixel[0]%self.tile_size, start_pixel[1]%self.tile_size)
+      
       end_pixel = gm.LatLngToRaster(next_point_obj.lat,
                                     next_point_obj.lon, zoom)
       end_pixel_obj = Pixel(end_pixel[0]%self.tile_size, end_pixel[1]%self.tile_size)
+      
       pixels = self.pixels_between(start_pixel_obj, end_pixel_obj)
-
       for p in pixels:
-        print '{}, {}'.format(p.x,p.y)
-        tile_matrix[p.x][p.y] = 1
+        # print '{}, {}'.format(p.x,p.y)
+        line_matrix[p.x][p.y] = 1
       count += 1
 
-    return tile_matrix
-
+    return line_matrix
 
   def pixels_between(self, start_pixel, end_pixel):
     pixels = []
- 
     if end_pixel.x - start_pixel.x == 0:
       for y in range(min(end_pixel.y, start_pixel.y),
                      max(end_pixel.y, start_pixel.y)):
@@ -226,16 +246,17 @@ class OSMDataNormalizer:
         p.x = end_pixel.x
         p.y = y
         pixels.append(p) 
+      print "VERTICAL LINE of length {}".format(len(pixels))
       return pixels
       
-    slope = (end_pixel.y - start_pixel.y)/(end_pixel.x - start_pixel.x)
+    slope = (end_pixel.y - start_pixel.y)/((end_pixel.x - start_pixel.x)*1.0)
     offset = end_pixel.y - slope*end_pixel.x
     
     for x in range(min(end_pixel.x, start_pixel.x),
                    max(end_pixel.x, start_pixel.x)):
       p = Pixel()
       p.x = int(x)
-      p.y = int(slope*x + offset)
+      p.y = int(slope*x + offset) % self.tile_size
       pixels.append(p) 
     return pixels
 
