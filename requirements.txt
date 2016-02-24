@@ -1,2 +1,2 @@
-clipper
+pyclipper
 https://storage.googleapis.com/tensorflow/mac/tensorflow-0.6.0-py2-none-any.whl

@@ -1,5 +1,5 @@
 import numpy as np
-
+import pyclipper
 '''
     1) download geojson road tiles from mapzen
     2) convert the road geographic linestrings to pixels
@@ -151,17 +151,20 @@ class OSMDataNormalizer:
 
   def process_geojson(self):
     rootdir = self.vector_tiles_dir
+    self.gm = GlobalMercator()
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
-        if os.path.join(folder, filename) != 'data/vector-tiles/12/685/1583.json':
-          continue
+        #if os.path.join(folder, filename) != 'data/vector-tiles/12/685/1583.json':
+        #  continue
         with open(os.path.join(folder, filename), 'r') as src:
           linestrings = self.linestrings_for_tile(src)
         tile_matrix = self.empty_tile_matrix()
         tile = self.tile_for_folder_and_filename(folder, filename)
-        for linestring in linestrings:
+        tile_bounds = self.gm.TileLatLonBounds(tile.x, tile.y, tile.z)
+        tile_bounds = (tile_bounds[1], tile_bounds[0], tile_bounds[3], tile_bounds[2])
+        for linestring in self.clipped_linestrings(tile.z, tile_bounds, linestrings):
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
-        self.print_matrix(tile_matrix)
+        #self.print_matrix(tile_matrix)
 
   def tile_for_folder_and_filename(self, folder, filename):
     dir_string = folder.split(self.vector_tiles_dir)
@@ -181,6 +184,47 @@ class OSMDataNormalizer:
         for ls in f['geometry']['coordinates']:
           linestrings.append(ls)   
     return linestrings
+
+  def clipped_linestrings(self, zoom, bounding_box, linestrings):
+    scaling_factor = pow(10, self.decimal_places_for_zoom(zoom))
+    clip_box = (
+        (int(bounding_box[0] * scaling_factor), int(bounding_box[1] * scaling_factor)),
+        (int(bounding_box[2] * scaling_factor), int(bounding_box[1] * scaling_factor)),
+        (int(bounding_box[2] * scaling_factor), int(bounding_box[3] * scaling_factor)),
+        (int(bounding_box[0] * scaling_factor), int(bounding_box[3] * scaling_factor)),
+        (int(bounding_box[0] * scaling_factor), int(bounding_box[1] * scaling_factor)),
+    )
+    scaled_coordinates = [[(int(c[0] * scaling_factor),
+              int(c[1] * scaling_factor)) for c in linestring] \
+          for linestring in linestrings]
+    pc = pyclipper.Pyclipper()
+    pc.AddPath(clip_box, pyclipper.PT_CLIP, True)
+     
+    try:
+      pc.AddPaths(scaled_coordinates, pyclipper.PT_SUBJECT, False)
+      solution = pc.Execute2(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
+      solution_paths = pyclipper.OpenPathsFromPolyTree(solution)
+      print solution_paths
+      unscaled_coordinates = [[(c[0] / scaling_factor, c[1] / scaling_factor) \
+          for c in linestring] for linestring in solution_paths]
+      linestrings = unscaled_coordinates
+    except Exception, e:
+      print("error clipping track")
+    return linestrings
+
+  def decimal_places_for_zoom(self, z):
+    if z <= 1:
+        return 1
+    elif z <= 4:
+        return 2
+    elif z <= 7:
+        return 3
+    elif z <= 10:
+        return 4
+    elif z <= 13:
+        return 5
+    else:
+        return 6
 
   def add_linestring_to_matrix(self, linestring, tile, matrix):
     print "adding a line string with {} points".format(len(linestring))
@@ -216,25 +260,23 @@ class OSMDataNormalizer:
     zoom = tile.z
 
     print self.osm_url_for_tile(tile)
-    gm = GlobalMercator()
 
     count = 0
     for current_point in linestring:
-      # stop at 2 to prevent wrapping, sinc geojson is closed loops?
       if count == len(linestring) - 1:
         break
       next_point = linestring[count+1]
       current_point_obj = Coordinate(current_point[1], current_point[0])
       next_point_obj = Coordinate(next_point[1], next_point[0])
       
-      start_pixel = gm.LatLngToRaster(current_point_obj.lat,
+      start_pixel = self.gm.LatLngToRaster(current_point_obj.lat,
                                       current_point_obj.lon, zoom)
       start_pixel_obj = Pixel(start_pixel[0]%self.tile_size, start_pixel[1]%self.tile_size)
       
-      end_pixel = gm.LatLngToRaster(next_point_obj.lat,
+      end_pixel = self.gm.LatLngToRaster(next_point_obj.lat,
                                     next_point_obj.lon, zoom)
       end_pixel_obj = Pixel(end_pixel[0]%self.tile_size, end_pixel[1]%self.tile_size)
-      
+       
       pixels = self.pixels_between(start_pixel_obj, end_pixel_obj)
       for p in pixels:
         # print '{}, {}'.format(p.x,p.y)
@@ -246,6 +288,7 @@ class OSMDataNormalizer:
   def pixels_between(self, start_pixel, end_pixel):
     pixels = []
     if end_pixel.x - start_pixel.x == 0:
+      print "start {} to end {}".format(start_pixel, end_pixel)
       for y in range(min(end_pixel.y, start_pixel.y),
                      max(end_pixel.y, start_pixel.y)):
         p = Pixel()
@@ -261,15 +304,15 @@ class OSMDataNormalizer:
     for x in range(min(end_pixel.x, start_pixel.x),
                    max(end_pixel.x, start_pixel.x)):
       p = Pixel()
-      p.x = int(x+1)
-      p.y = int(slope*x + offset) % self.tile_size
+      p.x = x
+      p.y = int(slope*x + offset) % (self.tile_size)
       pixels.append(p) 
 
     for y in range(min(end_pixel.y, start_pixel.y),
                    max(end_pixel.y, start_pixel.y)):
       p = Pixel()
       p.x = int((y - offset)/slope)
-      p.y = int(y)
+      p.y = y
       pixels.append(p) 
 
     return pixels
