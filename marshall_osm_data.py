@@ -69,7 +69,8 @@ class OSMDataNormalizer:
     try:
       os.mkdir(new_dir);
     except:
-      print("{} already exists".format(new_dir))
+      pass
+      #print("{} already exists".format(new_dir))
 
   def tile_with_coordinates_and_zoom(self, coordinates, zoom):
     scale = (1<<zoom);
@@ -124,7 +125,6 @@ class OSMDataNormalizer:
       api_key = MAPZEN_VECTOR_TILES_API_KEY
       filename = '{}.{}'.format(tile.x,format)
       url = base_url + '{}/{}/{}/{}?api_key={}'.format(layers,tile.z,tile.y,filename,api_key)
-      print url
       return url 
 
   def osm_url_for_tile(self, tile):
@@ -158,11 +158,12 @@ class OSMDataNormalizer:
           linestrings = self.linestrings_for_tile(src)
         tile_matrix = self.empty_tile_matrix()
         tile = self.tile_for_folder_and_filename(folder, filename)
-        tile_bounds = self.gm.GoogleTileLatLonBounds(tile.y, tile.x, tile.z)
-        tile_bounds = (tile_bounds[1], tile_bounds[0], tile_bounds[3], tile_bounds[2])
+        print "Adding lines for: " + self.osm_url_for_tile(tile)
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
-        self.print_matrix(tile_matrix)
+          if not tile_matrix:
+            return
+        # self.print_matrix(tile_matrix)
 
   def tile_for_folder_and_filename(self, folder, filename):
     dir_string = folder.split(self.vector_tiles_dir)
@@ -184,8 +185,9 @@ class OSMDataNormalizer:
     return linestrings
 
   def add_linestring_to_matrix(self, linestring, tile, matrix):
-    print "adding a line string with {} points".format(len(linestring))
     line_matrix = self.pixel_matrix_for_linestring(linestring, tile)
+    if not line_matrix:
+      return False
     for x in range(0,self.tile_size):
       for y in range(0,self.tile_size):
         if line_matrix[x][y]:
@@ -216,8 +218,6 @@ class OSMDataNormalizer:
     line_matrix = self.empty_tile_matrix()
     zoom = tile.z
 
-    print self.osm_url_for_tile(tile)
-
     count = 0
     for current_point in linestring:
       if count == len(linestring) - 1:
@@ -230,11 +230,16 @@ class OSMDataNormalizer:
                                       current_point_obj.lon, zoom)      
       end_pixel = self.fromLatLngToPoint(next_point_obj.lat,
                                     next_point_obj.lon, zoom)
-      print start_pixel
-      print end_pixel
       pixels = self.pixels_between(start_pixel, end_pixel)
+      if len(pixels) > 200:
+        print "Got a runner boys..."
+        print self.fromLatLngToPoint(current_point_obj.lat,
+                                      current_point_obj.lon, zoom, debug=True) 
+        print self.fromLatLngToPoint(next_point_obj.lat,
+                                      next_point_obj.lon, zoom, debug=True) 
+        print "\n"
+        return False
       for p in pixels:
-        # print '{}, {}'.format(p.x,p.y)
         line_matrix[p.x][p.y] = 1
       count += 1
 
@@ -250,8 +255,9 @@ class OSMDataNormalizer:
         return res;
     
   
-  def fromLatLngToPoint(self, lat, lng, zoom):
-      
+  def fromLatLngToPoint(self, lat, lng, zoom, debug=False):
+      if debug: print "conversion for these coords may be off tile bounds: {}, {} (z: {})".format(lat, lng, zoom)
+      # http://stackoverflow.com/a/17419232/108512
       _pixelOrigin = Pixel()
       _pixelOrigin.x = self.tile_size / 2.0
       _pixelOrigin.y = self.tile_size / 2.0
@@ -260,20 +266,23 @@ class OSMDataNormalizer:
 
       point = Pixel()
       point.x = _pixelOrigin.x + lng * _pixelsPerLonDegree;       
+      if debug: print "point.x is {}".format(point.x)
 
       # Truncating to 0.9999 effectively limits latitude to 89.189. This is
       # about a third of a tile past the edge of the world tile.
       siny = self.bound(math.sin(self.degreesToRadians(lat)), -0.9999,0.9999);
+      if debug: print "siny is {}".format(siny)
       point.y = _pixelOrigin.y + 0.5 * math.log((1 + siny) / (1 - siny)) *- _pixelsPerLonRadian;
+      if debug: print "point.y is {}".format(point.y)
 
-      numTiles = 1 << zoom;
-      point.x = int(point.x * numTiles)%self.tile_size;
-      point.y = int(point.y * numTiles)%self.tile_size;
+      num_tiles = 1 << zoom;
+      if debug: print "num_tiles is {}".format(num_tiles)
+      point.x = int(point.x * num_tiles)%self.tile_size;
+      point.y = int(point.y * num_tiles)%self.tile_size;
+      if debug: print "possibly faulty conversion to {}, {}".format(point.x, point.y)
       return point;
 
   def pixels_between(self, start_pixel, end_pixel):
-    print start_pixel
-    print end_pixel
     pixels = []
     if end_pixel.x - start_pixel.x == 0:
       for y in range(min(end_pixel.y, start_pixel.y),
@@ -304,5 +313,5 @@ class OSMDataNormalizer:
     return pixels
 
 odn = OSMDataNormalizer()
-odn.download_geojson()
+#odn.download_geojson()
 odn.process_geojson()
