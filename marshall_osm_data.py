@@ -63,6 +63,8 @@ class OSMDataNormalizer:
     self.vector_tiles_dir = "data/vector-tiles/"
     self.make_directory(self.vector_tiles_dir)
 
+    self.current_tile = None
+
   def make_directory(self, new_dir):
     '''
        make a directory or complain it already exists
@@ -159,6 +161,7 @@ class OSMDataNormalizer:
           linestrings = self.linestrings_for_tile(src)
         tile_matrix = self.empty_tile_matrix()
         tile = self.tile_for_folder_and_filename(folder, filename)
+        self.current_tile = tile
         print "\nAdding lines for: " + self.osm_url_for_tile(tile)
         # SWNE
         tile_bounds = self.gm.GoogleTileLatLonBounds(tile.y, tile.x, tile.z)
@@ -168,23 +171,24 @@ class OSMDataNormalizer:
         print "\nnew bounds clipping to {}\n".format(new_bounds)
         clipped_linestrings = self.clipped_linestrings(tile.z, new_bounds, linestrings)
         print clipped_linestrings
-        for linestring in clipped_linestrings:
+        #for linestring in clipped_linestrings:
+        for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
-        #self.print_matrix(tile_matrix)
+        self.print_matrix(tile_matrix)
 
   def clip_tile_bounds(self,bounds):
     new_bounds = []
     for point in bounds:
       if point > 0:
-        new_bounds.append((int(point*10000-1))/10000.0 )
+        new_bounds.append((int(point*100000))/100000.0 )
       else:
-        new_bounds.append((int(point*10000+1))/10000.0 )
+        new_bounds.append((int(point*100000))/100000.0 )
     return new_bounds
 
   def tile_for_folder_and_filename(self, folder, filename):
     dir_string = folder.split(self.vector_tiles_dir)
-    z, y = dir_string[1].split('/')
-    x = filename.split('.')[0]
+    z, x = dir_string[1].split('/')
+    y = filename.split('.')[0]
     return MercatorTile(int(x), int(y), int(z))
 
   def linestrings_for_tile(self, file_data):
@@ -298,10 +302,11 @@ class OSMDataNormalizer:
                                     next_point_obj.lon, zoom)
       pixels = self.pixels_between(start_pixel, end_pixel)
       if len(pixels) > 200:
-        print "\n****Got a runner boys..."
+        print "\n****Got a runner boys..." + str(len(pixels))
         
-        bounds = self.gm.GoogleTileLatLonBounds(tile.y, tile.x, tile.z)
-        new_bounds = self.clip_tile_bounds(bounds)
+        bounds = self.gm.GoogleTileLatLonBounds(tile.x, tile.y, tile.z)
+        #new_bounds = self.clip_tile_bounds(bounds)
+        new_bounds = bounds
         print "tile bounds is {}".format(new_bounds)
 
         if start_pixel.x == 0 or start_pixel.y == 0:
@@ -326,7 +331,17 @@ class OSMDataNormalizer:
     res = min(val, valMax);
     return res;
     
+  # TODO - sometimes this function return a bad x or y value.... 
+  # we expect it to be 255, but instead its 0, and causes lines to wrap on ascii tiles  
   def fromLatLngToPoint(self, lat, lng, zoom, debug=False):
+  
+    tile = self.gm.GoogleTileFromLatLng(lat, lng, zoom)
+    
+    tile_x_offset =  (tile[0] - self.current_tile.x) * self.tile_size
+    tile_y_offset = (tile[1] - self.current_tile.y) * self.tile_size
+    
+    if debug: 
+      print "Tile offsets " + str(tile_x_offset) + " " + str(tile_y_offset)
     if debug: print "conversion for these coords may be off tile bounds: {}, {} (z: {})".format(lat, lng, zoom)
     # http://stackoverflow.com/a/17419232/108512
     _pixelOrigin = Pixel()
@@ -350,10 +365,16 @@ class OSMDataNormalizer:
     if debug: print "num_tiles is {}".format(num_tiles)
     if debug: print "values before (Pxy * num_tiles % 256) are {}, {}".format(point.x, point.y)
     if debug: print "Pxy * num_tiles are {}, {}".format(point.x * num_tiles, point.y * num_tiles)
-    point.x = int(point.x * num_tiles)%self.tile_size
-    point.y = int(point.y * num_tiles)%self.tile_size
+    point.x = int(point.x * num_tiles)%self.tile_size + tile_x_offset
+    point.y = int(point.y * num_tiles)%self.tile_size + tile_y_offset
     if debug: print "possibly faulty conversion to {}, {}\n".format(point.x, point.y)
     return point
+
+  def pixel_is_valid(self, p):
+    if (p.x >= 0 and p.x < self.tile_size and p.y >= 0 and p.y < self.tile_size):
+      return True
+    return False
+
 
   def pixels_between(self, start_pixel, end_pixel):
     pixels = []
@@ -363,25 +384,24 @@ class OSMDataNormalizer:
         p = Pixel()
         p.x = end_pixel.x
         p.y = y
-        pixels.append(p) 
+        if self.pixel_is_valid(p):
+          pixels.append(p) 
       return pixels
       
     slope = (end_pixel.y - start_pixel.y)/float(end_pixel.x - start_pixel.x)
     offset = end_pixel.y - slope*end_pixel.x
-    
-    for x in range(min(end_pixel.x, start_pixel.x),
-                   max(end_pixel.x, start_pixel.x)):
-      p = Pixel()
-      p.x = x
-      p.y = int(slope*x + offset) % (self.tile_size)
-      pixels.append(p) 
 
-    for y in range(min(end_pixel.y, start_pixel.y),
-                   max(end_pixel.y, start_pixel.y)):
+    num_points = self.tile_size
+    i = 0
+    while i < num_points:
       p = Pixel()
-      p.x = int((y - offset)/slope)
-      p.y = y
-      pixels.append(p) 
+      floatx = start_pixel.x + (end_pixel.x - start_pixel.x) * i / float(num_points)
+      p.x = int(floatx)
+      p.y = int(offset + slope * floatx)
+      i += 1
+    
+      if self.pixel_is_valid(p):
+        pixels.append(p) 
 
     return pixels
 
