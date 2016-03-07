@@ -4,7 +4,7 @@ category: gaiagps.com
 layout: ios
 ---
 
-# GaiaGPS.com February Updates
+# GaiaGPS.com February 2016 Updates
 
 * improved search on map and gallery (now uses MapZen geocoder)
 * improved performance of waypoint table - should now be fast, and work for 100K+ waypoints
