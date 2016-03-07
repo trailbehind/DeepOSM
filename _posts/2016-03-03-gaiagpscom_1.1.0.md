@@ -1,10 +1,10 @@
 ---
-title: 1.1.0 - March 2016
+title: March 2016 Updates 
 category: gaiagps.com
 layout: ios
 ---
 
-# GaiaGPS.com v1.1.0
+# GaiaGPS.com March 2016 Updates 
 
 Gaiagps.com now looks great. Check it out!
 

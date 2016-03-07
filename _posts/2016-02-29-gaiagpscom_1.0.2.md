@@ -1,10 +1,10 @@
 ---
-title: 1.0.2 - February 2016
+title: February 2016 Updates 
 category: gaiagps.com
 layout: ios
 ---
 
-# GaiaGPS.com v1.0.2
+# GaiaGPS.com February Updates
 
 * improved search on map and gallery (now uses MapZen geocoder)
 * improved performance of waypoint table - should now be fast, and work for 100K+ waypoints
