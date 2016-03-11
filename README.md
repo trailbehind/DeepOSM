@@ -4,7 +4,7 @@ Detect roads and features in satellite imagery by training a convnet with OSM da
 
 Work in progress.
 
-![Deep OSM Project]()
+![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
 
 # Install Requirements
 
