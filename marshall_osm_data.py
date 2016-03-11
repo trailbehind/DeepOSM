@@ -7,11 +7,9 @@ import numpy as np
     3b) further fix with a training layer to guess come up with the width predicitvely
     3) download corresponding MapQuest imagery for the tiles
     4) train a deep learning net with the roads as labeled data for the imagery
-    5) 
+    5) FOSS then profits.
 
     geo help from: https://gist.github.com/tucotuco/1193577
-
-
 '''
 
 import os, math, urllib, sys, json
@@ -168,7 +166,7 @@ class OSMDataNormalizer:
         tile_bounds = (tile_bounds[1],tile_bounds[0],tile_bounds[3],tile_bounds[2])
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
-        self.print_matrix(tile_matrix)
+        # self.print_matrix(tile_matrix)
 
   def tile_for_folder_and_filename(self, folder, filename):
     dir_string = folder.split(self.vector_tiles_dir)
@@ -234,20 +232,6 @@ class OSMDataNormalizer:
       end_pixel = self.fromLatLngToPoint(next_point_obj.lat,
                                     next_point_obj.lon, zoom)
       pixels = self.pixels_between(start_pixel, end_pixel)
-      if len(pixels) > 200:        
-        bounds = self.gm.GoogleTileLatLonBounds(tile.x, tile.y, tile.z)
-        if start_pixel.x == 0 or start_pixel.y == 0:
-          print "\n****Got a runner boys..." + str(len(pixels))
-          print "tile bounds is {}".format(bounds)
-          print "is this point outside of bounds?: {} {}".format(next_point_obj.lat, next_point_obj.lon)
-          self.fromLatLngToPoint(current_point_obj.lat,
-                                      current_point_obj.lon, zoom, debug=True) 
-        if end_pixel.x == 0 or end_pixel.y == 0:
-          print "\n****Got a runner boys..." + str(len(pixels))
-          print "tile bounds is {}".format(bounds)
-          print "is this point outside of bounds?: {} {}".format(next_point_obj.lat, next_point_obj.lon)
-          self.fromLatLngToPoint(next_point_obj.lat,
-                                      next_point_obj.lon, zoom, debug=True) 
       for p in pixels:
         line_matrix[p.x][p.y] = 1
       count += 1
@@ -263,18 +247,13 @@ class OSMDataNormalizer:
     res = min(val, valMax);
     return res;
     
-  # TODO - sometimes this function return a bad x or y value.... 
-  # we expect it to be 255, but instead its 0, and causes lines to wrap on ascii tiles  
-  def fromLatLngToPoint(self, lat, lng, zoom, debug=False):
+  def fromLatLngToPoint(self, lat, lng, zoom):
   
     tile = self.gm.GoogleTileFromLatLng(lat, lng, zoom)
     
     tile_x_offset =  (tile[0] - self.current_tile.x) * self.tile_size
     tile_y_offset = (tile[1] - self.current_tile.y) * self.tile_size
     
-    if debug: 
-      print "Tile offsets " + str(tile_x_offset) + " " + str(tile_y_offset)
-    if debug: print "conversion for these coords may be off tile bounds: {}, {} (z: {})".format(lat, lng, zoom)
     # http://stackoverflow.com/a/17419232/108512
     _pixelOrigin = Pixel()
     _pixelOrigin.x = self.tile_size / 2.0
@@ -284,29 +263,21 @@ class OSMDataNormalizer:
 
     point = Pixel()
     point.x = _pixelOrigin.x + lng * _pixelsPerLonDegree
-    if debug: print "point.x is {}".format(point.x)
 
     # Truncating to 0.9999 effectively limits latitude to 89.189. This is
     # about a third of a tile past the edge of the world tile.
     siny = self.bound(math.sin(self.degreesToRadians(lat)), -0.9999,0.9999)
-    if debug: print "siny is {}".format(siny)
     point.y = _pixelOrigin.y + 0.5 * math.log((1 + siny) / (1 - siny)) *- _pixelsPerLonRadian
-    if debug: print "point.y is {}".format(point.y)
 
     num_tiles = 1 << zoom
-    if debug: print "num_tiles is {}".format(num_tiles)
-    if debug: print "values before (Pxy * num_tiles % 256) are {}, {}".format(point.x, point.y)
-    if debug: print "Pxy * num_tiles are {}, {}".format(point.x * num_tiles, point.y * num_tiles)
-    point.x = int(point.x * num_tiles)%self.tile_size + tile_x_offset
-    point.y = int(point.y * num_tiles)%self.tile_size + tile_y_offset
-    if debug: print "possibly faulty conversion to {}, {}\n".format(point.x, point.y)
+    point.x = int(point.x * num_tiles) + tile_x_offset - self.current_tile.x* self.tile_size
+    point.y = int(point.y * num_tiles) + tile_y_offset - self.current_tile.y* self.tile_size
     return point
 
   def pixel_is_valid(self, p):
     if (p.x >= 0 and p.x < self.tile_size and p.y >= 0 and p.y < self.tile_size):
       return True
     return False
-
 
   def pixels_between(self, start_pixel, end_pixel):
     pixels = []
@@ -338,5 +309,5 @@ class OSMDataNormalizer:
     return pixels
 
 odn = OSMDataNormalizer()
-odn.download_geojson()
+#odn.download_geojson()
 odn.process_geojson()
