@@ -16,7 +16,6 @@ import numpy as np
 
 import os, math, urllib, sys, json
 from globalmaptiles import GlobalMercator
-import pyclipper
 
 MAPZEN_VECTOR_TILES_API_KEY = 'vector-tiles-NsMiwBc'
 
@@ -164,26 +163,12 @@ class OSMDataNormalizer:
         self.current_tile = tile
         print "\nAdding lines for: " + self.osm_url_for_tile(tile)
         # SWNE
-        tile_bounds = self.gm.GoogleTileLatLonBounds(tile.y, tile.x, tile.z)
+        tile_bounds = self.gm.GoogleTileLatLonBounds(tile.x, tile.y, tile.z)
         # WSEN
         tile_bounds = (tile_bounds[1],tile_bounds[0],tile_bounds[3],tile_bounds[2])
-        new_bounds = self.clip_tile_bounds(tile_bounds)
-        print "\nnew bounds clipping to {}\n".format(new_bounds)
-        clipped_linestrings = self.clipped_linestrings(tile.z, new_bounds, linestrings)
-        print clipped_linestrings
-        #for linestring in clipped_linestrings:
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
         self.print_matrix(tile_matrix)
-
-  def clip_tile_bounds(self,bounds):
-    new_bounds = []
-    for point in bounds:
-      if point > 0:
-        new_bounds.append((int(point*100000))/100000.0 )
-      else:
-        new_bounds.append((int(point*100000))/100000.0 )
-    return new_bounds
 
   def tile_for_folder_and_filename(self, folder, filename):
     dir_string = folder.split(self.vector_tiles_dir)
@@ -203,58 +188,6 @@ class OSMDataNormalizer:
         for ls in f['geometry']['coordinates']:
           linestrings.append(ls)   
     return linestrings
-
-  def clipped_linestrings(self, zoom, bounding_box, linestrings):
-    point_count = 0
-    for l in linestrings:
-      for p in l:
-        point_count += 1
-    print "clipping {} points".format(point_count)
-    scaling_factor = pow(10, self.decimal_places_for_zoom(zoom))
-    clip_box = (
-        (int(bounding_box[0] * scaling_factor), int(bounding_box[1] * scaling_factor)),
-        (int(bounding_box[2] * scaling_factor), int(bounding_box[1] * scaling_factor)),
-        (int(bounding_box[2] * scaling_factor), int(bounding_box[3] * scaling_factor)),
-        (int(bounding_box[0] * scaling_factor), int(bounding_box[3] * scaling_factor)),
-        (int(bounding_box[0] * scaling_factor), int(bounding_box[1] * scaling_factor)),
-    )
-    scaled_coordinates = [[(int(c[0] * scaling_factor),
-              int(c[1] * scaling_factor)) for c in linestring] \
-          for linestring in linestrings]
-    pc = pyclipper.Pyclipper()
-    pc.AddPath(clip_box, pyclipper.PT_CLIP, True)
-     
-    try:
-      pc.AddPaths(scaled_coordinates, pyclipper.PT_SUBJECT, False)
-      solution = pc.Execute2(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
-      solution_paths = pyclipper.OpenPathsFromPolyTree(solution)
-      unscaled_coordinates = [[(c[0]*1.0 / scaling_factor, c[1]*1.0 / scaling_factor) \
-          for c in linestring] for linestring in solution_paths]
-      linestrings = unscaled_coordinates
-      print "clipped to {}".format(linestrings)
-    except Exception, e:
-      print("error clipping track")
-    point_count = 0
-    for l in linestrings:
-      for p in l:
-        point_count += 1
-    print "clipped to {} points".format(point_count)
-
-    return linestrings
-
-  def decimal_places_for_zoom(self, z):
-    if z <= 1:
-        return 1
-    elif z <= 4:
-        return 2
-    elif z <= 7:
-        return 3
-    elif z <= 10:
-        return 4
-    elif z <= 13:
-        return 5
-    else:
-        return 6
 
   def add_linestring_to_matrix(self, linestring, tile, matrix):
     line_matrix = self.pixel_matrix_for_linestring(linestring, tile)
@@ -301,18 +234,17 @@ class OSMDataNormalizer:
       end_pixel = self.fromLatLngToPoint(next_point_obj.lat,
                                     next_point_obj.lon, zoom)
       pixels = self.pixels_between(start_pixel, end_pixel)
-      if len(pixels) > 200:
-        print "\n****Got a runner boys..." + str(len(pixels))
-        
+      if len(pixels) > 200:        
         bounds = self.gm.GoogleTileLatLonBounds(tile.x, tile.y, tile.z)
-        #new_bounds = self.clip_tile_bounds(bounds)
-        new_bounds = bounds
-        print "tile bounds is {}".format(new_bounds)
-
         if start_pixel.x == 0 or start_pixel.y == 0:
+          print "\n****Got a runner boys..." + str(len(pixels))
+          print "tile bounds is {}".format(bounds)
+          print "is this point outside of bounds?: {} {}".format(next_point_obj.lat, next_point_obj.lon)
           self.fromLatLngToPoint(current_point_obj.lat,
                                       current_point_obj.lon, zoom, debug=True) 
         if end_pixel.x == 0 or end_pixel.y == 0:
+          print "\n****Got a runner boys..." + str(len(pixels))
+          print "tile bounds is {}".format(bounds)
           print "is this point outside of bounds?: {} {}".format(next_point_obj.lat, next_point_obj.lon)
           self.fromLatLngToPoint(next_point_obj.lat,
                                       next_point_obj.lon, zoom, debug=True) 
@@ -406,5 +338,5 @@ class OSMDataNormalizer:
     return pixels
 
 odn = OSMDataNormalizer()
-#odn.download_geojson()
+odn.download_geojson()
 odn.process_geojson()
