@@ -66,51 +66,17 @@ class OSMDataNormalizer:
 
   def make_directory(self, new_dir):
     '''
-       make a directory or complain it already exists
+       try to make a new directory
     '''
     try:
       os.mkdir(new_dir);
     except:
       pass
-      #print("{} already exists".format(new_dir))
-
-  def tile_with_coordinates_and_zoom(self, coordinates, zoom):
-    scale = (1<<zoom);
-    normalized_point = self.normalize_pixel_coords(coordinates)
-    return MercatorTile(int(normalized_point.lat * scale), 
-                        int(normalized_point.lon * scale), 
-                        int(zoom)
-                       )
-
-  def normalize_pixel_coords(self, coord):
-    if coord.lon > 180:
-      coord.lon -= 360
-    coord.lon /= 360.0
-    coord.lon += 0.5
-    coord.lat = 0.5 - ((math.log(math.tan((math.pi/4) + ((0.5 * math.pi *coord.lat) / 180.0))) / math.pi) / 2.0)
-    return coord    
-
-  def tiles_for_bounding_box(self, bounding_box, zoom):
-    tile_array = []
-    ne_tile = self.tile_with_coordinates_and_zoom(bounding_box.northeast,
-                                                  zoom)
-    sw_tile = self.tile_with_coordinates_and_zoom(bounding_box.southwest,
-                                                  zoom)
-      
-    min_x = min(ne_tile.x, sw_tile.x)
-    min_y = min(ne_tile.y, sw_tile.y)
-    max_y = max(ne_tile.y, sw_tile.y)
-    max_x = max(ne_tile.x, sw_tile.x)
-    for y in range(min_y, max_y):
-      for x in range(min_x, max_x):
-        new_tile = MercatorTile()
-        new_tile.x = x
-        new_tile.y = y
-        new_tile.z = zoom
-        tile_array.append(new_tile)
-    return tile_array
 
   def default_bounds_to_analyze(self):
+    '''
+        analyze a small chunk around Yosemite Village, by default
+    '''
     yosemite_village_bb = BoundingBox()
     yosemite_village_bb.northeast.lat = 37.81385
     yosemite_village_bb.northeast.lon = -119.48559
@@ -119,6 +85,9 @@ class OSMDataNormalizer:
     return yosemite_village_bb
 
   def default_zoom(self):
+    '''
+        analyze tiles at TMS zoom level 12, by default
+    '''
     return 12
 
   def default_vector_tile_base_url(self):
@@ -160,52 +129,122 @@ class OSMDataNormalizer:
                          suffix = '?api_key={}'.format(MAPZEN_VECTOR_TILES_API_KEY),
                          layers = 'roads')
 
+  def tiles_for_bounding_box(self, bounding_box, zoom):
+    '''
+        returns a list of MeractorTiles that intersect the bounding_box
+        at the given zoom
+    '''
+    tile_array = []
+    ne_tile = self.tile_with_coordinates_and_zoom(bounding_box.northeast,
+                                                  zoom)
+    sw_tile = self.tile_with_coordinates_and_zoom(bounding_box.southwest,
+                                                  zoom)
+      
+    min_x = min(ne_tile.x, sw_tile.x)
+    min_y = min(ne_tile.y, sw_tile.y)
+    max_y = max(ne_tile.y, sw_tile.y)
+    max_x = max(ne_tile.x, sw_tile.x)
+    for y in range(min_y, max_y):
+      for x in range(min_x, max_x):
+        new_tile = MercatorTile()
+        new_tile.x = x
+        new_tile.y = y
+        new_tile.z = zoom
+        tile_array.append(new_tile)
+    return tile_array
+
+  def tile_with_coordinates_and_zoom(self, coordinates, zoom):
+    '''
+        returns a MeractorTile for the given coordinates and zoom
+    '''
+    scale = (1<<zoom);
+    normalized_point = self.normalize_pixel_coords(coordinates)
+    return MercatorTile(int(normalized_point.lat * scale), 
+                        int(normalized_point.lon * scale), 
+                        int(zoom)
+                       )
+
+  def normalize_pixel_coords(self, coord):
+    '''
+        convert lat lon to TMS meters
+    '''
+    if coord.lon > 180:
+      coord.lon -= 360
+    coord.lon /= 360.0
+    coord.lon += 0.5
+    coord.lat = 0.5 - ((math.log(math.tan((math.pi/4) + ((0.5 * math.pi *coord.lat) / 180.0))) / math.pi) / 2.0)
+    return coord    
+
   def download_tile(self, base_url, format, directory, tile, suffix='', layers=None):
-      url = self.url_for_tile(base_url, format, tile, suffix, layers)
-      print url
-      z_dir = directory + str(tile.z)
-      y_dir = z_dir + "/" + str(tile.y)
-      self.make_directory(z_dir)
-      self.make_directory(y_dir)
-      filename = '{}.{}'.format(tile.x,format)
-      download_path = y_dir + "/" + filename
-      urllib.urlretrieve (url, download_path)
+    '''
+        download a map tile from a TMS server
+    '''
+    url = self.url_for_tile(base_url, format, tile, suffix, layers)
+    print 'DOWNLOADING: ' + url
+    z_dir = directory + str(tile.z)
+    y_dir = z_dir + "/" + str(tile.y)
+    self.make_directory(z_dir)
+    self.make_directory(y_dir)
+    filename = '{}.{}'.format(tile.x,format)
+    download_path = y_dir + "/" + filename
+    urllib.urlretrieve (url, download_path)
 
   def url_for_tile(self, base_url, format, tile, suffix='', layers=None):
-      filename = '{}.{}'.format(tile.x,format)
-      url = base_url 
-      if layers:
-        url += '{}/'.format(layers)
-      url = url + '{}/{}/{}{}'.format(tile.z,tile.y,filename,suffix)
-      return url 
+    '''
+        compose a URL for a TMS server
+    '''
+    filename = '{}.{}'.format(tile.x,format)
+    url = base_url 
+    if layers:
+      url += '{}/'.format(layers)
+    url = url + '{}/{}/{}{}'.format(tile.z,tile.y,filename,suffix)
+    return url 
 
   def process_geojson(self):
+    '''
+        convert geojson vector tiles to 256 x 256 matrices
+        matrix is 1 if the pixel has road on it, 0 if not
+    '''
     rootdir = self.vector_tiles_dir
     self.gm = GlobalMercator()
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
-        #if os.path.join(folder, filename) != 'data/vector-tiles/12/685/1583.json':
-        #  continue
         with open(os.path.join(folder, filename), 'r') as src:
-          linestrings = self.linestrings_for_tile(src)
+          linestrings = self.linestrings_for_vector_tile(src)
         tile_matrix = self.empty_tile_matrix()
-        tile = self.tile_for_folder_and_filename(folder, filename)
+        tile = self.tile_for_folder_and_filename(folder, filename, self.vector_tiles_dir)
+        # keep track of current tile to clip off off-tile points in linestrings
         self.current_tile = tile
-        # SWNE
-        tile_bounds = self.gm.GoogleTileLatLonBounds(tile.x, tile.y, tile.z)
-        # WSEN
-        tile_bounds = (tile_bounds[1],tile_bounds[0],tile_bounds[3],tile_bounds[2])
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
         # self.print_matrix(tile_matrix)
 
-  def tile_for_folder_and_filename(self, folder, filename):
-    dir_string = folder.split(self.vector_tiles_dir)
+  def process_rasters(self):
+    '''
+        convert raster satellite tiles to 256 x 256 matrices
+        floats represent some color info about each pixel
+    '''
+    rootdir = self.raster_tiles_dir
+    self.gm = GlobalMercator()
+    for folder, subs, files in os.walk(rootdir):
+      for filename in files:
+        tile = self.tile_for_folder_and_filename(folder, filename, self.raster_tiles_dir)
+        # TODO
+
+  def tile_for_folder_and_filename(self, folder, filename, directory):
+    '''
+        the MeractorTile given a path to a file on disk
+    '''
+    dir_string = folder.split(directory)
     z, x = dir_string[1].split('/')
     y = filename.split('.')[0]
     return MercatorTile(int(x), int(y), int(z))
 
-  def linestrings_for_tile(self, file_data):
+  def linestrings_for_vector_tile(self, file_data):
+    '''
+        flatten linestrings and multilinestrings in a geojson tile
+        to a list of linestrings
+    '''
     features = json.loads(file_data.read())['features']
     linestrings = []          
     count = 0
@@ -219,6 +258,9 @@ class OSMDataNormalizer:
     return linestrings
 
   def add_linestring_to_matrix(self, linestring, tile, matrix):
+    '''
+        add a pixel linestring to the matrix for a given tile
+    '''
     line_matrix = self.pixel_matrix_for_linestring(linestring, tile)
     for x in range(0,self.tile_size):
       for y in range(0,self.tile_size):
@@ -227,6 +269,9 @@ class OSMDataNormalizer:
     return matrix
 
   def print_matrix(self, matrix):
+    '''
+        print an ascii matrix in cosole
+    '''
     for row in np.rot90(np.fliplr(matrix)):
       row_str = ''
       for cell in row:
@@ -234,7 +279,9 @@ class OSMDataNormalizer:
       print row_str
 
   def empty_tile_matrix(self):
-    # initialize the array to all zeroes
+    ''' 
+        initialize the array to all zeroes
+    '''
     tile_matrix = []    
     for x in range(0,self.tile_size):
       tile_matrix.append([])
@@ -269,16 +316,10 @@ class OSMDataNormalizer:
 
     return line_matrix
 
-  def degreesToRadians(self, deg): 
-    return deg * (math.pi / 180)
-    
-  def bound(self, val, valMin, valMax):
-    res = 0
-    res = max(val, valMin);
-    res = min(val, valMax);
-    return res;
-    
   def fromLatLngToPoint(self, lat, lng, zoom):
+    '''
+       convert a lat/lng/zoom to a pixel on a self.tile_size sized tile
+    '''
   
     tile = self.gm.GoogleTileFromLatLng(lat, lng, zoom)
     
@@ -305,12 +346,26 @@ class OSMDataNormalizer:
     point.y = int(point.y * num_tiles) + tile_y_offset - self.current_tile.y* self.tile_size
     return point
 
-  def pixel_is_valid(self, p):
-    if (p.x >= 0 and p.x < self.tile_size and p.y >= 0 and p.y < self.tile_size):
-      return True
-    return False
-
+  def degreesToRadians(self, deg):
+    '''
+        return radians given degrees
+    ''' 
+    return deg * (math.pi / 180)
+    
+  def bound(self, val, valMin, valMax):
+    '''
+        used to cap the TMS bounding box to clip the poles
+    ''' 
+    res = 0
+    res = max(val, valMin);
+    res = min(val, valMax);
+    return res;
+    
   def pixels_between(self, start_pixel, end_pixel):
+    '''
+        return a list of pixels along the ling from 
+        start_pixel to end_pixel
+    ''' 
     pixels = []
     if end_pixel.x - start_pixel.x == 0:
       for y in range(min(end_pixel.y, start_pixel.y),
@@ -318,7 +373,7 @@ class OSMDataNormalizer:
         p = Pixel()
         p.x = end_pixel.x
         p.y = y
-        if self.pixel_is_valid(p):
+        if self.pixel_is_on_tile(p):
           pixels.append(p) 
       return pixels
       
@@ -334,13 +389,21 @@ class OSMDataNormalizer:
       p.y = int(offset + slope * floatx)
       i += 1
     
-      if self.pixel_is_valid(p):
+      if self.pixel_is_on_tile(p):
         pixels.append(p) 
 
     return pixels
 
+  def pixel_is_on_tile(self, p):
+    '''
+        return true of p.x and p.y are >= 0 and < self.tile_size
+    '''
+    if (p.x >= 0 and p.x < self.tile_size and p.y >= 0 and p.y < self.tile_size):
+      return True
+    return False
+
 odn = OSMDataNormalizer()
-#odn.download_geojson()
-#odn.process_geojson()
+odn.download_geojson()
+odn.process_geojson()
 odn.download_rasters()
-#odn.process_geojson()
+odn.process_rasters()
