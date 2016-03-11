@@ -1,8 +1,10 @@
-# Deep Trails
+# Deep OSM
 
-Detect roads/trails in satellite imagery by training a convnet with OSM ways data.
+Detect roads and features in satellite imagery by training a convnet with OSM data.
 
 Work in progress.
+
+![Deep OSM Project]()
 
 # Install Requirements
 

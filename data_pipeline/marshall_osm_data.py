@@ -185,7 +185,8 @@ class OSMDataNormalizer:
         self.current_tile = tile
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
-        # self.print_matrix(tile_matrix)
+        self.print_matrix(tile_matrix)
+        print '\n\n\n'
 
   def process_rasters(self):
     '''
@@ -201,6 +202,8 @@ class OSMDataNormalizer:
 
   # http://code.activestate.com/recipes/577591-conversion-of-pil-image-and-numpy-array/
   def jpeg_to_rgb_matrix(self, img):
+    print numpy.array(img.getdata(),
+                    numpy.uint8).reshape(img.size[1], img.size[0], 3)
     return numpy.array(img.getdata(),
                     numpy.uint8).reshape(img.size[1], img.size[0], 3)
 
@@ -376,7 +379,11 @@ class OSMDataNormalizer:
     return False
 
 odn = OSMDataNormalizer()
-#odn.download_geojson()
-#odn.process_geojson()
-#odn.download_rasters()
+
+# network requests
+odn.download_geojson()
+odn.download_rasters()
+
+# process into matrices
+odn.process_geojson()
 odn.process_rasters()
