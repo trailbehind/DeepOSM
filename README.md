@@ -14,7 +14,7 @@ Install globalmaptiles.py
     cd lib
     git clone git@gist.github.com:1193577.git global_map
     cd ..
-    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/lib/global_map
+    export PYTHONPATH=$PYTHONPATH:./lib/global_map
 
 # Road/Trail Detection
 
@@ -47,7 +47,7 @@ Multilayer Convolutional Network
 
 * Download a different set of training imagery and OSM ways, and see if we can predict the ways from the imagery
 
-## **Marshal Test Data**
+## Marshal Test Data
 
 ### MapZen vector gepjson tiles are convenient
 
@@ -73,12 +73,3 @@ Accuracy
 
 * mimic Hinton’s methods, esp. for getting real road geometries
 * see if we can identify trails nearly as well as roads
-
-# Learning Project
-
-There's nothing to see here, move along. None of this code probably works. Still working on tutorials to learn deep learning, so I can apply to OSM and satellite imagery.
-
-For using the MNIST data, clone the tensorflow repo, and add the mnist example to your PYTHONPATH:
-
-    export PYTHONPATH=$PYTHONPATH:/PATH_TO_REPO/tensorflow/tensorflow/examples/tutorials/mnist/
-
