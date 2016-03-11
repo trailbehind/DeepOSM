@@ -58,7 +58,9 @@ class OSMDataNormalizer:
     self.tile_size = 256
     self.make_directory(data_dir)
     self.vector_tiles_dir = "data/vector-tiles/"
+    self.raster_tiles_dir = "data/raster-tiles/"
     self.make_directory(self.vector_tiles_dir)
+    self.make_directory(self.raster_tiles_dir)
 
     self.current_tile = None
 
@@ -108,44 +110,74 @@ class OSMDataNormalizer:
         tile_array.append(new_tile)
     return tile_array
 
-  def download_tile(self, tile):
-      url = self.url_for_tile(tile)
-      z_dir = self.vector_tiles_dir + str(tile.z)
-      y_dir = z_dir + "/" + str(tile.y)
-      self.make_directory(z_dir)
-      self.make_directory(y_dir)
-      format = 'json'
-      filename = '{}.{}'.format(tile.x,format)
-      download_path = y_dir + "/" + filename
-      urllib.urlretrieve (url, download_path)
-
-  def url_for_tile(self, tile, base_url='http://vector.mapzen.com/osm/'):
-      layers = 'roads'
-      format = 'json'
-      api_key = MAPZEN_VECTOR_TILES_API_KEY
-      filename = '{}.{}'.format(tile.x,format)
-      url = base_url + '{}/{}/{}/{}?api_key={}'.format(layers,tile.z,tile.y,filename,api_key)
-      return url 
-
-  def osm_url_for_tile(self, tile):
-      base_url='http://b.tile.thunderforest.com/outdoors/'
-      filename = '{}.{}'.format(tile.x,'png')
-      url = base_url + '{}/{}/{}'.format(tile.z,tile.y,filename)
-      return url 
-
-  def download_geojson(self):
-    ''' 
-        download geojson tiles for Yosemite Village from mapzen
-    '''
+  def default_bounds_to_analyze(self):
     yosemite_village_bb = BoundingBox()
     yosemite_village_bb.northeast.lat = 37.81385
     yosemite_village_bb.northeast.lon = -119.48559
     yosemite_village_bb.southwest.lat = 37.66724
     yosemite_village_bb.southwest.lon = -119.72454
-    zoom = 12
+    return yosemite_village_bb
 
-    for tile in self.tiles_for_bounding_box(yosemite_village_bb, zoom):
-      self.download_tile(tile)
+  def default_zoom(self):
+    return 12
+
+  def default_vector_tile_base_url(self):
+    ''' 
+        the default server to get vector data to train on
+    '''
+    return 'http://vector.mapzen.com/osm/'
+
+  def default_raster_tile_base_url(self):
+    ''' 
+        the default server to get satellite imagery to analyze
+    '''
+    return 'http://otile2.mqcdn.com/tiles/1.0.0/sat/'
+
+  def download_rasters(self):
+    ''' 
+        download raster satellite tiles for the region to be analyzed
+    '''
+    bounding_box = self.default_bounds_to_analyze()
+    zoom = self.default_zoom()
+    for tile in self.tiles_for_bounding_box(bounding_box, zoom):
+      self.download_tile(self.default_raster_tile_base_url(), 
+                         'jpg', 
+                         self.raster_tiles_dir, 
+                         tile)
+    
+  def download_geojson(self):
+    ''' 
+        download geojson tiles for the region to be analyzed
+    '''
+    bounding_box = self.default_bounds_to_analyze()
+    zoom = self.default_zoom()
+
+    for tile in self.tiles_for_bounding_box(bounding_box, zoom):
+      self.download_tile(self.default_vector_tile_base_url(), 
+                         'json', 
+                         self.vector_tiles_dir, 
+                         tile,
+                         suffix = '?api_key={}'.format(MAPZEN_VECTOR_TILES_API_KEY),
+                         layers = 'roads')
+
+  def download_tile(self, base_url, format, directory, tile, suffix='', layers=None):
+      url = self.url_for_tile(base_url, format, tile, suffix, layers)
+      print url
+      z_dir = directory + str(tile.z)
+      y_dir = z_dir + "/" + str(tile.y)
+      self.make_directory(z_dir)
+      self.make_directory(y_dir)
+      filename = '{}.{}'.format(tile.x,format)
+      download_path = y_dir + "/" + filename
+      urllib.urlretrieve (url, download_path)
+
+  def url_for_tile(self, base_url, format, tile, suffix='', layers=None):
+      filename = '{}.{}'.format(tile.x,format)
+      url = base_url 
+      if layers:
+        url += '{}/'.format(layers)
+      url = url + '{}/{}/{}{}'.format(tile.z,tile.y,filename,suffix)
+      return url 
 
   def process_geojson(self):
     rootdir = self.vector_tiles_dir
@@ -159,7 +191,6 @@ class OSMDataNormalizer:
         tile_matrix = self.empty_tile_matrix()
         tile = self.tile_for_folder_and_filename(folder, filename)
         self.current_tile = tile
-        print "\nAdding lines for: " + self.osm_url_for_tile(tile)
         # SWNE
         tile_bounds = self.gm.GoogleTileLatLonBounds(tile.x, tile.y, tile.z)
         # WSEN
@@ -310,4 +341,6 @@ class OSMDataNormalizer:
 
 odn = OSMDataNormalizer()
 #odn.download_geojson()
-odn.process_geojson()
+#odn.process_geojson()
+odn.download_rasters()
+#odn.process_geojson()
