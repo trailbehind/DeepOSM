@@ -12,7 +12,8 @@
 '''
 
 import os, math, urllib, sys, json
-import numpy as np
+import numpy
+from PIL import Image
 from globalmaptiles import GlobalMercator
 from geo_util import *
 
@@ -196,7 +197,12 @@ class OSMDataNormalizer:
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
         tile = self.tile_for_folder_and_filename(folder, filename, self.raster_tiles_dir)
-        # TODO
+        self.jpeg_to_rgb_matrix(Image.open(os.path.join(folder, filename)))
+
+  # http://code.activestate.com/recipes/577591-conversion-of-pil-image-and-numpy-array/
+  def jpeg_to_rgb_matrix(self, img):
+    return numpy.array(img.getdata(),
+                    numpy.uint8).reshape(img.size[1], img.size[0], 3)
 
   def tile_for_folder_and_filename(self, folder, filename, directory):
     '''
@@ -239,7 +245,7 @@ class OSMDataNormalizer:
     '''
         print an ascii matrix in cosole
     '''
-    for row in np.rot90(np.fliplr(matrix)):
+    for row in numpy.rot90(numpy.fliplr(matrix)):
       row_str = ''
       for cell in row:
         row_str += str(cell)
@@ -370,7 +376,7 @@ class OSMDataNormalizer:
     return False
 
 odn = OSMDataNormalizer()
-odn.download_geojson()
-odn.process_geojson()
-odn.download_rasters()
+#odn.download_geojson()
+#odn.process_geojson()
+#odn.download_rasters()
 odn.process_rasters()

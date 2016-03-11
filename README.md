@@ -6,6 +6,7 @@ Work in progress.
 
 # Install Requirements
 
+    brew install libjpeg
     pip install -r requirements.txt 
 
 Install globalmaptiles.py
