@@ -22,24 +22,34 @@ MAPZEN_VECTOR_TILES_API_KEY = 'vector-tiles-NsMiwBc'
 class OSMDataNormalizer:  
 
   def __init__(self):
-    data_dir = "data/"
     self.tile_size = 256
     
-    # download vector and raster tiles to this directory
-    self.make_directory(data_dir)
-    
     # select a random half of tiles for training
-    self.vector_tiles_dir = self.make_directory("data/vector-tiles/")
-    self.raster_tiles_dir = self.make_directory("data/raster-tiles/")
+    self.train_vector_tiles_dir = self.make_directory("data/train/vector-tiles/", full_path=True)
+    self.train_raster_tiles_dir = self.make_directory("data/train/raster-tiles/", full_path=True)
     
     # select a random half of tiles for testing
-    self.test_vector_tiles_dir = self.make_directory("data/test/vector-tiles/")
-    self.test_raster_tiles_dir = self.make_directory("data/test/raster-tiles/")
+    self.test_vector_tiles_dir = self.make_directory("data/test/vector-tiles/", full_path=True)
+    self.test_raster_tiles_dir = self.make_directory("data/test/raster-tiles/", full_path=True)
 
-  def make_directory(self, new_dir):
+    # put even tiles in train, odd tiles in test
+    self.download_count = 0
+
+  def make_directory(self, new_dir, full_path=False):
     '''
        try to make a new directory
     '''
+    
+    if full_path:
+      path = ''
+      for token in new_dir.split('/'):
+        path += token + '/'
+        try:
+          os.mkdir(path);
+        except:
+          pass
+      return path
+
     try:
       os.mkdir(new_dir);
     except:
@@ -75,32 +85,34 @@ class OSMDataNormalizer:
     '''
     return 'http://otile2.mqcdn.com/tiles/1.0.0/sat/'
 
-  def download_rasters(self):
+  def download_tiles(self):
     ''' 
-        download raster satellite tiles for the region to be analyzed
+        download raster satellite and geojson tiles for the region to be analyzed
     '''
     bounding_box = self.default_bounds_to_analyze()
     zoom = self.default_zoom()
+    tile_download_count = 0
     for tile in self.tiles_for_bounding_box(bounding_box, zoom):
-      self.download_tile(self.default_raster_tile_base_url(), 
-                         'jpg', 
-                         self.raster_tiles_dir, 
-                         tile)
-    
-  def download_geojson(self):
-    ''' 
-        download geojson tiles for the region to be analyzed
-    '''
-    bounding_box = self.default_bounds_to_analyze()
-    zoom = self.default_zoom()
+      tile_download_count += 1
 
-    for tile in self.tiles_for_bounding_box(bounding_box, zoom):
+      vector_tiles_dir = self.train_vector_tiles_dir
+      if tile_download_count % 2 == 0:
+        vector_tiles_dir = self.test_vector_tiles_dir
       self.download_tile(self.default_vector_tile_base_url(), 
                          'json', 
-                         self.vector_tiles_dir, 
+                         vector_tiles_dir, 
                          tile,
                          suffix = '?api_key={}'.format(MAPZEN_VECTOR_TILES_API_KEY),
                          layers = 'roads')
+
+      raster_tiles_dir = self.train_raster_tiles_dir
+      if tile_download_count % 2 == 0:
+        raster_tiles_dir = self.test_raster_tiles_dir
+      self.download_tile(self.default_raster_tile_base_url(), 
+                         'jpg', 
+                         raster_tiles_dir, 
+                         tile)
+
 
   def tiles_for_bounding_box(self, bounding_box, zoom):
     '''
@@ -178,14 +190,17 @@ class OSMDataNormalizer:
         convert geojson vector tiles to 256 x 256 matrices
         matrix is 1 if the pixel has road on it, 0 if not
     '''
-    rootdir = self.vector_tiles_dir
+    self.process_vectors_in_dir(self.train_vector_tiles_dir)
+    self.process_vectors_in_dir(self.test_vector_tiles_dir)
+
+  def process_vectors_in_dir(self, rootdir):
     self.gm = GlobalMercator()
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
         with open(os.path.join(folder, filename), 'r') as src:
           linestrings = self.linestrings_for_vector_tile(src)
         tile_matrix = self.empty_tile_matrix()
-        tile = self.tile_for_folder_and_filename(folder, filename, self.vector_tiles_dir)
+        tile = self.tile_for_folder_and_filename(folder, filename, rootdir)
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
         self.print_matrix(tile_matrix)
@@ -196,17 +211,18 @@ class OSMDataNormalizer:
         convert raster satellite tiles to 256 x 256 matrices
         floats represent some color info about each pixel
     '''
-    rootdir = self.raster_tiles_dir
+    self.process_rasters_in_dir(self.train_raster_tiles_dir)
+    self.process_rasters_in_dir(self.test_raster_tiles_dir)
+
+  def process_rasters_in_dir(self, rootdir):
     self.gm = GlobalMercator()
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
-        tile = self.tile_for_folder_and_filename(folder, filename, self.raster_tiles_dir)
+        tile = self.tile_for_folder_and_filename(folder, filename, rootdir)
         self.jpeg_to_rgb_matrix(Image.open(os.path.join(folder, filename)))
 
   # http://code.activestate.com/recipes/577591-conversion-of-pil-image-and-numpy-array/
   def jpeg_to_rgb_matrix(self, img):
-    print numpy.array(img.getdata(),
-                    numpy.uint8).reshape(img.size[1], img.size[0], 3)
     return numpy.array(img.getdata(),
                     numpy.uint8).reshape(img.size[1], img.size[0], 3)
 
@@ -318,11 +334,11 @@ class OSMDataNormalizer:
     # Truncating to 0.9999 effectively limits latitude to 89.189. This is
     # about a third of a tile past the edge of the world tile.
     siny = self.bound(math.sin(self.degreesToRadians(lat)), -0.9999,0.9999)
-    point.y = _pixelOrigin.y + 0.5 * math.log((1 + siny) / (1 - siny)) *- _pixelsPerLonRadian
+    point.y = _pixelOrigin.y + 0.5 * math.log((1 + siny) / (1 - siny)) * -_pixelsPerLonRadian
 
     num_tiles = 1 << zoom
-    point.x = int(point.x * num_tiles) + tile_x_offset - current_tile.x* self.tile_size
-    point.y = int(point.y * num_tiles) + tile_y_offset - current_tile.y* self.tile_size
+    point.x = int(point.x * num_tiles) + tile_x_offset - current_tile.x * self.tile_size
+    point.y = int(point.y * num_tiles) + tile_y_offset - current_tile.y * self.tile_size
     return point
 
   def degreesToRadians(self, deg):
@@ -384,8 +400,7 @@ class OSMDataNormalizer:
 odn = OSMDataNormalizer()
 
 # network requests
-odn.download_geojson()
-odn.download_rasters()
+odn.download_tiles()
 
 # process into matrices
 odn.process_geojson()
