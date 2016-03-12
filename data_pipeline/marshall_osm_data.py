@@ -24,13 +24,17 @@ class OSMDataNormalizer:
   def __init__(self):
     data_dir = "data/"
     self.tile_size = 256
+    
+    # download vector and raster tiles to this directory
     self.make_directory(data_dir)
-    self.vector_tiles_dir = "data/vector-tiles/"
-    self.raster_tiles_dir = "data/raster-tiles/"
-    self.make_directory(self.vector_tiles_dir)
-    self.make_directory(self.raster_tiles_dir)
-
-    self.current_tile = None
+    
+    # select a random half of tiles for training
+    self.vector_tiles_dir = self.make_directory("data/vector-tiles/")
+    self.raster_tiles_dir = self.make_directory("data/raster-tiles/")
+    
+    # select a random half of tiles for testing
+    self.test_vector_tiles_dir = self.make_directory("data/test/vector-tiles/")
+    self.test_raster_tiles_dir = self.make_directory("data/test/raster-tiles/")
 
   def make_directory(self, new_dir):
     '''
@@ -40,6 +44,7 @@ class OSMDataNormalizer:
       os.mkdir(new_dir);
     except:
       pass
+    return new_dir
 
   def default_bounds_to_analyze(self):
     '''
@@ -181,8 +186,6 @@ class OSMDataNormalizer:
           linestrings = self.linestrings_for_vector_tile(src)
         tile_matrix = self.empty_tile_matrix()
         tile = self.tile_for_folder_and_filename(folder, filename, self.vector_tiles_dir)
-        # keep track of current tile to clip off off-tile points in linestrings
-        self.current_tile = tile
         for linestring in linestrings:
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
         self.print_matrix(tile_matrix)
@@ -282,9 +285,9 @@ class OSMDataNormalizer:
       next_point_obj = Coordinate(next_point[1], next_point[0])
       
       start_pixel = self.fromLatLngToPoint(current_point_obj.lat,
-                                      current_point_obj.lon, zoom)      
+                                      current_point_obj.lon, tile)      
       end_pixel = self.fromLatLngToPoint(next_point_obj.lat,
-                                    next_point_obj.lon, zoom)
+                                    next_point_obj.lon, tile)
       pixels = self.pixels_between(start_pixel, end_pixel)
       for p in pixels:
         line_matrix[p.x][p.y] = 1
@@ -292,15 +295,15 @@ class OSMDataNormalizer:
 
     return line_matrix
 
-  def fromLatLngToPoint(self, lat, lng, zoom):
+  def fromLatLngToPoint(self, lat, lng, current_tile):
     '''
        convert a lat/lng/zoom to a pixel on a self.tile_size sized tile
     '''
-  
-    tile = self.gm.GoogleTileFromLatLng(lat, lng, zoom)
+    zoom = current_tile.z
+    tile_for_point = self.gm.GoogleTileFromLatLng(lat, lng, zoom)
     
-    tile_x_offset =  (tile[0] - self.current_tile.x) * self.tile_size
-    tile_y_offset = (tile[1] - self.current_tile.y) * self.tile_size
+    tile_x_offset =  (tile_for_point[0] - current_tile.x) * self.tile_size
+    tile_y_offset = (tile_for_point[1] - current_tile.y) * self.tile_size
     
     # http://stackoverflow.com/a/17419232/108512
     _pixelOrigin = Pixel()
@@ -318,8 +321,8 @@ class OSMDataNormalizer:
     point.y = _pixelOrigin.y + 0.5 * math.log((1 + siny) / (1 - siny)) *- _pixelsPerLonRadian
 
     num_tiles = 1 << zoom
-    point.x = int(point.x * num_tiles) + tile_x_offset - self.current_tile.x* self.tile_size
-    point.y = int(point.y * num_tiles) + tile_y_offset - self.current_tile.y* self.tile_size
+    point.x = int(point.x * num_tiles) + tile_x_offset - current_tile.x* self.tile_size
+    point.y = int(point.y * num_tiles) + tile_y_offset - current_tile.y* self.tile_size
     return point
 
   def degreesToRadians(self, deg):
