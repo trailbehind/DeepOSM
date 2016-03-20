@@ -13,7 +13,7 @@
 
 import os, math, urllib, sys, json
 import numpy
-from PIL import Image
+from PIL import Image, ImageOps
 from globalmaptiles import GlobalMercator
 from geo_util import *
 
@@ -211,20 +211,45 @@ class OSMDataNormalizer:
         convert raster satellite tiles to 256 x 256 matrices
         floats represent some color info about each pixel
     '''
-    self.process_rasters_in_dir(self.train_raster_tiles_dir)
-    self.process_rasters_in_dir(self.test_raster_tiles_dir)
+    train_images = self.process_rasters_in_dir(self.train_raster_tiles_dir)
+    test_images = self.process_rasters_in_dir(self.test_raster_tiles_dir)
+    print("analyzing {} training images and {} test images".format(len(train_images), len(test_images)))
 
   def process_rasters_in_dir(self, rootdir):
-    self.gm = GlobalMercator()
+    '''
+        descends through a TMS tile structure and converts the images
+        to a matrix of dimensions: num_images * width * height, dtype=numpy.uint8
+    '''
+
+    height = self.tile_size
+    width = self.tile_size
+    num_images = self.count_rasters_in_dir(rootdir)
+
+    images = numpy.zeros(num_images * width * height, dtype=numpy.uint8)
+    images = images.reshape(num_images, height, width)
+    
+    index = 0
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
         tile = self.tile_for_folder_and_filename(folder, filename, rootdir)
-        self.jpeg_to_rgb_matrix(Image.open(os.path.join(folder, filename)))
+        image_filename = os.path.join(folder, filename)
+        with open(image_filename, 'rb') as img_file:
+          with Image.open(img_file) as open_pil_img:
+            pil_image = open_pil_img.convert("L")
+            pil_image = ImageOps.invert(pil_image)
+        image_matrix = numpy.asarray(pil_image, dtype=numpy.uint8)
+        images[index] = image_matrix
+        index += 1
+    print "Packing {} images to a matrix of size num_images * width * height, dtype=numpy.uint8".format(index)
+    return images
 
-  # http://code.activestate.com/recipes/577591-conversion-of-pil-image-and-numpy-array/
-  def jpeg_to_rgb_matrix(self, img):
-    return numpy.array(img.getdata(),
-                    numpy.uint8).reshape(img.size[1], img.size[0], 3)
+  def count_rasters_in_dir(self, rootdir):
+    num_images = 0
+    for folder, subs, files in os.walk(rootdir):
+      for filename in files:
+        num_images += 1
+    return num_images
+
 
   def tile_for_folder_and_filename(self, folder, filename, directory):
     '''
@@ -400,8 +425,8 @@ class OSMDataNormalizer:
 odn = OSMDataNormalizer()
 
 # network requests
-odn.download_tiles()
+#odn.download_tiles()
 
 # process into matrices
-odn.process_geojson()
+# odn.process_geojson()
 odn.process_rasters()
