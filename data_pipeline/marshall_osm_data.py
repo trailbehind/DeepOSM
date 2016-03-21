@@ -27,13 +27,16 @@ class OSMDataNormalizer:
   def __init__(self):
     self.tile_size = 256
     
+    # the square size to chop the imagery up into for analysis
+    self.thumb_size = 32
+
     # select a random half of tiles for training
-    self.train_vector_tiles_dir = self.make_directory("data/train/vector-tiles/", full_path=True)
-    self.train_raster_tiles_dir = self.make_directory("data/train/raster-tiles/", full_path=True)
+    self.train_vector_tiles_dir = self.make_directory("data/train/vector-tiles", full_path=True)
+    self.train_raster_tiles_dir = self.make_directory("data/train/raster-tiles", full_path=True)
     
     # select a random half of tiles for testing
-    self.test_vector_tiles_dir = self.make_directory("data/test/vector-tiles/", full_path=True)
-    self.test_raster_tiles_dir = self.make_directory("data/test/raster-tiles/", full_path=True)
+    self.test_vector_tiles_dir = self.make_directory("data/test/vector-tiles", full_path=True)
+    self.test_raster_tiles_dir = self.make_directory("data/test/raster-tiles", full_path=True)
 
     # put even tiles in train, odd tiles in test
     self.download_count = 0
@@ -74,7 +77,7 @@ class OSMDataNormalizer:
     '''
         analyze tiles at TMS zoom level 14, by default
     '''
-    return 15
+    return 14
 
   def default_vector_tile_base_url(self):
     ''' 
@@ -174,8 +177,36 @@ class OSMDataNormalizer:
     self.make_directory(z_dir)
     self.make_directory(y_dir)
     filename = '{}.{}'.format(tile.x,format)
-    download_path = y_dir + "/" + filename
-    urllib.request.urlretrieve (url, download_path)
+    download_path = y_dir + "/"
+    urllib.request.urlretrieve (url, download_path + filename)
+    if format == 'jpg':
+      self.chop_tile(download_path, filename)
+
+  def chop_tile(self, path, filename):
+
+    subdir = path + filename.split('.')[0]
+    try:
+      os.mkdir(subdir);
+    except:
+      pass
+
+    height = self.thumb_size 
+    width = self.thumb_size
+    input = path + filename
+    im = Image.open(input)
+    imgwidth, imgheight = im.size
+
+    img_count = 0
+    for y in range(int(self.tile_size/self.thumb_size)):
+      for x in range(int(self.tile_size/self.thumb_size)):
+        box = (x*self.thumb_size, y*self.thumb_size, x*self.thumb_size+self.thumb_size, y*self.thumb_size+self.thumb_size)
+        a = im.crop(box)
+        chunk_path = subdir + '/' + str(img_count) + '.jpg'
+        if (img_count < 10):
+          chunk_path = subdir + '/' + '0' + str(img_count) + '.jpg'
+        a.save(chunk_path)
+        img_count += 1
+    os.remove(path + filename)
 
   def url_for_tile(self, base_url, format, tile, suffix='', layers=None):
     '''
@@ -202,8 +233,8 @@ class OSMDataNormalizer:
 
     height = self.tile_size
     width = self.tile_size
-    num_images = self.count_rasters_in_dir(rootdir)
- 
+    num_images = self.count_rasters_in_dir(rootdir) * self.thumb_size * 2
+    print ("num_images is {} in {}".format(num_images, rootdir))
     labels = None
     if self.train_vector_tiles_dir == rootdir:
       self.train_labels = numpy.zeros(num_images * 2, dtype=numpy.float32)
@@ -224,18 +255,24 @@ class OSMDataNormalizer:
         tile = self.tile_for_folder_and_filename(folder, filename, rootdir)
         for linestring in linestrings:
           # check if tile has any linestrings to set it's one-hot
-          has_ways = True
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
         # self.print_matrix(tile_matrix)
         # print '\n\n\n'
         
         # Now set the one_hot value for this label
-        if has_ways:
-          labels[index][0] = 1
-        else:
-          labels[index][1] = 1
+        for y in range(int(self.tile_size/self.thumb_size)):
+          for x in range(int(self.tile_size/self.thumb_size)):
+            for tmy in range (self.thumb_size):
+              for tmx in range (self.thumb_size):
+                if tile_matrix[tmx][tmy] == 1:
+                  has_ways = True
 
-        index += 1
+            if has_ways:
+              labels[index][0] = 1
+            else:
+              labels[index][1] = 1
+
+            index += 1
 
   def process_rasters(self):
     '''
@@ -254,8 +291,8 @@ class OSMDataNormalizer:
         to a matrix of dimensions: num_images * width * height, dtype=numpy.uint8
     '''
 
-    height = self.tile_size
-    width = self.tile_size
+    height = self.thumb_size
+    width = self.thumb_size
     num_images = self.count_rasters_in_dir(rootdir)
     images = numpy.zeros(num_images * width * height, dtype=numpy.uint8)
     images = images.reshape(num_images, height, width)
@@ -290,8 +327,12 @@ class OSMDataNormalizer:
         the MeractorTile given a path to a file on disk
     '''
     dir_string = folder.split(directory)
-    z, x = dir_string[1].split('/')
-    y = filename.split('.')[0]
+    try:
+      z, x = dir_string[1].split('/')
+      y = filename.split('.')[0]
+    except:
+      # it's a tile cropping
+      z, x, y = dir_string[1].split('/')
     return MercatorTile(int(x), int(y), int(z))
 
   def linestrings_for_vector_tile(self, file_data):
@@ -528,24 +569,23 @@ class DataSets(object):
     pass
 
 odn = OSMDataNormalizer()
+
 # network requests
-odn.download_tiles()
+# odn.download_tiles()
+
 # process into matrices
 odn.process_geojson()
 odn.process_rasters()
-
 data_sets = DataSets()
 data_sets.train = DataSet(odn.train_images, odn.train_labels, dtype=tf.uint8)
 data_sets.test = DataSet(odn.test_images, odn.test_labels, dtype=tf.uint8)
-
 print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(odn.train_images), len(odn.test_images), len(odn.train_labels), len(odn.test_labels)))
 
+# run a TensorFlow session
 sess = tf.InteractiveSession()
-
-print(data_sets.train.images.shape[1])
 # Create the model
-x = tf.placeholder(tf.float32, [None, 256*256])
-W = tf.Variable(tf.zeros([256*256, 2]))
+x = tf.placeholder(tf.float32, [None, odn.thumb_size*odn.thumb_size])
+W = tf.Variable(tf.zeros([odn.thumb_size*odn.thumb_size, 2]))
 b = tf.Variable(tf.zeros([2]))
 y = tf.nn.softmax(tf.matmul(x, W) + b)
 
