@@ -2,11 +2,9 @@
     1) download geojson road tiles from mapzen
     2) convert the road geographic linestrings to pixels
     2a) rasterize the roads to pixel matrices for the tiles
-    2b) try using 2 pixels for the road width, then fix this with trial/error
-    3b) further fix with a training layer to guess come up with the width predicitvely
+    2b) chunk the data into thumb_size pieces (break down the 256px tiles into smaller pieces)
     3) download corresponding MapQuest imagery for the tiles
-    4) train a deep learning net with the roads as labeled data for the imagery
-    5) FOSS then profits.
+    3a) chunk the imagery into thumb_size pieces
 
     geo help from: https://gist.github.com/tucotuco/1193577
 '''
@@ -17,8 +15,6 @@ import numpy
 from PIL import Image, ImageOps
 from globalmaptiles import GlobalMercator
 from geo_util import *
-import tensorflow as tf
-import tensorflow.python.platform
 
 MAPZEN_VECTOR_TILES_API_KEY = 'vector-tiles-NsMiwBc'
 
@@ -498,111 +494,3 @@ class OSMDataNormalizer:
     if (p.x >= 0 and p.x < self.tile_size and p.y >= 0 and p.y < self.tile_size):
       return True
     return False
-
-class DataSet(object):
-    def __init__(self, images, labels, dtype=tf.float32):
-        """
-        Construct a DataSet.
-        `dtype` can be either `uint8` to leave the input as `[0, 255]`,
-        or `float32` to rescale into `[0, 1]`.
-        """
-        dtype = tf.as_dtype(dtype).base_dtype
-        if dtype not in (tf.uint8, tf.float32):
-            raise TypeError('Invalid image dtype %r, expected uint8 or float32' % dtype)
-        assert images.shape[0] == labels.shape[0], (
-                            'images.shape: %s labels.shape: %s' % (images.shape, labels.shape))
-        self._num_examples = images.shape[0]
-
-        # Convert shape from [num examples, rows, columns, depth]
-        # to [num examples, rows*columns] (assuming depth == 1)
-        assert images.shape[3] == 1
-
-        # Store the width and height of the images before flattening it, if only for reference.
-        image_height, image_width = images.shape[1], images.shape[2]
-        self.original_image_width = image_width
-        self.original_image_height = image_height
-
-        images = images.reshape(images.shape[0], images.shape[1] * images.shape[2])
-        if dtype == tf.float32:
-            # Convert from [0, 255] -> [0.0, 1.0]
-            images = images.astype(numpy.float32)
-            images = numpy.multiply(images, 1.0 / 255.0)
-        self._images = images
-        self._labels = labels
-        self._epochs_completed = 0
-        self._index_in_epoch = 0
-
-    @property
-    def images(self):
-        return self._images
-
-    @property
-    def labels(self):
-        return self._labels
-
-    @property
-    def num_examples(self):
-        return self._num_examples
-
-    @property
-    def epochs_completed(self):
-        return self._epochs_completed
-
-    def next_batch(self, batch_size):
-      """Return the next `batch_size` examples from this data set."""
-      start = self._index_in_epoch
-      self._index_in_epoch += batch_size
-      if self._index_in_epoch > self._num_examples:
-          # Finished epoch
-          self._epochs_completed += 1
-          # Shuffle the data
-          perm = numpy.arange(self._num_examples)
-          numpy.random.shuffle(perm)
-          self._images = self._images[perm]
-          self._labels = self._labels[perm]
-          # Start next epoch
-          start = 0
-          self._index_in_epoch = batch_size
-          assert batch_size <= self._num_examples
-      end = self._index_in_epoch
-      return self._images[start:end], self._labels[start:end]
-
-class DataSets(object):
-    pass
-
-odn = OSMDataNormalizer()
-
-# network requests
-odn.download_tiles()
-
-# process into matrices
-odn.process_geojson()
-odn.process_rasters()
-data_sets = DataSets()
-data_sets.train = DataSet(odn.train_images, odn.train_labels, dtype=tf.uint8)
-data_sets.test = DataSet(odn.test_images, odn.test_labels, dtype=tf.uint8)
-print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(odn.train_images), len(odn.test_images), len(odn.train_labels), len(odn.test_labels)))
-
-# run a TensorFlow session
-sess = tf.InteractiveSession()
-# Create the model
-x = tf.placeholder(tf.float32, [None, odn.thumb_size*odn.thumb_size])
-W = tf.Variable(tf.zeros([odn.thumb_size*odn.thumb_size, 2]))
-b = tf.Variable(tf.zeros([2]))
-y = tf.nn.softmax(tf.matmul(x, W) + b)
-
-# Define loss and optimizer
-y_ = tf.placeholder(tf.float32, [None, 2])
-cross_entropy = -tf.reduce_sum(y_ * tf.log(y))
-train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
-
-# Train
-tf.initialize_all_variables().run()
-for i in range(4):
-  batch_xs, batch_ys = data_sets.train.next_batch(11)
-  train_step.run({x: batch_xs, y_: batch_ys})
-
-# Test trained model
-correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-print(accuracy.eval({x: data_sets.test.images, y_: data_sets.test.labels}))

@@ -20,12 +20,12 @@ Install globalmaptiles.py
     cd lib
     git clone git@gist.github.com:d5bf14750eff1197e8c5.git global_map
     cd ..
-    export PYTHONPATH=$PYTHONPATH:./lib/global_map
+    export PYTHONPATH=$PYTHONPATH:./lib/global_map:./data_pipeline
 
 # Run the Script
 This will download vectors, imagery, and run the analysis.
 
-    python3 marshall_osm_data.py 
+    python3 label_chunks_softmax.py 
 
 # Road/Trail Detection
 
