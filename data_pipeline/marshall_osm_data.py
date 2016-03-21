@@ -74,7 +74,7 @@ class OSMDataNormalizer:
     '''
         analyze tiles at TMS zoom level 14, by default
     '''
-    return 14
+    return 15
 
   def default_vector_tile_base_url(self):
     ''' 
@@ -529,7 +529,7 @@ class DataSets(object):
 
 odn = OSMDataNormalizer()
 # network requests
-# odn.download_tiles()
+odn.download_tiles()
 # process into matrices
 odn.process_geojson()
 odn.process_rasters()
@@ -558,10 +558,6 @@ train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
 tf.initialize_all_variables().run()
 for i in range(4):
   batch_xs, batch_ys = data_sets.train.next_batch(11)
-  print('batch_xs')
-  print(batch_xs)
-  print('batch_ys')
-  print(batch_ys)
   train_step.run({x: batch_xs, y_: batch_ys})
 
 # Test trained model

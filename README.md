@@ -16,10 +16,9 @@ Install globalmaptiles.py
 
     mkdir lib
     cd lib
-    git clone git@gist.github.com:1193577.git global_map
+    git clone git@gist.github.com:d5bf14750eff1197e8c5.git global_map
     cd ..
     export PYTHONPATH=$PYTHONPATH:./lib/global_map
-
 # Road/Trail Detection
 
 ## Overview
