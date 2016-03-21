@@ -28,7 +28,7 @@ class OSMDataNormalizer:
     self.tile_size = 256
     
     # the square size to chop the imagery up into for analysis
-    self.thumb_size = 32
+    self.thumb_size = 128
 
     # select a random half of tiles for training
     self.train_vector_tiles_dir = self.make_directory("data/train/vector-tiles", full_path=True)
@@ -231,9 +231,7 @@ class OSMDataNormalizer:
 
     self.gm = GlobalMercator()
 
-    height = self.tile_size
-    width = self.tile_size
-    num_images = self.count_rasters_in_dir(rootdir) * self.thumb_size * 2
+    num_images = self.count_rasters_in_dir(rootdir) * pow(self.tile_size/self.thumb_size,2)
     print ("num_images is {} in {}".format(num_images, rootdir))
     labels = None
     if self.train_vector_tiles_dir == rootdir:
@@ -575,7 +573,7 @@ class DataSets(object):
 odn = OSMDataNormalizer()
 
 # network requests
-# odn.download_tiles()
+odn.download_tiles()
 
 # process into matrices
 odn.process_geojson()
