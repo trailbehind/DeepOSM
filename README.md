@@ -60,7 +60,7 @@ Multilayer Convolutional Network
 
 ## Marshal Test Data
 
-### MapZen vector gepjson tiles are convenient
+### Mapzen vector gepjson tiles are convenient
 
 * flatten it into matrices of trail/no trail
 * check tiles visually 
