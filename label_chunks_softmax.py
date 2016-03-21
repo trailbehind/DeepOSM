@@ -14,7 +14,7 @@ import numpy
 
 odn = OSMDataNormalizer()
 # network requests
-# odn.download_tiles()
+odn.download_tiles()
 # process into matrices
 odn.process_geojson()
 odn.process_rasters()
