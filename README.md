@@ -8,6 +8,8 @@ Work in progress.
 
 # Install Requirements
 
+This has been run on OSX Yosemite (10.10.5).
+
     brew install libjpeg
     pip3 install -r requirements.txt 
     sudo easy_install --upgrade six

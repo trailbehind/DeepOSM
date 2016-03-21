@@ -248,6 +248,8 @@ class OSMDataNormalizer:
     index = 0
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
+        if not filename.endswith('.json'):
+            continue
         has_ways = False
         with open(os.path.join(folder, filename), 'r') as src:
           linestrings = self.linestrings_for_vector_tile(src)
@@ -300,6 +302,8 @@ class OSMDataNormalizer:
     index = 0
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
+        if not filename.endswith('.jpg'):
+            continue
         tile = self.tile_for_folder_and_filename(folder, filename, rootdir)
         image_filename = os.path.join(folder, filename)
         with open(image_filename, 'rb') as img_file:
