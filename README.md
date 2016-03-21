@@ -4,6 +4,6 @@
 
  * Added part of the directory structure here: http://jekyllrb.com/docs/structure/
 
- * We make "drafts" for unpublished release notes: http://jekyllrb.com/docs/drafts/
+ * We put release notes directly into _posts, even if the release isn't live yet.
 
 Site is served live here: http://updates.gaiagps.com/ (CNAME for http://trailbehind.github.io/release-notes)
