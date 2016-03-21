@@ -18,6 +18,7 @@ from PIL import Image, ImageOps
 from globalmaptiles import GlobalMercator
 from geo_util import *
 import tensorflow as tf
+import tensorflow.python.platform
 
 MAPZEN_VECTOR_TILES_API_KEY = 'vector-tiles-NsMiwBc'
 
@@ -71,9 +72,9 @@ class OSMDataNormalizer:
 
   def default_zoom(self):
     '''
-        analyze tiles at TMS zoom level 15, by default
+        analyze tiles at TMS zoom level 14, by default
     '''
-    return 15
+    return 14
 
   def default_vector_tile_base_url(self):
     ''' 
@@ -205,12 +206,12 @@ class OSMDataNormalizer:
  
     labels = None
     if self.train_vector_tiles_dir == rootdir:
-      self.train_labels = numpy.zeros(num_images * num_images, dtype=numpy.float32)
-      self.train_labels = self.train_labels.reshape(num_images, num_images)
+      self.train_labels = numpy.zeros(num_images * 2, dtype=numpy.float32)
+      self.train_labels = self.train_labels.reshape(num_images, 2)
       labels = self.train_labels 
     else:
-      self.test_labels = numpy.zeros(num_images * num_images, dtype=numpy.float32)
-      self.test_labels = self.test_labels .reshape(num_images, num_images)
+      self.test_labels = numpy.zeros(num_images * 2, dtype=numpy.float32)
+      self.test_labels = self.test_labels.reshape(num_images, 2)
       labels = self.test_labels 
 
     index = 0
@@ -236,8 +237,6 @@ class OSMDataNormalizer:
 
         index += 1
 
-    print(labels)
-
   def process_rasters(self):
     '''
         convert raster satellite tiles to 256 x 256 matrices
@@ -258,7 +257,6 @@ class OSMDataNormalizer:
     height = self.tile_size
     width = self.tile_size
     num_images = self.count_rasters_in_dir(rootdir)
-
     images = numpy.zeros(num_images * width * height, dtype=numpy.uint8)
     images = images.reshape(num_images, height, width)
     
@@ -531,7 +529,7 @@ class DataSets(object):
 
 odn = OSMDataNormalizer()
 # network requests
-odn.download_tiles()
+# odn.download_tiles()
 # process into matrices
 odn.process_geojson()
 odn.process_rasters()
@@ -540,4 +538,33 @@ data_sets = DataSets()
 data_sets.train = DataSet(odn.train_images, odn.train_labels, dtype=tf.uint8)
 data_sets.test = DataSet(odn.test_images, odn.test_labels, dtype=tf.uint8)
 
-print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels").format(odn.train_images, odn.test_images, odn.train_labels, odn.test_labels)
+print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(odn.train_images), len(odn.test_images), len(odn.train_labels), len(odn.test_labels)))
+
+sess = tf.InteractiveSession()
+
+print(data_sets.train.images.shape[1])
+# Create the model
+x = tf.placeholder(tf.float32, [None, 256*256])
+W = tf.Variable(tf.zeros([256*256, 2]))
+b = tf.Variable(tf.zeros([2]))
+y = tf.nn.softmax(tf.matmul(x, W) + b)
+
+# Define loss and optimizer
+y_ = tf.placeholder(tf.float32, [None, 2])
+cross_entropy = -tf.reduce_sum(y_ * tf.log(y))
+train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
+
+# Train
+tf.initialize_all_variables().run()
+for i in range(4):
+  batch_xs, batch_ys = data_sets.train.next_batch(11)
+  print('batch_xs')
+  print(batch_xs)
+  print('batch_ys')
+  print(batch_ys)
+  train_step.run({x: batch_xs, y_: batch_ys})
+
+# Test trained model
+correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+print(accuracy.eval({x: data_sets.test.images, y_: data_sets.test.labels}))
