@@ -9,7 +9,8 @@ Work in progress.
 # Install Requirements
 
     brew install libjpeg
-    pip install -r requirements.txt 
+    pip3 install -r requirements.txt 
+    sudo easy_install --upgrade six
 
 Install globalmaptiles.py
 

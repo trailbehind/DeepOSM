@@ -11,11 +11,13 @@
     geo help from: https://gist.github.com/tucotuco/1193577
 '''
 
-import os, math, urllib, sys, json
+import urllib.request
+import os, math, sys, json
 import numpy
 from PIL import Image, ImageOps
 from globalmaptiles import GlobalMercator
 from geo_util import *
+import tensorflow as tf
 
 MAPZEN_VECTOR_TILES_API_KEY = 'vector-tiles-NsMiwBc'
 
@@ -69,9 +71,9 @@ class OSMDataNormalizer:
 
   def default_zoom(self):
     '''
-        analyze tiles at TMS zoom level 12, by default
+        analyze tiles at TMS zoom level 15, by default
     '''
-    return 12
+    return 15
 
   def default_vector_tile_base_url(self):
     ''' 
@@ -165,14 +167,14 @@ class OSMDataNormalizer:
         download a map tile from a TMS server
     '''
     url = self.url_for_tile(base_url, format, tile, suffix, layers)
-    print 'DOWNLOADING: ' + url
+    print('DOWNLOADING: ' + url)
     z_dir = directory + str(tile.z)
     y_dir = z_dir + "/" + str(tile.y)
     self.make_directory(z_dir)
     self.make_directory(y_dir)
     filename = '{}.{}'.format(tile.x,format)
     download_path = y_dir + "/" + filename
-    urllib.urlretrieve (url, download_path)
+    urllib.request.urlretrieve (url, download_path)
 
   def url_for_tile(self, base_url, format, tile, suffix='', layers=None):
     '''
@@ -194,26 +196,58 @@ class OSMDataNormalizer:
     self.process_vectors_in_dir(self.test_vector_tiles_dir)
 
   def process_vectors_in_dir(self, rootdir):
+
     self.gm = GlobalMercator()
+
+    height = self.tile_size
+    width = self.tile_size
+    num_images = self.count_rasters_in_dir(rootdir)
+ 
+    labels = None
+    if self.train_vector_tiles_dir == rootdir:
+      self.train_labels = numpy.zeros(num_images * num_images, dtype=numpy.float32)
+      self.train_labels = self.train_labels.reshape(num_images, num_images)
+      labels = self.train_labels 
+    else:
+      self.test_labels = numpy.zeros(num_images * num_images, dtype=numpy.float32)
+      self.test_labels = self.test_labels .reshape(num_images, num_images)
+      labels = self.test_labels 
+
+    index = 0
     for folder, subs, files in os.walk(rootdir):
       for filename in files:
+        has_ways = False
         with open(os.path.join(folder, filename), 'r') as src:
           linestrings = self.linestrings_for_vector_tile(src)
         tile_matrix = self.empty_tile_matrix()
         tile = self.tile_for_folder_and_filename(folder, filename, rootdir)
         for linestring in linestrings:
+          # check if tile has any linestrings to set it's one-hot
+          has_ways = True
           tile_matrix = self.add_linestring_to_matrix(linestring, tile, tile_matrix)
-        self.print_matrix(tile_matrix)
-        print '\n\n\n'
+        # self.print_matrix(tile_matrix)
+        # print '\n\n\n'
+        
+        # Now set the one_hot value for this label
+        if has_ways:
+          labels[index][0] = 1
+        else:
+          labels[index][1] = 1
+
+        index += 1
+
+    print(labels)
 
   def process_rasters(self):
     '''
         convert raster satellite tiles to 256 x 256 matrices
         floats represent some color info about each pixel
+
+        help in tensorflow data pipeline from https://github.com/silberman/polygoggles/blob/master/datasets.py
     '''
-    train_images = self.process_rasters_in_dir(self.train_raster_tiles_dir)
-    test_images = self.process_rasters_in_dir(self.test_raster_tiles_dir)
-    print("analyzing {} training images and {} test images".format(len(train_images), len(test_images)))
+    self.train_images = self.process_rasters_in_dir(self.train_raster_tiles_dir)
+    self.test_images = self.process_rasters_in_dir(self.test_raster_tiles_dir)
+    print("analyzing {} training images and {} test images".format(len(self.train_images), len(self.test_images)))
 
   def process_rasters_in_dir(self, rootdir):
     '''
@@ -240,8 +274,10 @@ class OSMDataNormalizer:
         image_matrix = numpy.asarray(pil_image, dtype=numpy.uint8)
         images[index] = image_matrix
         index += 1
-    print "Packing {} images to a matrix of size num_images * width * height, dtype=numpy.uint8".format(index)
-    return images
+    print("Packing {} images to a matrix of size num_images * width * height, dtype=numpy.uint8".format(index))
+
+    # Reshape to add a depth dimension
+    return images.reshape(num_images, width, height, 1)
 
   def count_rasters_in_dir(self, rootdir):
     num_images = 0
@@ -296,7 +332,7 @@ class OSMDataNormalizer:
       row_str = ''
       for cell in row:
         row_str += str(cell)
-      print row_str
+      print(row_str)
 
   def empty_tile_matrix(self):
     ''' 
@@ -422,11 +458,86 @@ class OSMDataNormalizer:
       return True
     return False
 
+class DataSet(object):
+    def __init__(self, images, labels, dtype=tf.float32):
+        """
+        Construct a DataSet.
+        `dtype` can be either `uint8` to leave the input as `[0, 255]`,
+        or `float32` to rescale into `[0, 1]`.
+        """
+        dtype = tf.as_dtype(dtype).base_dtype
+        if dtype not in (tf.uint8, tf.float32):
+            raise TypeError('Invalid image dtype %r, expected uint8 or float32' % dtype)
+        assert images.shape[0] == labels.shape[0], (
+                            'images.shape: %s labels.shape: %s' % (images.shape, labels.shape))
+        self._num_examples = images.shape[0]
+
+        # Convert shape from [num examples, rows, columns, depth]
+        # to [num examples, rows*columns] (assuming depth == 1)
+        assert images.shape[3] == 1
+
+        # Store the width and height of the images before flattening it, if only for reference.
+        image_height, image_width = images.shape[1], images.shape[2]
+        self.original_image_width = image_width
+        self.original_image_height = image_height
+
+        images = images.reshape(images.shape[0], images.shape[1] * images.shape[2])
+        if dtype == tf.float32:
+            # Convert from [0, 255] -> [0.0, 1.0]
+            images = images.astype(numpy.float32)
+            images = numpy.multiply(images, 1.0 / 255.0)
+        self._images = images
+        self._labels = labels
+        self._epochs_completed = 0
+        self._index_in_epoch = 0
+
+    @property
+    def images(self):
+        return self._images
+
+    @property
+    def labels(self):
+        return self._labels
+
+    @property
+    def num_examples(self):
+        return self._num_examples
+
+    @property
+    def epochs_completed(self):
+        return self._epochs_completed
+
+    def next_batch(self, batch_size):
+      """Return the next `batch_size` examples from this data set."""
+      start = self._index_in_epoch
+      self._index_in_epoch += batch_size
+      if self._index_in_epoch > self._num_examples:
+          # Finished epoch
+          self._epochs_completed += 1
+          # Shuffle the data
+          perm = numpy.arange(self._num_examples)
+          numpy.random.shuffle(perm)
+          self._images = self._images[perm]
+          self._labels = self._labels[perm]
+          # Start next epoch
+          start = 0
+          self._index_in_epoch = batch_size
+          assert batch_size <= self._num_examples
+      end = self._index_in_epoch
+      return self._images[start:end], self._labels[start:end]
+
+class DataSets(object):
+    pass
+
 odn = OSMDataNormalizer()
-
 # network requests
-#odn.download_tiles()
-
+odn.download_tiles()
 # process into matrices
-# odn.process_geojson()
+odn.process_geojson()
 odn.process_rasters()
+
+data_sets = DataSets()
+data_sets.train = DataSet(odn.train_images, odn.train_labels, dtype=tf.uint8)
+data_sets.test = DataSet(odn.test_images, odn.test_labels, dtype=tf.uint8)
+
+print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels").format(odn.train_images, odn.test_images, odn.train_labels, odn.test_labels)
