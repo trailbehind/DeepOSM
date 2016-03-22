@@ -25,7 +25,8 @@ Install globalmaptiles.py
 # Run the Script
 This will download vectors, imagery, and run the analysis.
 
-    python3 label_chunks_softmax.py 
+    python3 label_chunks_softmax.py download-data MAPZEN_KEY
+    python3 label_chunks_softmax.py train
 
 # Road/Trail Detection
 

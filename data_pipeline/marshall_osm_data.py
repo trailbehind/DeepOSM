@@ -16,15 +16,15 @@ from PIL import Image, ImageOps
 from globalmaptiles import GlobalMercator
 from geo_util import *
 
-MAPZEN_VECTOR_TILES_API_KEY = 'vector-tiles-NsMiwBc'
-
 class OSMDataNormalizer:  
 
-  def __init__(self):
+  def __init__(self, mapzen_key):
+
+    self.mapzen_key = mapzen_key
     self.tile_size = 256
     
     # the square size to chop the imagery up into for analysis
-    self.thumb_size = 128
+    self.thumb_size = 8
 
     # select a random half of tiles for training
     self.train_vector_tiles_dir = self.make_directory("data/train/vector-tiles", full_path=True)
@@ -73,7 +73,7 @@ class OSMDataNormalizer:
     '''
         analyze tiles at TMS zoom level 14, by default
     '''
-    return 14
+    return 15
 
   def default_vector_tile_base_url(self):
     ''' 
@@ -104,7 +104,7 @@ class OSMDataNormalizer:
                          'json', 
                          vector_tiles_dir, 
                          tile,
-                         suffix = '?api_key={}'.format(MAPZEN_VECTOR_TILES_API_KEY),
+                         suffix = '?api_key={}'.format(self.mapzen_key),
                          layers = 'roads')
 
       raster_tiles_dir = self.train_raster_tiles_dir
@@ -199,6 +199,12 @@ class OSMDataNormalizer:
         a = im.crop(box)
         chunk_path = subdir + '/' + str(img_count) + '.jpg'
         if (img_count < 10):
+          chunk_path = subdir + '/' + '0000' + str(img_count) + '.jpg'
+        elif (img_count < 100):
+          chunk_path = subdir + '/' + '000' + str(img_count) + '.jpg'
+        elif (img_count < 1000):
+          chunk_path = subdir + '/' + '00' + str(img_count) + '.jpg'
+        elif (img_count < 10000):
           chunk_path = subdir + '/' + '0' + str(img_count) + '.jpg'
         a.save(chunk_path)
         img_count += 1
