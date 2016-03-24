@@ -1,9 +1,6 @@
 '''
-    train a deep learning net with the OSM ways as labeled data for the imagery
-    based on https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/tutorials/mnist/mnist_softmax.py
-
-    simple softmax example to see if we can detect ways on chunks of tiles
-
+    train a softmax regression with the OSM ways as labeled data for the imagery
+    based on the 1st tensroflow tutorial https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/tutorials/mnist/mnist_softmax.py
 '''
 
 import sys
@@ -58,7 +55,7 @@ if len(sys.argv) == 1:
   print(parameters_message)
 elif sys.argv[1] == 'download-data':
   if len(sys.argv) < 3:
-    print('download data requires a Mapzen APIkey as the 2nd parameter')
+    print('download-data requires a Mapzen APIkey as the 2nd parameter')
   else:
     odn = OSMDataNormalizer(sys.argv[2])
     odn.download_tiles()

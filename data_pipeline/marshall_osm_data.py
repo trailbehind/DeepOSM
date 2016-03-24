@@ -18,13 +18,13 @@ from geo_util import *
 
 class OSMDataNormalizer:  
 
-  def __init__(self, mapzen_key):
+  def __init__(self, mapzen_key=None):
 
     self.mapzen_key = mapzen_key
     self.tile_size = 256
     
     # the square size to chop the imagery up into for analysis
-    self.thumb_size = 8
+    self.thumb_size = 256
 
     # select a random half of tiles for training
     self.train_vector_tiles_dir = self.make_directory("data/train/vector-tiles", full_path=True)
@@ -179,7 +179,8 @@ class OSMDataNormalizer:
       self.chop_tile(download_path, filename)
 
   def chop_tile(self, path, filename):
-
+    if self.thumb_size == self.tile_size:
+      return
     subdir = path + filename.split('.')[0]
     try:
       os.mkdir(subdir);
@@ -310,7 +311,7 @@ class OSMDataNormalizer:
           with Image.open(img_file) as open_pil_img:
             pil_image = open_pil_img.convert("L")
             pil_image = ImageOps.invert(pil_image)
-        image_matrix = numpy.asarray(pil_image, dtype=numpy.uint8)
+        image_matrix = numpy.asarray(pil_image, dtype=numpy.float32)
         images[index] = image_matrix
         index += 1
     print("Packing {} images to a matrix of size num_images * width * height, dtype=numpy.uint8".format(index))

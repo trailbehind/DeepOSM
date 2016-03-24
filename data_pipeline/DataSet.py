@@ -3,6 +3,7 @@
     based on https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/tutorials/mnist/input_data.py
 '''
 
+import numpy
 import tensorflow as tf
 
 class DataSet(object):
