@@ -85,13 +85,13 @@ def train_neural_net():
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
   sess.run(tf.initialize_all_variables())
 
-  batch_size = 10
-  for i in range(batch_size):
-    batch = data_sets.train.next_batch(len(odn.train_images)/batch_size)
-    if i%2 == 0:
-      train_accuracy = accuracy.eval(feed_dict={
-          x:batch[0], y_: batch[1], keep_prob: 1.0})
-      print("step %d, training accuracy %g"%(i, train_accuracy))
+  batch_size = 100
+  for i in range(int(len(odn.train_images)/batch_size)):
+    batch = data_sets.train.next_batch(batch_size)
+    #if i%5 == 0:
+    train_accuracy = accuracy.eval(feed_dict={
+      x:batch[0], y_: batch[1], keep_prob: 1.0})
+    print("step %d, training accuracy %g"%(i, train_accuracy))
     train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
   print("test accuracy %g"%accuracy.eval(feed_dict={

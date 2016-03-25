@@ -65,8 +65,8 @@ class OSMDataNormalizer:
     yosemite_village_bb = BoundingBox()
     yosemite_village_bb.northeast.lat = 37.81385
     yosemite_village_bb.northeast.lon = -119.48559
-    yosemite_village_bb.southwest.lat = 37.66724
-    yosemite_village_bb.southwest.lon = -119.72454
+    yosemite_village_bb.southwest.lat = 37.46724
+    yosemite_village_bb.southwest.lon = -120.02454
     return yosemite_village_bb
 
   def default_zoom(self):
@@ -94,27 +94,40 @@ class OSMDataNormalizer:
     bounding_box = self.default_bounds_to_analyze()
     zoom = self.default_zoom()
     tile_download_count = 0
-    for tile in self.tiles_for_bounding_box(bounding_box, zoom):
-      tile_download_count += 1
-
+    tiles = self.tiles_for_bounding_box(bounding_box, zoom)
+    print("DOWNLOADING {} tiles (x2, vector+raster)".format(len(tiles)))
+    
+    tile_count = 0
+    for tile in tiles:
       vector_tiles_dir = self.train_vector_tiles_dir
-      if tile_download_count % 2 == 0:
-        vector_tiles_dir = self.test_vector_tiles_dir
-      self.download_tile(self.default_vector_tile_base_url(), 
-                         'json', 
-                         vector_tiles_dir, 
-                         tile,
-                         suffix = '?api_key={}'.format(self.mapzen_key),
-                         layers = 'roads')
-
       raster_tiles_dir = self.train_raster_tiles_dir
-      if tile_download_count % 2 == 0:
+      if tile_count % 2 == 0:
+        vector_tiles_dir = self.test_vector_tiles_dir
         raster_tiles_dir = self.test_raster_tiles_dir
-      self.download_tile(self.default_raster_tile_base_url(), 
-                         'jpg', 
-                         raster_tiles_dir, 
-                         tile)
 
+      vector_path, raster_name = self.download_tile(self.default_vector_tile_base_url(), 
+                                                    'json', 
+                                                    vector_tiles_dir, 
+                                                    tile,
+                                                    suffix = '?api_key={}'.format(self.mapzen_key),
+                                                    layers = 'roads')
+
+      raster_path, raster_name = self.download_tile(self.default_raster_tile_base_url(), 
+                                                   'jpg', 
+                                                   raster_tiles_dir, 
+                                                   tile)
+      
+      if not vector_path and raster_path:
+        print("FAILED to download vector, deleting {}{}".format(raster_path, raster_name))
+        os.remove(raster_path, vector_path)
+      if not raster_path and vector_path:
+        print("FAILED to download raster, deleting {}{}".format(vector_path, vector_name))
+        os.remove(vector_path, vector_name)
+      if vector_path and raster_path:
+        tile_count += 1
+        self.chop_tile(raster_path, raster_name)
+    print("DOWNLOADED {} tiles".format(tile_count))
+   
 
   def tiles_for_bounding_box(self, bounding_box, zoom):
     '''
@@ -167,16 +180,24 @@ class OSMDataNormalizer:
         download a map tile from a TMS server
     '''
     url = self.url_for_tile(base_url, format, tile, suffix, layers)
-    print('DOWNLOADING: ' + url)
     z_dir = directory + str(tile.z)
     y_dir = z_dir + "/" + str(tile.y)
     self.make_directory(z_dir)
     self.make_directory(y_dir)
     filename = '{}.{}'.format(tile.x,format)
     download_path = y_dir + "/"
+
+    # skip files we already have
+    if os.path.exists(download_path + filename):   
+      print('SKIPPING, already downloaded: ' + url)
+      return download_path, filename
+
+    print('DOWNLOADING: ' + url)
     urllib.request.urlretrieve (url, download_path + filename)
-    if format == 'jpg':
-      self.chop_tile(download_path, filename)
+    if not os.path.exists(download_path + filename):   
+      return None, None
+
+    return download_path, filename
 
   def chop_tile(self, path, filename):
     if self.thumb_size == self.tile_size:

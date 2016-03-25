@@ -2,9 +2,9 @@
 
 Detect roads and features in satellite imagery by training a convnet with OSM data.
 
-Work in progress.
+# Work in progress
 
-![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
+At this point, the label_chunks_cnn.py script seems to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets.
 
 # Install Requirements
 
@@ -28,26 +28,35 @@ This will download vectors, imagery, and run the analysis.
     python3 label_chunks_softmax.py download-data MAPZEN_KEY
     python3 label_chunks_softmax.py train
 
-# Road/Trail Detection
+# Contributions
+
+Contributions are welcome. Open an issue if you want to discuss something to do.
+
+Things I have thought about working on next include:
+
+ * run the CNN on Google Cloud or AWS, so it can use parallel GPUs
+ * change the CNN to do pixel-level identification, instead of one-hotting tiles
+ * download and process NAIP imagery, instead of JPG tiles
+ * do features like tennis courts or baseball diamonds maybe (does OSM have enough training data?)
+ * lots of data pipeline work, and an intense bit of neural net work
+
+# Road/Trail Detection Project Idea
 
 ## Overview
 
 Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train the neural net using MapQuest open imagery, and an OSM ways.
 
+![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
+
 ## Background
 
-* [TensorFlow](https://www.tensorflow.org/) - using this for the deep learning
+* [TensorFlow](https://www.tensorflow.org/) - using this for the deep learning, do multilayer, deep CNN
 * Hinton on [using a neural network to do this](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.232.1679&rep=rep1&type=pdf) - best/recent paper on doing this, great success with these methods
 * Links from the Tensorflow site
     * [MNIST Data and Background](http://yann.lecun.com/exdb/mnist/)
     * all the other links to Nielsen’s book and [Colah’s blog](http://colah.github.io/posts/2015-08-Backprop/)
 * Deep Background
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
-
-
-## Methodology
-
-Multilayer Convolutional Network
 
 ### Train
 
