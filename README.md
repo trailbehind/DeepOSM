@@ -67,7 +67,10 @@ Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train
 ## Background
 
 * [TensorFlow](https://www.tensorflow.org/) - using this for the deep learning, do multilayer, deep CNN
-* Hinton on [using a neural network to do this](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.232.1679&rep=rep1&type=pdf) - best/recent paper on doing this, great success with these methods
+* [Learning to Detect Roads in High-Resolution Aerial
+Images](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.232.1679&rep=rep1&type=pdf) - best/recent paper on doing this, great success with these methods
+* [Parsing Natural Scenes and Natural Language
+with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11-ParsingWithRecursiveNeuralNetworks.pdf)
 * Links from the Tensorflow site
     * [MNIST Data and Background](http://yann.lecun.com/exdb/mnist/)
     * all the other links to Nielsen’s book and [Colah’s blog](http://colah.github.io/posts/2015-08-Backprop/)
