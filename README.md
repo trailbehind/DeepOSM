@@ -28,6 +28,22 @@ This will download vectors, imagery, and run the analysis.
     python3 label_chunks_softmax.py download-data MAPZEN_KEY
     python3 label_chunks_softmax.py train
 
+This will use a convolutional neural network (CNN) from TensorFlow tutorial 2, instead of the softmax from tutorial 1.
+
+    python3 label_chunks_cnn.py train
+
+# Download NAIP Imagery
+
+I just started the script to download NAIPs. You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
+
+ * set you [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or otherwise authenticate with AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
+ 
+Then run:
+
+    python3 data_pipeline/download_naips.py download
+
+This will download one NAIP. Have fun!
+
 # Contributions
 
 Contributions are welcome. Open an issue if you want to discuss something to do.
