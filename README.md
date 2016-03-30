@@ -34,15 +34,33 @@ This will use a convolutional neural network (CNN) from TensorFlow tutorial 2, i
 
 # Download NAIP Imagery
 
-I just started the script to download NAIPs. You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
+I just started the script to download NAIPs, instead of using TMS tiles as above. You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
  * set you [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or otherwise authenticate with AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
  
+    brew install gdal --HEAD   # GDAL 2.0
+
 Then run:
 
     python3 data_pipeline/download_naips.py download
 
-This will download one NAIP. Have fun!
+This will download one NAIP, and tile it into cubes (NxNx4 bands of data).
+
+# Clip OSM Vectors for NAIP Tiles
+
+I was using TMS vector OSM tiles, which mapped to TMS aerial tiles. Now that I'm using NAIPs, I need to calculate the OSM ways/features a different way.
+
+Let's try using:
+
+ * a [North America OSM extract](http://download.geofabrik.de/)
+ * [libosmium](http://osmcode.org/libosmium/) via [Python bindings](https://github.com/osmcode/pyosmium)
+
+Download and install Osmium:
+
+    brew install boost-python --with-python3 # for Osmium
+    Download a release [https://github.com/osmcode/pyosmium/releases](https://github.com/osmcode/pyosmium/releases)
+    cd ~/PATH_TO_OSMIUM_ZIP_DIR
+    python setup.py
 
 # Contributions
 

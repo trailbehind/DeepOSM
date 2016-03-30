@@ -1,50 +1,15 @@
-# cribbed from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
-
 import numpy as np
 import os
-
 from osgeo import gdal
-
-def create_mask_from_vector(vector_data_path, cols, rows, geo_transform,
-              projection, target_value=1):
-  """Rasterize the given vector (wrapper for gdal.RasterizeLayer)."""
-  data_source = gdal.OpenEx(vector_data_path, gdal.OF_VECTOR)
-  layer = data_source.GetLayer(0)
-  driver = gdal.GetDriverByName('MEM')  # In memory dataset
-  target_ds = driver.Create('', cols, rows, 1, gdal.GDT_UInt16)
-  target_ds.SetGeoTransform(geo_transform)
-  target_ds.SetProjection(projection)
-  gdal.RasterizeLayer(target_ds, [1], layer, burn_values=[target_value])
-  return target_ds
-
-
-def vectors_to_raster(file_paths, rows, cols, geo_transform, projection):
-  """Rasterize the vectors in the given directory in a single image."""
-  labeled_pixels = np.zeros((rows, cols))
-  for i, path in enumerate(file_paths):
-    label = i+1
-    ds = create_mask_from_vector(path, cols, rows, geo_transform,
-                   projection, target_value=label)
-    band = ds.GetRasterBand(1)
-    labeled_pixels += band.ReadAsArray()
-    ds = None
-  return labeled_pixels
-
-
-def write_geotiff(fname, data, geo_transform, projection):
-  """Create a GeoTIFF file with the given data."""
-  driver = gdal.GetDriverByName('GTiff')
-  rows, cols = data.shape
-  dataset = driver.Create(fname, cols, rows, 1, gdal.GDT_Byte)
-  dataset.SetGeoTransform(geo_transform)
-  dataset.SetProjection(projection)
-  band = dataset.GetRasterBand(1)
-  band.WriteArray(data)
-  dataset = None  # Close the file
+from pyproj import Proj, transform
 
 def read_naip(file_path):
+  ''' 
+      cribbed from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
+  '''
   raster_dataset = gdal.Open(raster_data_path, gdal.GA_ReadOnly)
-  geo_transform = raster_dataset.GetGeoTransform()
+  coord = pixelTocoord(raster_dataset, 0, 0)
+  print("this NAIP top left corner is {}".format(coord))
   proj = raster_dataset.GetProjectionRef()
   bands_data = []
   for b in range(1, raster_dataset.RasterCount+1):
@@ -52,12 +17,42 @@ def read_naip(file_path):
     bands_data.append(band.ReadAsArray())
 
   bands_data = np.dstack(bands_data)
+  shaped_data = tile_naip(raster_dataset, bands_data)
+
+def pixelToLatLng(raster_dataset, col, row):
+  '''
+      Returns lat lng for pixel in epsg:4326
+  '''
+  # http://gis.stackexchange.com/questions/53617/how-to-find-lat-lon-values-for-every-pixel-in-a-geotiff-file
+  # unravel GDAL affine transform parameters
+  c, a, b, f, d, e = raster_dataset.GetGeoTransform()
+  xp = a * col + b * row + a * 0.5 + b * 0.5 + c
+  yp = d * col + e * row + d * 0.5 + e * 0.5 + f
+
+  # http://gis.stackexchange.com/questions/78838/how-to-convert-projected-coordinates-to-lat-lon-using-python
+  inProj = Proj(init='epsg:3857')
+  outProj = Proj(init='epsg:4326')
+  x1,y1 = xp, yp
+  x2,y2 = transform(inProj,outProj,x1,y1)
+  return(x2, x2)
+
+def tile_naip(raster_dataset, bands_data):
   rows, cols, n_bands = bands_data.shape
+  print("this NAIP has {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
+  tiled_data = []
+  tile_size = 32
+  # this code might be inefficient, maybe i'll care later, YOLO
+  for row in xrange(0, rows-tile_size, tile_size):
+    for col in xrange(0, cols-tile_size, tile_size):
+      new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:n_bands]
+      tiled_data.append(new_tile)
+      print(pixelToLatLng(raster_dataset, row, col))
 
-  raster_data_path = 'data/naip/m_3807708_ne_18_1_20130924.tif'
-  print("this tiff has {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
+  shaped_data = np.array(tiled_data)
+  tiles, h, w, bands = shaped_data.shape
+  print("this shaped_data has {} tiles sized {} x {} x {}".format(tiles, h, w, bands))
+  return shaped_data
 
-def tile_naip(file_path):
 
-  # use gdal_translate to clip an area
-  # https://trac.osgeo.org/gdal/wiki/FAQRaster#HowdoIusegdal_translatetoextractorclipasub-sectionofaraster
+raster_data_path = 'data/naip/m_3807708_ne_18_1_20130924.tif'
+read_naip(raster_data_path)
