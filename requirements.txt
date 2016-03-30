@@ -10,7 +10,6 @@ https://storage.googleapis.com/tensorflow/mac/tensorflow-0.7.1-cp35-none-any.whl
 
 # calculate lat lng for project coords
 pyproj
-pyosmium
 
 # process naips
 gdal==1.11.3
