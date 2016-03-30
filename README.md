@@ -50,17 +50,26 @@ This will download one NAIP, and tile it into cubes (NxNx4 bands of data).
 
 I was using TMS vector OSM tiles, which mapped to TMS aerial tiles. Now that I'm using NAIPs, I need to calculate the OSM ways/features a different way.
 
-Let's try using:
+## Could use Osmium:
 
- * a [North America OSM extract](http://download.geofabrik.de/)
  * [libosmium](http://osmcode.org/libosmium/) via [Python bindings](https://github.com/osmcode/pyosmium)
 
-Download and install Osmium:
+### Download and install Osmium:
 
     brew install boost-python --with-python3 # for Osmium
     Download a release [https://github.com/osmcode/pyosmium/releases](https://github.com/osmcode/pyosmium/releases)
     cd ~/PATH_TO_OSMIUM_ZIP_DIR
     python setup.py
+
+## imposm
+
+Maybe this is easier and fine, building Osmium is a pain:
+
+* [http://imposm.org/docs/imposm.parser/latest/](http://imposm.org/docs/imposm.parser/latest/)
+
+## OSM Vector Data
+* a [North America OSM extract](http://download.geofabrik.de/)
+
 
 # Contributions
 
