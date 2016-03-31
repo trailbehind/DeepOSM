@@ -10,9 +10,9 @@ Contributions are welcome. Open an issue if you want to discuss something to do,
 
 ## Overview
 
-I first trained on a set of Mapzen vector tiles, which conveniently map onto Mapquest imagery tiles. The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse.
+I first trained on a set of Mapzen vector tiles, which conveniently map onto Mapquest imagery tiles. This was the simplest possible thing I thought to do... this data jammed right into the [Tensorflow](http://tensorflow.org) tutorials.
 
-This was the simplest possible thing I thought to do... this data jammed right into the [Tensorflow](http://tensorflow.org) tutorials. 
+The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse. There is also some chance the output was just random and buggy too. 
 
 ## Install Requirements
 
