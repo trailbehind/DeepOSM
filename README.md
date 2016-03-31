@@ -1,12 +1,16 @@
 # Deep OSM
 
-Detect roads and features in satellite imagery by training neural networks with OpenStreetMap (OSM) data.
+Detect roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. The gist:
+
+* Download a chunk of satellite imagery
+* Download ways (i.e. road/trails) for that area from OSM 
+* Generate training and evaluation data
 
 This is a work in progress. Experiment 1 went well, and now the goal is better data experiment 2. Read below to run the code for either.
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
 
-# Experiment 1 - TMS Tiles - Install Requirements
+# Experiment 1 - TMS Tiles
 
 ## Overview
 
@@ -84,9 +88,11 @@ libosmium takes some setting up.
 [Install a cmake binary first](https://cmake.org/download/)
     
 Add cmake to your path:
+
     export PATH=/Applications/CMake.app/Contents/bin:$PATH
     
 Dependency for libosmium:
+
     brew install google-sparsehash
     
     cd lib
@@ -96,7 +102,8 @@ Dependency for libosmium:
     cd build
     cmake ..
     
-Install pyosmium (python lobosmium bindings):
+Install pyosmium (python libosmium bindings):
+
     curl -LOk https://github.com/osmcode/pyosmium/archive/v2.6.0.zip
     unzip -a v2.6.0.zip
     cd pyosmium-2.6.0
@@ -109,15 +116,14 @@ Get OSM extracts here [from geofabrik](http://download.geofabrik.de/). I used Ca
     curl http://download.geofabrik.de/north-america/us/california-latest.osm.pbf >> data/california-latest.osm.pbf
 
 ### Extract Ways
+
 This can take many minutes to run for the California PBF (500 mb), but more processors would help.
 
     python3 data_pipeline/extract_ways.py data/california-latest.osm.pbf
 
-# Project Idea, Research, Readings, and Notes
+# Background
 
-## Overview
-
-Detect OpenStreetMap (OSM) ways (streets and trails) in satellite imagery. Train the neural net using MapQuest open imagery, and an OSM ways.
+This was the general idea to start:
 
 ![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
 
@@ -133,40 +139,3 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
     * all the other links to Nielsen’s book and [Colah’s blog](http://colah.github.io/posts/2015-08-Backprop/)
 * Deep Background
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
-
-### Train
-
-* Download a chunk of satellite imagery from MapQuest at max resolution, in 256x256px PNGs
-* Download ways (i.e. road/trails) for that area from OSM 
-* Generate training and evaluation data
-
-### Test 
-
-* Download a different set of training imagery and OSM ways, and see if we can predict the ways from the imagery
-
-## Marshal Test Data
-
-### Mapzen vector gepjson tiles are convenient
-
-* flatten it into matrices of trail/no trail
-* check tiles visually 
-
-### download imagery data
-
-* use GDAL to download and composite image tiles
-
-## Scale Up
-
-Data Size
-
-* do a tiny area and do it all locally for testing
-* use one or more GPUs on Amazon if bottlenecked
-
-Download OSM data, parse out ways
-
-* alternative to Clipper method: load it into Postgres and do it that way
-
-Accuracy
-
-* mimic Hinton’s methods, esp. for getting real road geometries
-* see if we can identify trails nearly as well as roads
