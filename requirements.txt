@@ -8,8 +8,9 @@ Pillow==3.1.1
 # the recommended Tensorflow binary for python 3
 https://storage.googleapis.com/tensorflow/mac/tensorflow-0.7.1-cp35-none-any.whl
 
-# calculate lat lng for project coords
-pyproj
-
 # process naips
 gdal==1.11.3
+
+# convert to lat lng for projected coords from naips
+pyproj
+
