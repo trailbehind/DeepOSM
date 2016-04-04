@@ -65,6 +65,10 @@ You might have already done these two steps from Experiment 1.
     pip3 install -r requirements.txt 
     export PYTHONPATH=$PYTHONPATH:./data_pipeline
 
+Use boto3 to download from Amazon:
+
+    pip install boto3==1.3.0
+
 You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
  * set your [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or otherwise authenticate with AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
@@ -72,6 +76,10 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 And you need GDAL compatible with Python3.
  
     brew install gdal --HEAD   # GDAL 2.0 for Python3
+
+To convert to lat lng for projected coords from naips:
+
+    pip install pyproj
 
 ## Download NAIP Imagery
 
