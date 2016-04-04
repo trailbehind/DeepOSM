@@ -58,13 +58,25 @@ class OSMDataNormalizer:
       pass
     return new_dir
 
-  def default_bounds_to_analyze(self):
+  def chunk_of_tahoe_bb(self):
     '''
-        analyze a small chunk around Yosemite Village, by default
+        a swath around Lake Tahoe that includes mountains, roads, and lakes
     '''
     yosemite_village_bb = BoundingBox()
     yosemite_village_bb.northeast.lat = 37.81385
     yosemite_village_bb.northeast.lon = -119.48559
+    yosemite_village_bb.southwest.lat = 39.82726
+    yosemite_village_bb.southwest.lon = -119.59648
+    return yosemite_village_bb
+
+
+  def default_bounds_to_analyze(self):
+    '''
+        analyze a chunk around Yosemite Village
+    '''
+    yosemite_village_bb = BoundingBox()
+    yosemite_village_bb.northeast.lat = 39.93449
+    yosemite_village_bb.northeast.lon = -119.35616
     yosemite_village_bb.southwest.lat = 37.46724
     yosemite_village_bb.southwest.lon = -120.02454
     return yosemite_village_bb
@@ -73,7 +85,7 @@ class OSMDataNormalizer:
     '''
         analyze tiles at TMS zoom level 14, by default
     '''
-    return 15
+    return 17
 
   def default_vector_tile_base_url(self):
     ''' 
@@ -91,7 +103,7 @@ class OSMDataNormalizer:
     ''' 
         download raster satellite and geojson tiles for the region to be analyzed
     '''
-    bounding_box = self.default_bounds_to_analyze()
+    bounding_box = self.chunk_of_tahoe_bb()
     zoom = self.default_zoom()
     tile_download_count = 0
     tiles = self.tiles_for_bounding_box(bounding_box, zoom)
