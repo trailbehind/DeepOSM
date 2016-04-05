@@ -38,8 +38,8 @@ class NAIPDownloader:
   def download_naips(self):
     s3_client = boto3.client('s3')
     filename = 'm_3807708_ne_18_1_20130924.tif'
-    full_path = 'data/naip/{}'.format(filename)
-    if os.exists(full_path):
+    full_path = '/Deep-OSM/data/naip/{}'.format(filename)
+    if os.path.exists(full_path):
       print("{} already downloaded".format(full_path))
     else:
       s3_client.download_file('aws-naip', 'md/2013/1m/rgbir/38077/{}'.format(filename), full_path, {'RequestPayer':'requester'})

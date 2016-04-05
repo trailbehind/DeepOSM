@@ -50,7 +50,7 @@ def tile_naip(raster_dataset, bands_data):
   print("this NAIP has bounds {}".format(bounds_for_naip(raster_dataset, rows, cols)))
 
   waymap = WayMap()
-  waymap.run_extraction('data/district-of-columbia-latest.osm.pbf')
+  waymap.run_extraction('./data/district-of-columbia-latest.osm.pbf')
   way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
   print(len(waymap.extracter.ways))
 

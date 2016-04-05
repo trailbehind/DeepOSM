@@ -16,6 +16,7 @@ class WayMap():
 
     def run_extraction(self, file_path):
       # cache locations for ways
+      print file_path
       reader = o.io.Reader(file_path, o.osm.osm_entity_bits.NODE)
       node_cache = "sparse_file_array," + "data/tmp_node_cache"
       idx = o.index.create_map(node_cache)
