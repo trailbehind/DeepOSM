@@ -13,5 +13,3 @@ pyproj==1.9.5.1
 
 # the recommended Tensorflow binary for python 2 on linux, CPU only
 https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp27-none-linux_x86_64.whl
-
-shapely
