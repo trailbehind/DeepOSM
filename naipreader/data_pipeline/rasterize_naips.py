@@ -3,7 +3,7 @@ import os
 from osgeo import gdal, osr
 from pyproj import Proj, transform
 from extract_ways import WayMap
-
+from download_naips import NAIPDownloader
 
 def read_naip(file_path):
   ''' 
@@ -50,7 +50,7 @@ def tile_naip(raster_dataset, bands_data):
   print("this NAIP has bounds {}".format(bounds_for_naip(raster_dataset, rows, cols)))
 
   waymap = WayMap()
-  waymap.run_extraction('./data/district-of-columbia-latest.osm.pbf')
+  waymap.run_extraction('./district-of-columbia-latest.osm.pbf')
   way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
   print(len(waymap.extracter.ways))
 
@@ -83,7 +83,6 @@ def empty_tile_matrix(rows, cols):
       tile_matrix[x].append(0)     
   return tile_matrix
 
-
 def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
   ''' 
     generate a matrix of size rows x cols, initialized to all zeroes,
@@ -93,13 +92,14 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
   for way in ways:
-  	for node in way.nodes:  print(node.id)
-  	  #if bounds_contains_node(bounds, node):
-  	  #  ways_on_naip.append(way)
+    print("this way has {} nodes".format(len(way.nodes)))
+    ways_on_naip.append(way)
   print("found {} ways that overlap this naip".format(len(ways_on_naip)))
 
 def bounds_contains_node(bounds, node):
   return True
 
+naiper = NAIPDownloader()
+naiper.download_naips()
 raster_data_path = 'data/naip/m_3807708_ne_18_1_20130924.tif'
 read_naip(raster_data_path)

@@ -60,74 +60,31 @@ I am currently working on this stage. The [NAIPs come from a requester pays buck
 
 ## Install Requirements
 
-You might have already done these two steps from Experiment 1.
-
-    pip3 install -r requirements.txt 
-    export PYTHONPATH=$PYTHONPATH:./data_pipeline
-
-Use boto3 to download from Amazon:
-
-    pip install boto3==1.3.0
+### AWS Credentials
 
 You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
- * set your [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or otherwise authenticate with AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
+ * get your [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
-And you need GDAL compatible with Python3.
- 
-    brew install gdal --HEAD   # GDAL 2.0 for Python3
+ * add them to Makefile
 
-To convert to lat lng for projected coords from naips:
+### Install Docker
 
-    pip install pyproj
+I also needed to set my VirtualBox default memory to 4GB, from the default 1GB, to get libosmium to work. 
 
-## Download NAIP Imagery
+## Run Scripts 
 
-    python3 data_pipeline/download_naips.py download
+Start Docker, then run:
 
-This will download one NAIP, and tile it into cubes (NxNx4 bands of data).
+    make dev
 
-## Clip OSM Vectors for NAIP Tiles
+Then the following Python script will work in the Docker machine.
 
-### libosmium + pyosmium
+## Download NAIP, PBF, and Analyze
 
-libosmium takes some setting up.
+    python data_pipeline/rasterize_naips.py download
 
-[Install a cmake binary first](https://cmake.org/download/)
-    
-Add cmake to your path:
-
-    export PATH=/Applications/CMake.app/Contents/bin:$PATH
-    
-Dependency for libosmium:
-
-    brew install google-sparsehash
-    
-    cd lib
-    git clone https://github.com/osmcode/libosmium
-    cd libosmium
-    mkdir build
-    cd build
-    cmake ..
-    
-Install pyosmium (python libosmium bindings):
-
-    curl -LOk https://github.com/osmcode/pyosmium/archive/v2.6.0.zip
-    unzip -a v2.6.0.zip
-    cd pyosmium-2.6.0
-    python3 setup.py install
-
-### Download OSM Vector Data
-
-Get OSM extracts here [from geofabrik](http://download.geofabrik.de/). I used California for now:
-
-    curl http://download.geofabrik.de/north-america/us/california-latest.osm.pbf >> data/california-latest.osm.pbf
-
-### Extract Ways
-
-This can take many minutes to run for the California PBF (500 mb), but more processors would help.
-
-    python3 data_pipeline/extract_ways.py data/california-latest.osm.pbf
+This will download one NAIP, and tile it into cubes (NxNx4 bands of data). Then it will download a PBF file and extract the ways for the NAIP.
 
 # Background
 

@@ -20,12 +20,9 @@ class NAIPDownloader:
       path = ''
       for token in new_dir.split('/'):
         path += token + '/'
-        print (path)
         try:
-          print ("try")
           os.mkdir(path);
         except:
-          print ("Except")
           pass
       return path
 
