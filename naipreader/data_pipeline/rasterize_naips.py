@@ -92,11 +92,21 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
   for way in ways:
-    print("this way has {} nodes".format(len(way.nodes)))
-    ways_on_naip.append(way)
-  print("found {} ways that overlap this naip".format(len(ways_on_naip)))
+    for point_tuple in way['linestring']:
+      if bounds_contains_node(bounds, point_tuple):
+        ways_on_naip.append(way)
+        break
+  print("found {}/{} ways that overlap this naip".format(len(ways_on_naip), len(ways)))
 
-def bounds_contains_node(bounds, node):
+def bounds_contains_node(bounds, point_tuple):
+  if point_tuple[0] > bounds['ne'][0]:
+    return False
+  if point_tuple[0] < bounds['sw'][0]:
+    return False
+  if point_tuple[1] > bounds['ne'][1]:
+    return False
+  if point_tuple[1] < bounds['sw'][1]:
+    return False
   return True
 
 naiper = NAIPDownloader()
