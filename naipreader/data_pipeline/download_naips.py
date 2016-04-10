@@ -40,12 +40,14 @@ class NAIPDownloader:
       print("{} already downloaded".format(full_path))
     else:
       s3_client.download_file('aws-naip', 'md/2013/1m/rgbir/38077/{}'.format(filename), full_path, {'RequestPayer':'requester'})
-parameters_message = "parameters are: download"
-if len(sys.argv) == 1:
-  print(parameters_message)
-elif sys.argv[1] == 'download':
-	naiper = NAIPDownloader()
-	naiper.download_naips()
-else:
-  print(parameters_message)
+
+if __name__ == '__main__':
+  parameters_message = "parameters are: download"
+  if len(sys.argv) == 1:
+    print(parameters_message)
+  elif sys.argv[1] == 'download':
+  	naiper = NAIPDownloader()
+  	naiper.download_naips()
+  else:
+    print(parameters_message)
 

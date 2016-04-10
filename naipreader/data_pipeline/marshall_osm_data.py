@@ -403,7 +403,7 @@ class OSMDataNormalizer:
 
   def print_matrix(self, matrix):
     '''
-        print an ascii matrix in cosole
+        print an ascii matrix in console
     '''
     for row in numpy.rot90(numpy.fliplr(matrix)):
       row_str = ''

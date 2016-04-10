@@ -6,43 +6,9 @@ Detect roads and features in satellite imagery, by training neural networks with
 * Download ways (i.e. road/trails) for that area from OSM 
 * Generate training and evaluation data
 
-This is a work in progress. Experiment 1 went well, and now the goal is better data experiment 2. Read below to run the code for either.
+This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either.
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
-
-# Experiment 1 - TMS Tiles
-
-## Overview
-
-I first trained on a set of Mapzen vector tiles, which conveniently map onto Mapquest imagery tiles. This was the simplest possible thing I thought to do... this data jammed right into the [Tensorflow](http://tensorflow.org) tutorials.
-
-The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse. There is also some chance the output was just random and buggy too. 
-
-## Install Requirements
-
-This has been run on OSX Yosemite (10.10.5).
-
-    brew install libjpeg
-    pip3 install -r requirements.txt 
-    sudo easy_install --upgrade six
-
-Install globalmaptiles.py
-
-    mkdir lib
-    cd lib
-    git clone git@gist.github.com:d5bf14750eff1197e8c5.git global_map
-    cd ..
-    export PYTHONPATH=$PYTHONPATH:./lib/global_map:./data_pipeline
-
-## Run the Script
-This will download vectors, imagery, and run the analysis.
-
-    python3 analysis/label_chunks_softmax.py download-data MAPZEN_KEY
-    python3 analysis/label_chunks_softmax.py train
-
-This will use a convolutional neural network (CNN) from TensorFlow tutorial 2, instead of the softmax from tutorial 1.
-
-    python3 analysis/label_chunks_cnn.py train
 
 # Experiment 2 - NAIPs and OSM PBF
 
@@ -82,9 +48,47 @@ Then the following Python script will work in the Docker machine.
 
 ## Download NAIP, PBF, and Analyze
 
-    python data_pipeline/rasterize_naips.py download
+    python data_pipeline/rasterize_naips.py
 
 This will download one NAIP, and tile it into cubes (NxNx4 bands of data). Then it will download a PBF file and extract the ways for the NAIP.
+
+It will produce a JPEG of the ways overlaid on the tiff, like this:
+
+[NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
+
+# Experiment 1 - TMS Tiles
+
+## Overview
+
+I first trained on a set of Mapzen vector tiles, which conveniently map onto Mapquest imagery tiles. This was the simplest possible thing I thought to do... this data jammed right into the [Tensorflow](http://tensorflow.org) tutorials.
+
+The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse. There is also some chance the output was just random and buggy too. 
+
+## Install Requirements
+
+This has been run on OSX Yosemite (10.10.5).
+
+    brew install libjpeg
+    pip3 install -r requirements.txt 
+    sudo easy_install --upgrade six
+
+Install globalmaptiles.py
+
+    mkdir lib
+    cd lib
+    git clone git@gist.github.com:d5bf14750eff1197e8c5.git global_map
+    cd ..
+    export PYTHONPATH=$PYTHONPATH:./lib/global_map:./data_pipeline
+
+## Run the Script
+This will download vectors, imagery, and run the analysis.
+
+    python3 analysis/label_chunks_softmax.py download-data MAPZEN_KEY
+    python3 analysis/label_chunks_softmax.py train
+
+This will use a convolutional neural network (CNN) from TensorFlow tutorial 2, instead of the softmax from tutorial 1.
+
+    python3 analysis/label_chunks_cnn.py train
 
 # Background
 

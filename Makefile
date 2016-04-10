@@ -13,6 +13,6 @@ build:
 	docker build -t $(IMAGE_NAME) .
 
 dev: build
-	docker run -v `pwd`:/Deep-OSM -e CPLUS_INCLUDE_PATH=/usr/include/gdal -e C_INCLUDE_PATH=/usr/include/gdal -e AWS_ACCESS_KEY_ID="" -e AWS_SECRET_ACCESS_KEY="" -ti $(IMAGE_NAME) /bin/bash
+	docker run -v `pwd`:/Deep-OSM -e CPLUS_INCLUDE_PATH=/usr/include/gdal -e C_INCLUDE_PATH=/usr/include/gdal -e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) -e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) -ti $(IMAGE_NAME) /bin/bash
 
 
