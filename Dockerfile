@@ -25,7 +25,7 @@ RUN apt-get -q update && \
 # dependencies into the virtualenv.
 ADD requirements.txt /Deep-OSM/requirements.txt
 RUN pip install -r /Deep-OSM/requirements.txt
-RUN ln -s /home/vmagent/naipreader /Deep-OSM
+RUN ln -s /home/vmagent/data_pipeline /Deep-OSM
 
 # install libosmium and pyosmium bindings
 RUN git clone https://github.com/osmcode/libosmium /libosmium

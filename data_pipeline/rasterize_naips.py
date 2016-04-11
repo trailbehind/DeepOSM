@@ -1,13 +1,13 @@
 import numpy, os
 from osgeo import gdal, osr
 from pyproj import Proj, transform
-from extract_ways import WayMap
+from extract_ways import WayMap, download_file
 from download_naips import NAIPDownloader
 from PIL import Image
 
 def read_naip(file_path):
   ''' 
-      cribbed from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
+      from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
   raster_dataset = gdal.Open(raster_data_path, gdal.GA_ReadOnly)
   coord = pixelToLatLng(raster_dataset, 0, 0)
@@ -22,18 +22,14 @@ def read_naip(file_path):
 
 def latLonToPixel(raster_dataset, location):
   '''
-      http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
+      from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
   '''
   ds = raster_dataset
-  # Get a geo-transform of the dataset
   gt = ds.GetGeoTransform()
-  # Create a spatial reference object for the dataset
   srs = osr.SpatialReference()
   srs.ImportFromWkt(ds.GetProjection())
-  # Set up the coordinate transformation object
   srsLatLong = srs.CloneGeogCS()
   ct = osr.CoordinateTransformation(srsLatLong,srs)
-
   new_location =[None, None]
   # Change the point locations into the GeoTransform space
   (new_location[1],new_location[0],holder) = ct.TransformPoint(location[1],location[0])
@@ -44,21 +40,18 @@ def latLonToPixel(raster_dataset, location):
 
 def pixelToLatLng(raster_dataset, col, row):
   '''
-      http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
+      from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
   '''
-  # Load the image dataset
   ds = raster_dataset
   gt = ds.GetGeoTransform()
   srs = osr.SpatialReference()
   srs.ImportFromWkt(ds.GetProjection())
   srsLatLong = srs.CloneGeogCS()
   ct = osr.CoordinateTransformation(srs,srsLatLong)
-
   ulon = col*gt[1]+gt[0]
   ulat = row*gt[5]+gt[3]
-  # Transform the points to the space
+  # Transform the point into the GeoTransform space
   (lon,lat,holder) = ct.TransformPoint(ulon,ulat)
-  # Add the point to our return array
   return (lat, lon)
 
 def tile_naip(raster_dataset, bands_data):
@@ -67,7 +60,8 @@ def tile_naip(raster_dataset, bands_data):
   print("GEO-BOUNDS for image is {}".format(bounds_for_naip(raster_dataset, rows, cols)))
 
   waymap = WayMap()
-  waymap.run_extraction('./district-of-columbia-latest.osm.pbf')
+  file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
+  waymap.run_extraction(file_path)
   way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
 
   tiled_data = []
@@ -117,7 +111,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
       if bounds_contains_node(bounds, point_tuple):
         ways_on_naip.append(way)
         break
-  print("EXTRACTED {}/{} ways that overlap this NAIP".format(len(ways_on_naip), len(ways)))
+  print("EXTRACTED {} highways that overlap the NAIP, out of {} ways in the PBF, ".format(len(ways_on_naip), len(ways)))
 
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):

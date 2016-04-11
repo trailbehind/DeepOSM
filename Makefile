@@ -3,7 +3,7 @@
 .PHONY: dev build
 
 help:
-	@echo 'Makefile for Deep-OSM/naipreader'
+	@echo 'Makefile for Deep-OSM'
 	@echo ''
 	@echo 'make dev        Build and run /bin/bash'
 

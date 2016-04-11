@@ -32,7 +32,10 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
  * get your [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
- * add them to Makefile
+ * export them as environment variables (and maybe add to your bash or zprofile)
+
+    export AWS_ACCESS_KEY_ID='FOO'
+    export AWS_SECRET_ACCESS_KEY='BAR'
 
 ### Install Docker
 
@@ -54,7 +57,7 @@ This will download one NAIP, and tile it into cubes (NxNx4 bands of data). Then 
 
 It will produce a JPEG of the ways overlaid on the tiff, like this:
 
-[NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
+![NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
 
 # Experiment 1 - TMS Tiles
 
