@@ -15,7 +15,7 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
   data_sets = DataSets()
   data_sets.train = DataSet(train_images, train_labels, dtype=tf.float32)
   data_sets.test = DataSet(test_images, test_labels, dtype=tf.float32)
-  print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(odn.train_images), len(odn.test_images), len(odn.train_labels), len(odn.test_labels)))
+  print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(train_images), len(test_images), len(train_labels), len(test_labels)))
 
   sess = tf.InteractiveSession()
 
@@ -41,7 +41,7 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
   y_ = tf.placeholder(tf.float32, [None, 2])
 
   # first layer of convolution
-  W_conv1 = weight_variable([5, 5, 1, 32])
+  W_conv1 = weight_variable([5, 5, 4, 32])
   b_conv1 = bias_variable([32])
 
   x_image = tf.reshape(x, [-1,image_size,image_size,1])
@@ -78,7 +78,7 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
   sess.run(tf.initialize_all_variables())
 
   batch_size = 100
-  for i in range(int(len(odn.train_images)/batch_size)):
+  for i in range(int(len(train_images)/batch_size)):
     batch = data_sets.train.next_batch(batch_size)
     #if i%5 == 0:
     train_accuracy = accuracy.eval(feed_dict={
