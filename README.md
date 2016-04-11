@@ -43,6 +43,8 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
 I also needed to set my VirtualBox default memory to 4GB, from the default 1GB, to get libosmium to work. 
 
+Then, I needed to up it again, to 16 GB, to get the neural net to work.
+
 ## Run Scripts 
 
 Start Docker, then run:

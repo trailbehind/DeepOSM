@@ -7,6 +7,8 @@ from PIL import Image
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
+tile_size = 128
+
 def read_naip(file_path):
   ''' 
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
@@ -32,7 +34,6 @@ def tile_naip(raster_dataset, bands_data):
 
   training_tiled_data = []
   test_tiled_data = []
-  tile_size = 256
   # this code might be inefficient, maybe i'll care later, YOLO
   x = 0
   for row in xrange(0, rows-tile_size, tile_size):
@@ -179,11 +180,13 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap):
 
 def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   waymap = WayMap()
-  file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
+  file_path = '/Deep-OSM/district-of-columbia-latest.osm.pbf'
+  if not os.path.exists(file_path):
+    file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
   waymap.run_extraction(file_path)
   way_bitmap = way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
   #save_naip_as_jpeg(raster_data_path, way_bitmap)
-  return labels_for_bitmap(way_bitmap, 256)
+  return labels_for_bitmap(way_bitmap, tile_size)
 
 def labels_for_bitmap(way_bitmap, tile_size):
   rows = len(way_bitmap[0])
