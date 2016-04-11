@@ -5,24 +5,16 @@
 '''
 
 import sys
-from marshall_osm_data import OSMDataNormalizer
 from DataSet import DataSet, DataSets
 import tensorflow as tf
 import tensorflow.python.platform
 import numpy
 
 
-def train_neural_net():  
-  odn = OSMDataNormalizer()
-  
-  # process into matrices
-  odn.process_geojson()
-  odn.process_rasters()
-
-  # create a DataSet that Tensorflow likes
+def train_neural_net(train_images, train_labels, test_images, test_labels):  
   data_sets = DataSets()
-  data_sets.train = DataSet(odn.train_images, odn.train_labels, dtype=tf.float32)
-  data_sets.test = DataSet(odn.test_images, odn.test_labels, dtype=tf.float32)
+  data_sets.train = DataSet(train_images, train_labels, dtype=tf.float32)
+  data_sets.test = DataSet(test_images, test_labels, dtype=tf.float32)
   print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(odn.train_images), len(odn.test_images), len(odn.train_labels), len(odn.test_labels)))
 
   sess = tf.InteractiveSession()
@@ -108,6 +100,13 @@ elif sys.argv[1] == 'download-data':
     odn = OSMDataNormalizer(sys.argv[2])
     odn.download_tiles()
 elif sys.argv[1] == 'train':
-  train_neural_net()
+  from marshall_osm_data import OSMDataNormalizer
+  odn = OSMDataNormalizer()
+  
+  # process into matrices
+  odn.process_geojson()
+  odn.process_rasters()
+  # create a DataSet that Tensorflow likes
+  train_neural_net(odn.train_images, odn.train_labels, odn.test_images, odn.test_labels)
 else:
   print(parameters_message)

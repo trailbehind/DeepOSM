@@ -34,7 +34,9 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
  * export them as environment variables (and maybe add to your bash or zprofile)
 
+
     export AWS_ACCESS_KEY_ID='FOO'
+
     export AWS_SECRET_ACCESS_KEY='BAR'
 
 ### Install Docker

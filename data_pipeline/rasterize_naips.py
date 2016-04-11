@@ -1,9 +1,11 @@
 import numpy, os
-from osgeo import gdal, osr
+from osgeo import gdal
 from pyproj import Proj, transform
 from extract_ways import WayMap, download_file
 from download_naips import NAIPDownloader
 from PIL import Image
+from geo_util import latLonToPixel, pixelToLatLng
+from label_chunks_cnn import train_neural_net
 
 def read_naip(file_path):
   ''' 
@@ -18,85 +20,35 @@ def read_naip(file_path):
     bands_data.append(band.ReadAsArray())
 
   bands_data = numpy.dstack(bands_data)
-  shaped_data = tile_naip(raster_dataset, bands_data)
-
-def latLonToPixel(raster_dataset, location):
-  '''
-      from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
-  '''
-  ds = raster_dataset
-  gt = ds.GetGeoTransform()
-  srs = osr.SpatialReference()
-  srs.ImportFromWkt(ds.GetProjection())
-  srsLatLong = srs.CloneGeogCS()
-  ct = osr.CoordinateTransformation(srsLatLong,srs)
-  new_location =[None, None]
-  # Change the point locations into the GeoTransform space
-  (new_location[1],new_location[0],holder) = ct.TransformPoint(location[1],location[0])
-  # Translate the x and y coordinates into pixel values
-  x = (new_location[1]-gt[0])/gt[1]
-  y = (new_location[0]-gt[3])/gt[5]
-  return(int(x),int(y))
-
-def pixelToLatLng(raster_dataset, col, row):
-  '''
-      from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
-  '''
-  ds = raster_dataset
-  gt = ds.GetGeoTransform()
-  srs = osr.SpatialReference()
-  srs.ImportFromWkt(ds.GetProjection())
-  srsLatLong = srs.CloneGeogCS()
-  ct = osr.CoordinateTransformation(srs,srsLatLong)
-  ulon = col*gt[1]+gt[0]
-  ulat = row*gt[5]+gt[3]
-  # Transform the point into the GeoTransform space
-  (lon,lat,holder) = ct.TransformPoint(ulon,ulat)
-  return (lat, lon)
+  training_images, test_images = tile_naip(raster_dataset, bands_data)
+  return training_images, test_images, raster_dataset, bands_data.shape[0], bands_data.shape[1]
 
 def tile_naip(raster_dataset, bands_data):
   rows, cols, n_bands = bands_data.shape
   print("OPENED NAIP with {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
   print("GEO-BOUNDS for image is {}".format(bounds_for_naip(raster_dataset, rows, cols)))
 
-  waymap = WayMap()
-  file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
-  waymap.run_extraction(file_path)
-  way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
-
-  tiled_data = []
-  tile_size = 32
+  training_tiled_data = []
+  test_tiled_data = []
+  tile_size = 256
   # this code might be inefficient, maybe i'll care later, YOLO
+  x = 0
   for row in xrange(0, rows-tile_size, tile_size):
     for col in xrange(0, cols-tile_size, tile_size):
       new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:n_bands]
-      tiled_data.append(new_tile)
+      if x%2 == 0:
+        training_tiled_data.append(new_tile)
+      else:
+        test_tiled_data.append(new_tile)        
+      x += 1
      
-  shaped_data = numpy.array(tiled_data)
-  tiles, h, w, bands = shaped_data.shape
-  print("SHAPED the tiff data to {} tiles sized {} x {} x {}".format(tiles, h, w, bands))
-  return shaped_data
-
-#top_y = 2500
-#bottom_y = 3000
-#left_x = 2500
-#right_x = 3000
-
-def bounds_for_naip(raster_dataset, rows, cols):
-  sw = pixelToLatLng(raster_dataset, 0, rows-1)
-  ne = pixelToLatLng(raster_dataset, cols-1, 0)
-  return {'sw': sw, 'ne': ne}
-
-def empty_tile_matrix(rows, cols):
-  ''' 
-      initialize the array to all zeroes
-  '''
-  tile_matrix = []    
-  for x in range(0,rows):
-    tile_matrix.append([])
-    for y in range(0,cols):
-      tile_matrix[x].append(0)     
-  return tile_matrix
+  shaped_training_data = numpy.array(training_tiled_data)
+  shaped_test_data = numpy.array(test_tiled_data)
+  tiles, h, w, bands = shaped_training_data.shape
+  print("TRAINING DATA: shaped the tiff data to {} tiles sized {} x {} x {}".format(tiles, h, w, bands))
+  tiles, h, w, bands = shaped_test_data.shape
+  print("TEST DATA: shaped the tiff data to {} tiles sized {} x {} x {}".format(tiles, h, w, bands))
+  return shaped_training_data, shaped_test_data
 
 def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
   ''' 
@@ -128,8 +80,28 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
           continue
         else:
           way_bitmap[p[0]][p[1]] = 1
-  save_naip_as_jpeg(raster_data_path, way_bitmap)
+  return way_bitmap
 
+def empty_tile_matrix(rows, cols):
+  ''' 
+      initialize the array to all zeroes
+  '''
+  tile_matrix = []    
+  for x in range(0,rows):
+    tile_matrix.append([])
+    for y in range(0,cols):
+      tile_matrix[x].append(0)     
+  return tile_matrix
+
+#top_y = 2500
+#bottom_y = 3000
+#left_x = 2500
+#right_x = 3000
+
+def bounds_for_naip(raster_dataset, rows, cols):
+  sw = pixelToLatLng(raster_dataset, 0, rows-1)
+  ne = pixelToLatLng(raster_dataset, cols-1, 0)
+  return {'sw': sw, 'ne': ne}
 
 def pixels_between(start_pixel, end_pixel, cols):
     '''
@@ -195,8 +167,58 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap):
   except Exception, e:
       print e
 
+def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
+  waymap = WayMap()
+  file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
+  waymap.run_extraction(file_path)
+  way_bitmap = way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
+  #save_naip_as_jpeg(raster_data_path, way_bitmap)
+  return labels_for_bitmap(way_bitmap, 256)
+
+def labels_for_bitmap(way_bitmap, tile_size):
+  rows = len(way_bitmap[0])
+  col = len(way_bitmap)
+  test_labels = []
+  training_labels = []
+  x = 0
+  for row in xrange(0, rows-tile_size, tile_size):
+    for col in xrange(0, cols-tile_size, tile_size):
+      new_tile = way_bitmap[row:row+tile_size][col:col+tile_size]
+      if x%2 == 0:
+        training_labels.append(new_tile)
+      else:
+        test_labels.append(new_tile)        
+      x += 1
+
+  onehot_test_labels = []
+  for label in test_labels:
+    if has_ways(label):
+      onehot_test_labels.append([0,1])
+    else:
+      onehot_test_labels.append([1,0])
+
+  onehot_training_labels = []
+  for label in training_labels:
+    if has_ways(label):
+      onehot_training_labels.append([0,1])
+    else:
+      onehot_training_labels.append([1,0])
+
+  print "ONE HOT for way presence - {} test labels and {} training labels in".format(len(onehot_training_labels), len(onehot_test_labels))
+  return numpy.asarray(onehot_training_labels), \
+         numpy.asarray(onehot_test_labels)
+
+def has_ways(tile):
+  for col in range(0, len(tile)):
+    for row in range(0, len(tile[col])):
+      if tile[col][row] == 1:
+        return True
+  return False
+
 if __name__ == '__main__':
   naiper = NAIPDownloader()
   naiper.download_naips()
   raster_data_path = 'data/naip/m_3807708_ne_18_1_20130924.tif'
-  read_naip(raster_data_path)
+  training_images, test_images, raster_dataset, rows, cols = read_naip(raster_data_path)
+  training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
+  train_neural_net(training_images, training_labels, test_images, test_labels)
