@@ -13,8 +13,8 @@ import numpy
 
 def train_neural_net(train_images, train_labels, test_images, test_labels):  
   data_sets = DataSets()
-  data_sets.train = DataSet(train_images, train_labels, dtype=tf.float32)
-  data_sets.test = DataSet(test_images, test_labels, dtype=tf.float32)
+  data_sets.train = DataSet(train_images, train_labels, dtype=tf.uint8)
+  data_sets.test = DataSet(test_images, test_labels, dtype=tf.uint8)
   print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(train_images), len(test_images), len(train_labels), len(test_labels)))
 
   sess = tf.InteractiveSession()
@@ -36,7 +36,7 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
 
   image_size = 256
   # placeholder for inputs
-  x = tf.placeholder("float", shape=[None, image_size*image_size*4])
+  x = tf.placeholder("float", shape=[None, image_size*image_size])
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
@@ -90,23 +90,24 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
       x: data_sets.test.images, y_: data_sets.test.labels, keep_prob: 1.0}))
  
 
-parameters_message = "parameters are: download-data, train"
-if len(sys.argv) == 1:
-  print(parameters_message)
-elif sys.argv[1] == 'download-data':
-  if len(sys.argv) < 3:
-    print('download-data requires a Mapzen APIkey as the 2nd parameter')
+if __name__ == '__main__':
+  parameters_message = "parameters are: download-data, train"
+  if len(sys.argv) == 1:
+    print(parameters_message)
+  elif sys.argv[1] == 'download-data':
+    if len(sys.argv) < 3:
+      print('download-data requires a Mapzen APIkey as the 2nd parameter')
+    else:
+      odn = OSMDataNormalizer(sys.argv[2])
+      odn.download_tiles()
+  elif sys.argv[1] == 'train':
+    from marshall_osm_data import OSMDataNormalizer
+    odn = OSMDataNormalizer()
+    
+    # process into matrices
+    odn.process_geojson()
+    odn.process_rasters()
+    # create a DataSet that Tensorflow likes
+    train_neural_net(odn.train_images, odn.train_labels, odn.test_images, odn.test_labels)
   else:
-    odn = OSMDataNormalizer(sys.argv[2])
-    odn.download_tiles()
-elif sys.argv[1] == 'train':
-  from marshall_osm_data import OSMDataNormalizer
-  odn = OSMDataNormalizer()
-  
-  # process into matrices
-  odn.process_geojson()
-  odn.process_rasters()
-  # create a DataSet that Tensorflow likes
-  train_neural_net(odn.train_images, odn.train_labels, odn.test_images, odn.test_labels)
-else:
-  print(parameters_message)
+    print(parameters_message)

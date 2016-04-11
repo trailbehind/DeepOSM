@@ -16,10 +16,12 @@ def read_naip(file_path):
   proj = raster_dataset.GetProjectionRef()
   bands_data = []
   for b in range(1, raster_dataset.RasterCount+1):
-    band = raster_dataset.GetRasterBand(b)
-    bands_data.append(band.ReadAsArray())
+    if b == 4:
+      band = raster_dataset.GetRasterBand(b)
+      bands_data.append(band.ReadAsArray())
 
   bands_data = numpy.dstack(bands_data)
+  
   training_images, test_images = tile_naip(raster_dataset, bands_data)
   return training_images, test_images, raster_dataset, bands_data.shape[0], bands_data.shape[1]
 
@@ -35,7 +37,7 @@ def tile_naip(raster_dataset, bands_data):
   x = 0
   for row in xrange(0, rows-tile_size, tile_size):
     for col in xrange(0, cols-tile_size, tile_size):
-      new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:n_bands]
+      new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
       if x%2 == 0:
         training_tiled_data.append(new_tile)
       else:
