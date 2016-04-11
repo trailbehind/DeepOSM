@@ -55,6 +55,13 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
+  try:
+    arr = numpy.load('./data/way_bitmap.npy')
+    print "CACHED: read label data from disk"
+    return arr
+  except:
+    print "CREATING LABELS"
+
   way_bitmap = empty_tile_matrix(cols, rows)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
@@ -80,6 +87,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
           continue
         else:
           way_bitmap[p[0]][p[1]] = 1
+  numpy.save('./data/way_bitmap', way_bitmap)
   return way_bitmap
 
 def empty_tile_matrix(rows, cols):

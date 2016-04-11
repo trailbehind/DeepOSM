@@ -36,12 +36,12 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
 
   image_size = 256
   # placeholder for inputs
-  x = tf.placeholder("float", shape=[None, image_size*image_size])
+  x = tf.placeholder("float", shape=[None, image_size*image_size*4])
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
   # first layer of convolution
-  W_conv1 = weight_variable([5, 5, 4, 32])
+  W_conv1 = weight_variable([5, 5, 1, 32])
   b_conv1 = bias_variable([32])
 
   x_image = tf.reshape(x, [-1,image_size,image_size,1])

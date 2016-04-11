@@ -25,14 +25,14 @@ class DataSet(object):
 
         # Convert shape from [num examples, rows, columns, depth]
         # to [num examples, rows*columns] (assuming depth == 1)
-        assert images.shape[3] == 1
+        assert images.shape[3] == 4
 
         # Store the width and height of the images before flattening it, if only for reference.
         image_height, image_width = images.shape[1], images.shape[2]
         self.original_image_width = image_width
         self.original_image_height = image_height
 
-        images = images.reshape(images.shape[0], images.shape[1] * images.shape[2])
+        images = images.reshape(images.shape[0], images.shape[1] * images.shape[2]*images.shape[3])
         if dtype == tf.float32:
             # Convert from [0, 255] -> [0.0, 1.0]
             images = images.astype(numpy.float32)

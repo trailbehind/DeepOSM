@@ -35,3 +35,5 @@ RUN cd /pyosmium && pwd && python setup.py install
 
 ADD . /Deep-OSM
 WORKDIR /Deep-OSM
+
+RUN export PYTHONPATH=$PYTHONPATH:/Deep-OSM/analysis/
