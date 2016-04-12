@@ -7,7 +7,7 @@ from PIL import Image
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
-tile_size = 128
+tile_size = 12
 
 def read_naip(file_path):
   ''' 
@@ -189,14 +189,23 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   return labels_for_bitmap(way_bitmap, tile_size)
 
 def labels_for_bitmap(way_bitmap, tile_size):
-  rows = len(way_bitmap[0])
-  col = len(way_bitmap)
+  
+  labels_bmp = empty_tile_matrix(len(way_bitmap), len(way_bitmap[0]))
+
+  rows = len(way_bitmap)
+  cols = len(way_bitmap[0])
+  print "way_bitmap is {} rows by {} cols".format(rows, cols)
   test_labels = []
   training_labels = []
   x = 0
-  for row in xrange(0, rows-tile_size, tile_size):
-    for col in xrange(0, cols-tile_size, tile_size):
-      new_tile = way_bitmap[row:row+tile_size][col:col+tile_size]
+  for row in range(0, rows-tile_size, tile_size):
+    for col in range(0, cols-tile_size, tile_size):
+      new_tile = way_bitmap[row:row+tile_size,col:col+tile_size]
+      if has_ways(new_tile):
+        #print "{} {} has ways".format(row, col)
+        for r in range(row,row+tile_size):
+          for c in range(col,col+tile_size):
+            labels_bmp[r][c] = 1
       if x%2 == 0:
         training_labels.append(new_tile)
       else:
@@ -218,10 +227,12 @@ def labels_for_bitmap(way_bitmap, tile_size):
       onehot_training_labels.append([1,0])
 
   print "ONE HOT for way presence - {} test labels and {} training labels in".format(len(onehot_training_labels), len(onehot_test_labels))
-  return numpy.asarray(onehot_training_labels), \
+  return labels_bmp, \
+         numpy.asarray(onehot_training_labels), \
          numpy.asarray(onehot_test_labels)
 
 def has_ways(tile):
+  #print "CHECKING FOR WAYS \\n {}".format(tile)
   for col in range(0, len(tile)):
     for row in range(0, len(tile[col])):
       if tile[col][row] == 1:
@@ -233,5 +244,7 @@ if __name__ == '__main__':
   naiper.download_naips()
   raster_data_path = 'data/naip/m_3807708_ne_18_1_20130924.tif'
   training_images, test_images, raster_dataset, rows, cols = read_naip(raster_data_path)
-  training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
+  labels_bmp, training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
+  save_naip_as_jpeg(raster_data_path, labels_bmp)
+
   train_neural_net(training_images, training_labels, test_images, test_labels)
