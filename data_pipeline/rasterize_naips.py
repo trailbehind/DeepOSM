@@ -8,6 +8,11 @@ from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
 tile_size = 12
+top_y = 1500
+bottom_y = 3500
+left_x = 2000
+right_x = 5500
+
 
 def read_naip(file_path):
   ''' 
@@ -36,8 +41,8 @@ def tile_naip(raster_dataset, bands_data):
   test_tiled_data = []
   # this code might be inefficient, maybe i'll care later, YOLO
   x = 0
-  for row in xrange(0, rows-tile_size, tile_size):
-    for col in xrange(0, cols-tile_size, tile_size):
+  for row in xrange(top_y, bottom_y-tile_size, tile_size):
+    for col in xrange(left_x, right_x-tile_size, tile_size):
       new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
       if x%2 == 0:
         training_tiled_data.append(new_tile)
@@ -104,14 +109,9 @@ def empty_tile_matrix(rows, cols):
       tile_matrix[x].append(0)     
   return tile_matrix
 
-#top_y = 2500
-#bottom_y = 3000
-#left_x = 2500
-#right_x = 3000
-
 def bounds_for_naip(raster_dataset, rows, cols):
-  sw = pixelToLatLng(raster_dataset, 0, rows-1)
-  ne = pixelToLatLng(raster_dataset, cols-1, 0)
+  sw = pixelToLatLng(raster_dataset, bottom_y, left_x)
+  ne = pixelToLatLng(raster_dataset, top_y, right_x)
   return {'sw': sw, 'ne': ne}
 
 def pixels_between(start_pixel, end_pixel, cols):
@@ -161,16 +161,17 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap):
   try:
       im = Image.open(raster_data_path)
       r, g, b, ir = im.split()
-      im = Image.merge("RGB", (r,g,b))
+      im = Image.merge("RGB", (ir,ir,ir))
       print "GENERATING JPEG for %s" % raster_data_path
-      
-      for row in range(0, len(way_bitmap)):
-        for col in range(0, len(way_bitmap[row])):
+      rows = len(way_bitmap)
+      cols = len(way_bitmap[0])
+      for col in range(0, cols):
+        for row in range(0, rows):
           if way_bitmap[row][col]:
             r, g, b = im.getpixel((row, col))
             im.putpixel((row, col), (255,0,0))
-          #elif row > top_y and row < bottom_y and col > left_x and col < right_x:
-          else:
+          elif row > top_y and row < bottom_y and col > left_x and col < right_x:
+          #else:
             r, g, b = im.getpixel((row, col))
             im.putpixel((row, col), (int(r*.2),int(g*.2),int(b*.2)))
       im.save(outfile, "JPEG")
@@ -194,12 +195,11 @@ def labels_for_bitmap(way_bitmap, tile_size):
 
   rows = len(way_bitmap)
   cols = len(way_bitmap[0])
-  print "way_bitmap is {} rows by {} cols".format(rows, cols)
   test_labels = []
   training_labels = []
   x = 0
-  for row in range(0, rows-tile_size, tile_size):
-    for col in range(0, cols-tile_size, tile_size):
+  for row in xrange(top_y, bottom_y-tile_size, tile_size):
+    for col in xrange(left_x, right_x-tile_size, tile_size):
       new_tile = way_bitmap[row:row+tile_size,col:col+tile_size]
       if has_ways(new_tile):
         #print "{} {} has ways".format(row, col)
