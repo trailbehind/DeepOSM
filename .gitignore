@@ -60,3 +60,8 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# big files
+*.pbf
+*.tif
+*.npy

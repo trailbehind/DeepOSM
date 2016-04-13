@@ -7,10 +7,13 @@
 import sys, os
 import boto3
 
-class NAIPDownloader:  
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
+NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
+
+class NAIPDownloader:
 
   def __init__(self):
-  	self.make_directory('data/naip/', full_path=True)
+  	self.make_directory(NAIP_DATA_DIR, full_path=True)
 
   def make_directory(self, new_dir, full_path=False):
     '''
@@ -33,13 +36,15 @@ class NAIPDownloader:
     return new_dir
 
   def download_naips(self):
+    # Return the full path downloaded to.
     s3_client = boto3.client('s3')
     filename = 'm_3807708_ne_18_1_20130924.tif'
-    full_path = '/Deep-OSM/data/naip/{}'.format(filename)
+    full_path = os.path.join(NAIP_DATA_DIR, filename)
     if os.path.exists(full_path):
       print("{} already downloaded".format(full_path))
     else:
       s3_client.download_file('aws-naip', 'md/2013/1m/rgbir/38077/{}'.format(filename), full_path, {'RequestPayer':'requester'})
+    return full_path
 
 if __name__ == '__main__':
   parameters_message = "parameters are: download"
@@ -50,4 +55,3 @@ if __name__ == '__main__':
   	naiper.download_naips()
   else:
     print(parameters_message)
-

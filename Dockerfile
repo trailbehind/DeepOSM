@@ -33,7 +33,16 @@ RUN cd /libosmium && mkdir build && cd build && cmake .. && make
 RUN git clone https://github.com/osmcode/pyosmium.git /pyosmium
 RUN cd /pyosmium && pwd && python setup.py install
 
+# Update PYTHONPATH
+ENV PYTHONPATH /Deep-OSM:/Deep-OSM/analysis:$PYTHONPATH
+ENV GEO_DATA_DIR /Deep-OSM/data
+
+# Jupyter has issues with being run directly:
+#    https://github.com/ipython/ipython/issues/7062
+# We just add a little wrapper script, and set up our jupyter config.
+COPY run_jupyter.sh /
+COPY jupyter_notebook_config.py /root/.jupyter/
+EXPOSE 8888
+
 ADD . /Deep-OSM
 WORKDIR /Deep-OSM
-
-RUN export PYTHONPATH=$PYTHONPATH:/Deep-OSM/analysis/
