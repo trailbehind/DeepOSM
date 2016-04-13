@@ -61,6 +61,19 @@ Alternately, development/research can be done via jupyter notebooks:
 make notebook
 ```
 
+To access the notebook via a browser on your host machine, find the IP VirtualBox is giving your
+default docker container by running:
+
+```bash
+docker-machine ls
+
+NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER    ERRORS
+default   *        virtualbox   Running   tcp://192.168.99.100:2376           v1.10.3
+```
+
+The notebook server is accessible via port 8888, so in this case you'd go to:
+http://192.168.99.100:8888
+
 ## Download NAIP, PBF, and Analyze
 
     python data_pipeline/rasterize_naips.py
