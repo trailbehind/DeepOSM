@@ -1,17 +1,17 @@
 import numpy, os
 from osgeo import gdal
+from PIL import Image
 from pyproj import Proj, transform
 from extract_ways import WayMap, download_file
 from download_naips import NAIPDownloader
-from PIL import Image
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
 tile_size = 12
-top_y = 1900
-bottom_y = 2900
-left_x = 1900
-right_x = 2900
+top_y = 2500
+bottom_y = 6800
+left_x = 500
+right_x = 4300
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, )
@@ -41,7 +41,6 @@ def tile_naip(raster_dataset, bands_data):
 
   training_tiled_data = []
   test_tiled_data = []
-  # this code might be inefficient, maybe i'll care later, YOLO
   x = 0
   for col in range(left_x, right_x-tile_size, tile_size):
     for row in range(top_y, bottom_y-tile_size, tile_size):
@@ -168,15 +167,13 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap):
       print "GENERATING JPEG for %s" % raster_data_path
       rows = len(way_bitmap)
       cols = len(way_bitmap[0])
-      for col in range(0, cols):
-        for row in range(0, rows):
+      for row in range(0, rows):
+        for col in range(0, cols):
           if way_bitmap[row][col]:
-            r, g, b = im.getpixel((row, col))
-            im.putpixel((row, col), (255,0,0))
+            im.putpixel((col, row), (255,0,0))
           elif row > top_y and row < bottom_y and col > left_x and col < right_x:
-          #else:
-            r, g, b = im.getpixel((row, col))
-            im.putpixel((row, col), (int(r*.2),int(g*.2),int(b*.2)))
+            r, g, b = im.getpixel((col, row))
+            im.putpixel((col, row), (int(r*.2),int(g*.2),int(b*.2)))
       im.save(outfile, "JPEG")
 
   except Exception, e:
@@ -190,20 +187,16 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   waymap.run_extraction(file_path)
   way_bitmap = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols))
   #save_naip_as_jpeg(raster_data_path, way_bitmap)
-  return labels_for_bitmap(way_bitmap, tile_size)
+  return labels_for_bitmap(way_bitmap, tile_size, rows, cols)
 
-def labels_for_bitmap(way_bitmap, tile_size):
-
-  labels_bmp = empty_tile_matrix(len(way_bitmap), len(way_bitmap[0]))
-
-  rows = len(way_bitmap)
-  cols = len(way_bitmap[0])
+def labels_for_bitmap(way_bitmap, tile_size, rows, cols):
+  labels_bmp = empty_tile_matrix(rows, cols)
   test_labels = []
   training_labels = []
   x = 0
-  for col in range(left_x, right_x-tile_size, tile_size):
-    for row in range(top_y, bottom_y-tile_size, tile_size):
-      new_tile = way_bitmap[row:row+tile_size, col:col+tile_size]
+  for row in range(top_y, bottom_y-tile_size, tile_size):
+    for col in range(left_x, right_x-tile_size, tile_size):
+      new_tile = way_bitmap[col:col+tile_size, row:row+tile_size]
       if has_ways(new_tile):
         for c in range(col,col+tile_size):
           for r in range(row,row+tile_size):
@@ -234,7 +227,6 @@ def labels_for_bitmap(way_bitmap, tile_size):
          numpy.asarray(onehot_test_labels)
 
 def has_ways(tile):
-  #print "CHECKING FOR WAYS \\n {}".format(tile)
   for col in range(0, len(tile)):
     for row in range(0, len(tile[col])):
       if tile[col][row] == 1:
@@ -247,5 +239,4 @@ if __name__ == '__main__':
   training_images, test_images, raster_dataset, rows, cols = read_naip(raster_data_path)
   labels_bmp, training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
   save_naip_as_jpeg(raster_data_path, labels_bmp)
-
   train_neural_net(training_images, training_labels, test_images, test_labels)
