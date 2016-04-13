@@ -3,7 +3,7 @@
 Detect roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. The gist:
 
 * Download a chunk of satellite imagery
-* Download ways (i.e. road/trails) for that area from OSM 
+* Download ways (i.e. road/trails) for that area from OSM
 * Generate training and evaluation data
 
 This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either.
@@ -22,7 +22,7 @@ For the experiment 2, I decided to tile/clip [NAIP images](http://www.fsa.usda.g
 
 When I switched to NAIPs, it no longer made sense to use pre-sliced vector tiles for the training labels. Instead, I'm extracting OSM data from PBF extracts, and manually clipping them to match arbitrary NAIP tiles.
 
-I am currently working on this stage. The [NAIPs come from a requester pays bucket on S3 set up by Mapbox](http://www.slideshare.net/AmazonWebServices/open-data-innovation-building-on-open-data-sets-for-innovative-applications), and the OSM extracts come [from geofabrik](http://download.geofabrik.de/). 
+I am currently working on this stage. The [NAIPs come from a requester pays bucket on S3 set up by Mapbox](http://www.slideshare.net/AmazonWebServices/open-data-innovation-building-on-open-data-sets-for-innovative-applications), and the OSM extracts come [from geofabrik](http://download.geofabrik.de/).
 
 ## Install Requirements
 
@@ -41,17 +41,25 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
 ### Install Docker
 
-I also needed to set my VirtualBox default memory to 4GB, from the default 1GB, to get libosmium to work. 
+I also needed to set my VirtualBox default memory to 4GB, from the default 1GB, to get libosmium to work.
 
 Then, I needed to up it again, to 16 GB, to get the neural net to work.
 
-## Run Scripts 
+## Run Scripts
 
 Start Docker, then run:
 
-    make dev
+```bash
+make dev
+```
 
 Then the following Python script will work in the Docker machine.
+
+Alternately, development/research can be done via jupyter notebooks:
+
+```bash
+make notebook
+```
 
 ## Download NAIP, PBF, and Analyze
 
@@ -69,14 +77,14 @@ It will produce a JPEG of the ways overlaid on the tiff, like this:
 
 I first trained on a set of Mapzen vector tiles, which conveniently map onto Mapquest imagery tiles. This was the simplest possible thing I thought to do... this data jammed right into the [Tensorflow](http://tensorflow.org) tutorials.
 
-The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse. There is also some chance the output was just random and buggy too. 
+The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse. There is also some chance the output was just random and buggy too.
 
 ## Install Requirements
 
 This has been run on OSX Yosemite (10.10.5).
 
     brew install libjpeg
-    pip3 install -r requirements.txt 
+    pip3 install -r requirements.txt
     sudo easy_install --upgrade six
 
 Install globalmaptiles.py

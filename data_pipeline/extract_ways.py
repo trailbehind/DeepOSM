@@ -10,6 +10,8 @@ import shapely.wkb as wkblib
 # A global factory that creates WKB from a osmium geometry
 wkbfab = o.geom.WKBFactory()
 
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
+
 class WayMap():
     def __init__(self):
       pass
@@ -39,11 +41,11 @@ class WayExtracter(o.SimpleHandler):
     def relation(self, r):
           relation_dict = {'id': r.id}
           for tag in r.tags:
-            print "({} {})".format(tag.k, tag.v)        
+            print "({} {})".format(tag.k, tag.v)
           print '\n'
     '''
 
-    def way(self, w): 
+    def way(self, w):
         is_highway = False
         name = ''
 
@@ -55,15 +57,15 @@ class WayExtracter(o.SimpleHandler):
         if not is_highway:
           return
 
-        way_dict = {'visible': w.visible, 
+        way_dict = {'visible': w.visible,
                     'deleted': w.deleted,
-                    'uid': w.uid, 
-                    'ends_have_same_id': w.ends_have_same_id(), 
-                    'id': w.id, 
+                    'uid': w.uid,
+                    'ends_have_same_id': w.ends_have_same_id(),
+                    'id': w.id,
                     'tags':[]}
         for tag in w.tags:
           way_dict['tags'].append((tag.k, tag.v))
-        
+
         wkb = wkbfab.create_linestring(w)
         line = wkblib.loads(wkb, hex=True)
         reverse_points = []
@@ -71,15 +73,16 @@ class WayExtracter(o.SimpleHandler):
           reverse_points.append([point[1],point[0]])
         way_dict['linestring'] = reverse_points
         self.ways.append(way_dict)
-   
+
 def download_file(url):
     local_filename = url.split('/')[-1]
+    full_local_filename = os.path.join(GEO_DATA_DIR, local_filename)
     r = requests.get(url, stream=True)
-    with open(local_filename, 'wb') as f:
-      for chunk in r.iter_content(chunk_size=1024): 
+    with open(full_local_filename, 'wb') as f:
+      for chunk in r.iter_content(chunk_size=1024):
         if chunk: # filter out keep-alive new chunks
           f.write(chunk)
-    return local_filename
+    return full_local_filename
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:

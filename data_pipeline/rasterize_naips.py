@@ -13,12 +13,14 @@ bottom_y = 3500
 left_x = 2000
 right_x = 5500
 
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
+DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, )
 
 def read_naip(file_path):
-  ''' 
+  '''
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
-  raster_dataset = gdal.Open(raster_data_path, gdal.GA_ReadOnly)
+  raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
   coord = pixelToLatLng(raster_dataset, 0, 0)
   proj = raster_dataset.GetProjectionRef()
   bands_data = []
@@ -28,7 +30,7 @@ def read_naip(file_path):
       bands_data.append(band.ReadAsArray())
 
   bands_data = numpy.dstack(bands_data)
-  
+
   training_images, test_images = tile_naip(raster_dataset, bands_data)
   return training_images, test_images, raster_dataset, bands_data.shape[0], bands_data.shape[1]
 
@@ -47,9 +49,9 @@ def tile_naip(raster_dataset, bands_data):
       if x%2 == 0:
         training_tiled_data.append(new_tile)
       else:
-        test_tiled_data.append(new_tile)        
+        test_tiled_data.append(new_tile)
       x += 1
-     
+
   shaped_training_data = numpy.array(training_tiled_data)
   shaped_test_data = numpy.array(test_tiled_data)
   tiles, h, w, bands = shaped_training_data.shape
@@ -59,12 +61,12 @@ def tile_naip(raster_dataset, bands_data):
   return shaped_training_data, shaped_test_data
 
 def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
-  ''' 
+  '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
   try:
-    arr = numpy.load('./data/way_bitmap.npy')
+    arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
     print "CACHED: read label data from disk"
     return arr
   except:
@@ -75,6 +77,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
   ways_on_naip = []
   for way in ways:
     for point_tuple in way['linestring']:
+      #print(bounds, point_tuple, bounds_contains_node(bounds, point_tuple))
       if bounds_contains_node(bounds, point_tuple):
         ways_on_naip.append(way)
         break
@@ -82,8 +85,8 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
 
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):
-      current_point = w['linestring'][x] 
-      next_point = w['linestring'][x+1]  
+      current_point = w['linestring'][x]
+      next_point = w['linestring'][x+1]
       if not bounds_contains_node(bounds, current_point) or \
          not bounds_contains_node(bounds, next_point):
         continue
@@ -95,18 +98,18 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
           continue
         else:
           way_bitmap[p[0]][p[1]] = 1
-  numpy.save('./data/way_bitmap', way_bitmap)
+  numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
   return way_bitmap
 
 def empty_tile_matrix(rows, cols):
-  ''' 
+  '''
       initialize the array to all zeroes
   '''
-  tile_matrix = []    
+  tile_matrix = []
   for x in range(0,rows):
     tile_matrix.append([])
     for y in range(0,cols):
-      tile_matrix[x].append(0)     
+      tile_matrix[x].append(0)
   return tile_matrix
 
 def bounds_for_naip(raster_dataset, rows, cols):
@@ -117,7 +120,7 @@ def bounds_for_naip(raster_dataset, rows, cols):
 def pixels_between(start_pixel, end_pixel, cols):
     '''
         returns a list of pixel tuples between current and next, inclusive
-    ''' 
+    '''
     pixels = []
     if end_pixel[0] - start_pixel[0] == 0:
       for y in range(min(end_pixel[1], start_pixel[1]),
@@ -127,7 +130,7 @@ def pixels_between(start_pixel, end_pixel, cols):
         p.append(y)
         pixels.append(p)
       return pixels
-      
+
     slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
     offset = end_pixel[1] - slope*end_pixel[0]
 
@@ -181,7 +184,7 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap):
 
 def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   waymap = WayMap()
-  file_path = '/Deep-OSM/district-of-columbia-latest.osm.pbf'
+  file_path = os.path.join(GEO_DATA_DIR, 'district-of-columbia-latest.osm.pbf')
   if not os.path.exists(file_path):
     file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
   waymap.run_extraction(file_path)
@@ -190,7 +193,7 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   return labels_for_bitmap(way_bitmap, tile_size)
 
 def labels_for_bitmap(way_bitmap, tile_size):
-  
+
   labels_bmp = empty_tile_matrix(len(way_bitmap), len(way_bitmap[0]))
 
   rows = len(way_bitmap)
@@ -209,7 +212,7 @@ def labels_for_bitmap(way_bitmap, tile_size):
       if x%2 == 0:
         training_labels.append(new_tile)
       else:
-        test_labels.append(new_tile)        
+        test_labels.append(new_tile)
       x += 1
 
   onehot_test_labels = []
@@ -241,8 +244,7 @@ def has_ways(tile):
 
 if __name__ == '__main__':
   naiper = NAIPDownloader()
-  naiper.download_naips()
-  raster_data_path = 'data/naip/m_3807708_ne_18_1_20130924.tif'
+  raster_data_path = naiper.download_naips()
   training_images, test_images, raster_dataset, rows, cols = read_naip(raster_data_path)
   labels_bmp, training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
   save_naip_as_jpeg(raster_data_path, labels_bmp)
