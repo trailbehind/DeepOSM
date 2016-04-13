@@ -8,10 +8,10 @@ from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
 tile_size = 12
-top_y = 1500
-bottom_y = 3500
-left_x = 2000
-right_x = 5500
+top_y = 1900
+bottom_y = 2900
+left_x = 1900
+right_x = 2900
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, )
@@ -43,8 +43,8 @@ def tile_naip(raster_dataset, bands_data):
   test_tiled_data = []
   # this code might be inefficient, maybe i'll care later, YOLO
   x = 0
-  for row in xrange(top_y, bottom_y-tile_size, tile_size):
-    for col in xrange(left_x, right_x-tile_size, tile_size):
+  for col in range(left_x, right_x-tile_size, tile_size):
+    for row in range(top_y, bottom_y-tile_size, tile_size):
       new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
       if x%2 == 0:
         training_tiled_data.append(new_tile)
@@ -81,7 +81,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
       if bounds_contains_node(bounds, point_tuple):
         ways_on_naip.append(way)
         break
-  print("EXTRACTED {} highways that overlap the NAIP, out of {} ways in the PBF, ".format(len(ways_on_naip), len(ways)))
+  print("EXTRACTED {} highways that overlap the NAIP, out of {} ways in the PBF".format(len(ways_on_naip), len(ways)))
 
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):
@@ -113,8 +113,8 @@ def empty_tile_matrix(rows, cols):
   return tile_matrix
 
 def bounds_for_naip(raster_dataset, rows, cols):
-  sw = pixelToLatLng(raster_dataset, bottom_y, left_x)
-  ne = pixelToLatLng(raster_dataset, top_y, right_x)
+  sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
+  ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
 
 def pixels_between(start_pixel, end_pixel, cols):
@@ -188,7 +188,7 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   if not os.path.exists(file_path):
     file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
   waymap.run_extraction(file_path)
-  way_bitmap = way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols)
+  way_bitmap = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols))
   #save_naip_as_jpeg(raster_data_path, way_bitmap)
   return labels_for_bitmap(way_bitmap, tile_size)
 
@@ -201,13 +201,12 @@ def labels_for_bitmap(way_bitmap, tile_size):
   test_labels = []
   training_labels = []
   x = 0
-  for row in xrange(top_y, bottom_y-tile_size, tile_size):
-    for col in xrange(left_x, right_x-tile_size, tile_size):
-      new_tile = way_bitmap[row:row+tile_size,col:col+tile_size]
+  for col in range(left_x, right_x-tile_size, tile_size):
+    for row in range(top_y, bottom_y-tile_size, tile_size):
+      new_tile = way_bitmap[row:row+tile_size, col:col+tile_size]
       if has_ways(new_tile):
-        #print "{} {} has ways".format(row, col)
-        for r in range(row,row+tile_size):
-          for c in range(col,col+tile_size):
+        for c in range(col,col+tile_size):
+          for r in range(row,row+tile_size):
             labels_bmp[r][c] = 1
       if x%2 == 0:
         training_labels.append(new_tile)
