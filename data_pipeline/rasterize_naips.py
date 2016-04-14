@@ -37,7 +37,7 @@ def read_naip(file_path):
 def tile_naip(raster_dataset, bands_data):
   rows, cols, n_bands = bands_data.shape
   print("OPENED NAIP with {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
-  print("GEO-BOUNDS for image is {}".format(bounds_for_naip(raster_dataset, rows, cols)))
+  print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset, rows, cols)))
 
   training_tiled_data = []
   test_tiled_data = []
@@ -156,7 +156,7 @@ def bounds_contains_node(bounds, point_tuple):
     return False
   return True
 
-def save_naip_as_jpeg(raster_data_path, way_bitmap, labels_bitmap, path=None):
+def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels, path=None):
   '''
       http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
   '''
@@ -170,15 +170,34 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, labels_bitmap, path=None):
   rows = len(way_bitmap)
   cols = len(way_bitmap[0])
   print "{} rows vs {} cols".format(rows, cols)
+
+  # shade bounds
   for row in range(0, rows):
     for col in range(0, cols):
       if way_bitmap[row][col]:
         im.putpixel((col, row), (255,0,0))
-      elif labels_bitmap[row][col]:
-        im.putpixel((col, row), (255,255,0))
       elif row > top_y and row < bottom_y and col > left_x and col < right_x:
         r, g, b = im.getpixel((col, row))
         im.putpixel((col, row), (int(r*.2),int(g*.2),int(b*.2)))
+
+  tiles_in_row = cols / tile_size
+
+  # shade training labels
+  index = 0
+  for label in training_labels:
+    for x in range(tile_size):
+      for y in range(tile_size):
+        col = x + left_x + ((index % tiles_in_row))
+        row = y + top_y + index / tiles_in_row * tile_size
+        print "{} {} -> {} {}".format(x,y, col, row)
+        im.putpixel((col, row), (255,255,0))
+    index += 2
+
+  # shade training data
+  for row in range(0, rows):
+    for col in range(0, cols):
+      if way_bitmap[row][col]:
+        im.putpixel((col, row), (255,0,0))
   im.save(outfile, "JPEG")
 
 def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
@@ -239,5 +258,5 @@ if __name__ == '__main__':
   training_images, test_images, raster_dataset, rows, cols = read_naip(raster_data_path)
   way_bitmap, labels_bitmap, training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
   print "raster has {} rows and {} cols".format(rows, cols)
-  save_naip_as_jpeg(raster_data_path, way_bitmap, labels_bitmap, path="data/naip/labels.jpg")
+  save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels, path="data/naip/labels.jpg")
   #train_neural_net(training_images, training_labels, test_images, test_labels)
