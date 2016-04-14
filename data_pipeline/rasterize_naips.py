@@ -14,7 +14,7 @@ left_x = 500
 right_x = 1000
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
-DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, )
+DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
 
 def read_naip(file_path):
   '''
@@ -97,6 +97,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
           continue
         else:
           way_bitmap[p[1]][p[0]] = 1
+  print "caching way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
   numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
   return way_bitmap
 
