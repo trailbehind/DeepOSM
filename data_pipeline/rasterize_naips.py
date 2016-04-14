@@ -9,9 +9,9 @@ from label_chunks_cnn import train_neural_net
 
 tile_size = 12
 top_y = 2500
-bottom_y = 6800
+bottom_y = 3500
 left_x = 500
-right_x = 4300
+right_x = 1000
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, )
@@ -71,7 +71,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
   except:
     print "CREATING LABELS"
 
-  way_bitmap = empty_tile_matrix(cols, rows)
+  way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
   for way in ways:
@@ -96,7 +96,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
         if p[0] < 0 or p[1] < 0 or p[0] >= cols or p[1] >= rows:
           continue
         else:
-          way_bitmap[p[0]][p[1]] = 1
+          way_bitmap[p[1]][p[0]] = 1
   numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
   return way_bitmap
 
@@ -155,29 +155,30 @@ def bounds_contains_node(bounds, point_tuple):
     return False
   return True
 
-def save_naip_as_jpeg(raster_data_path, way_bitmap):
+def save_naip_as_jpeg(raster_data_path, way_bitmap, labels_bitmap, path=None):
   '''
       http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
   '''
-  outfile = os.path.splitext(raster_data_path)[0] + ".jpg"
-  try:
-      im = Image.open(raster_data_path)
-      r, g, b, ir = im.split()
-      im = Image.merge("RGB", (ir,ir,ir))
-      print "GENERATING JPEG for %s" % raster_data_path
-      rows = len(way_bitmap)
-      cols = len(way_bitmap[0])
-      for row in range(0, rows):
-        for col in range(0, cols):
-          if way_bitmap[row][col]:
-            im.putpixel((col, row), (255,0,0))
-          elif row > top_y and row < bottom_y and col > left_x and col < right_x:
-            r, g, b = im.getpixel((col, row))
-            im.putpixel((col, row), (int(r*.2),int(g*.2),int(b*.2)))
-      im.save(outfile, "JPEG")
-
-  except Exception, e:
-      print e
+  outfile = path
+  if not outfile:
+    outfile = os.path.splitext(raster_data_path)[0] + ".jpg"
+  im = Image.open(raster_data_path)
+  r, g, b, ir = im.split()
+  im = Image.merge("RGB", (ir,ir,ir))
+  print "GENERATING JPEG for %s" % raster_data_path
+  rows = len(way_bitmap)
+  cols = len(way_bitmap[0])
+  print "{} rows vs {} cols".format(rows, cols)
+  for row in range(0, rows):
+    for col in range(0, cols):
+      if way_bitmap[row][col]:
+        im.putpixel((col, row), (255,0,0))
+      elif labels_bitmap[row][col]:
+        im.putpixel((col, row), (255,255,0))
+      elif row > top_y and row < bottom_y and col > left_x and col < right_x:
+        r, g, b = im.getpixel((col, row))
+        im.putpixel((col, row), (int(r*.2),int(g*.2),int(b*.2)))
+  im.save(outfile, "JPEG")
 
 def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   waymap = WayMap()
@@ -185,22 +186,20 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   if not os.path.exists(file_path):
     file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
   waymap.run_extraction(file_path)
-  way_bitmap = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols))
-  #save_naip_as_jpeg(raster_data_path, way_bitmap)
-  return labels_for_bitmap(way_bitmap, tile_size, rows, cols)
 
-def labels_for_bitmap(way_bitmap, tile_size, rows, cols):
-  labels_bmp = empty_tile_matrix(rows, cols)
+  labels_bitmap = empty_tile_matrix(rows, cols)
   test_labels = []
   training_labels = []
   x = 0
+  way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols))
+
   for row in range(top_y, bottom_y-tile_size, tile_size):
     for col in range(left_x, right_x-tile_size, tile_size):
-      new_tile = way_bitmap[col:col+tile_size, row:row+tile_size]
+      new_tile = way_bitmap_npy[row:row+tile_size, col:col+tile_size]
       if has_ways(new_tile):
-        for c in range(col,col+tile_size):
-          for r in range(row,row+tile_size):
-            labels_bmp[r][c] = 1
+        for r in range(row,row+tile_size):
+          for c in range(col,col+tile_size):
+            labels_bitmap[r][c] = 1
       if x%2 == 0:
         training_labels.append(new_tile)
       else:
@@ -222,7 +221,7 @@ def labels_for_bitmap(way_bitmap, tile_size, rows, cols):
       onehot_training_labels.append([1,0])
 
   print "ONE HOT for way presence - {} test labels and {} training labels in".format(len(onehot_training_labels), len(onehot_test_labels))
-  return labels_bmp, \
+  return way_bitmap_npy, labels_bitmap, \
          numpy.asarray(onehot_training_labels), \
          numpy.asarray(onehot_test_labels)
 
@@ -237,6 +236,7 @@ if __name__ == '__main__':
   naiper = NAIPDownloader()
   raster_data_path = naiper.download_naips()
   training_images, test_images, raster_dataset, rows, cols = read_naip(raster_data_path)
-  labels_bmp, training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
-  save_naip_as_jpeg(raster_data_path, labels_bmp)
-  train_neural_net(training_images, training_labels, test_images, test_labels)
+  way_bitmap, labels_bitmap, training_labels, test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
+  print "raster has {} rows and {} cols".format(rows, cols)
+  save_naip_as_jpeg(raster_data_path, way_bitmap, labels_bitmap, path="data/naip/labels.jpg")
+  #train_neural_net(training_images, training_labels, test_images, test_labels)
