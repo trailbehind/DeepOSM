@@ -6,6 +6,7 @@ from extract_ways import WayMap, download_file
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
+import random
 
 tile_size = 12
 top_y = 2500
@@ -45,7 +46,7 @@ def tile_naip(raster_dataset, bands_data):
   for col in range(left_x, right_x-tile_size, tile_size):
     for row in range(top_y, bottom_y-tile_size, tile_size):
       new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
-      if row > (bottom_y-top_y):
+      if random.random() < .7:#row > (bottom_y-top_y)*.75:
         training_tiled_data.append((new_tile,(col, row)))
       else:
         test_tiled_data.append((new_tile,(col, row)))
@@ -175,9 +176,9 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
       for y in range(start_y, start_y+tile_size):
         r, g, b, a = im.getpixel((x, y))
         if has_ways(label[0]):
-          im.putpixel((x, y), (r, g, b, 200))
+          im.putpixel((x, y), (r, g, b, 255))
         else:
-          im.putpixel((x, y), (r, g, 255, 200))
+          im.putpixel((x, y), (r, g, 255, 255))
 
   # shade test labels
   for label in test_labels:
@@ -187,9 +188,9 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
       for y in range(start_y, start_y+tile_size):
         r, g, b, a = im.getpixel((x, y))
         if has_ways(label[0]):
-          im.putpixel((x, y), (r, g, b, 100))
+          im.putpixel((x, y), (r, g, b, 255))
         else:
-          im.putpixel((x, y), (r, 255, b, 100))
+          im.putpixel((x, y), (r, 255, b, 255))
 
   # show raw data that spawned the labels
   for row in range(0, rows):
@@ -218,7 +219,7 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
         for r in range(row,row+tile_size):
           for c in range(col,col+tile_size):
             labels_bitmap[r][c] = 1
-      if row  > (bottom_y-top_y):
+      if random.random() < .7:#row > (bottom_y-top_y)*.75:
         training_labels.append((new_tile,(col, row)))
       else:
         test_labels.append((new_tile,(col, row)))
@@ -273,25 +274,32 @@ if __name__ == '__main__':
   test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
 
   # this step can take a long time, especially for the whole image or a large chunk
+  '''
   save_naip_as_jpeg(raster_data_path, 
                     way_bitmap, 
                     training_labels, 
                     test_labels, path="data/naip/labels.png")
-
-  tiles = len(training_labels)
-  h = len(training_labels[0])
-  w = len(training_labels[0][0])
+  '''
 
   onehot_training_labels, \
   onehot_test_labels = format_as_onehot_arrays(training_labels, test_labels)
 
-  print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} from the IR band, 50\% test data".format(tiles*2, h, w))
+  tiles = len(training_labels)
+  # how to log this better?
+  h = len(training_labels[0])
+  w = len(training_labels[0])
+  print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} from the IR band".format(tiles*2, h, w))
+
+  npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
+  npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
+  npy_training_labels = numpy.asarray(onehot_training_labels)
+  npy_test_labels = numpy.asarray(onehot_test_labels)
 
   # train and test the neural net
-  train_neural_net(numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images]), 
-                   numpy.asarray(onehot_training_labels), 
-                   numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images]), 
-                   numpy.asarray(onehot_test_labels))
+  train_neural_net(npy_training_images, 
+                   npy_training_labels, 
+                   npy_test_images, 
+                   npy_test_labels)
 
 
   
