@@ -25,6 +25,7 @@ class DataSet(object):
 
         # Convert shape from [num examples, rows, columns, depth]
         # to [num examples, rows*columns] (assuming depth == 1)
+        print images.shape
         assert images.shape[3] == 1
 
         # Store the width and height of the images before flattening it, if only for reference.

@@ -42,15 +42,13 @@ def tile_naip(raster_dataset, bands_data):
 
   training_tiled_data = []
   test_tiled_data = []
-  x = 0
   for col in range(left_x, right_x-tile_size, tile_size):
     for row in range(top_y, bottom_y-tile_size, tile_size):
       new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
-      if row > (bottom_y-top_y)/tile_size/2:
+      if row > (bottom_y-top_y):
         training_tiled_data.append((new_tile,(col, row)))
       else:
         test_tiled_data.append((new_tile,(col, row)))
-      x += 1
 
   return training_tiled_data, test_tiled_data
 
@@ -191,7 +189,7 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
         if has_ways(label[0]):
           im.putpixel((x, y), (r, g, b, 100))
         else:
-          im.putpixel((x, y), (r, g, 255, 100))
+          im.putpixel((x, y), (r, 255, b, 100))
 
   # show raw data that spawned the labels
   for row in range(0, rows):
@@ -220,7 +218,7 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
         for r in range(row,row+tile_size):
           for c in range(col,col+tile_size):
             labels_bitmap[r][c] = 1
-      if row > (bottom_y-top_y)/tile_size/2:
+      if row  > (bottom_y-top_y):
         training_labels.append((new_tile,(col, row)))
       else:
         test_labels.append((new_tile,(col, row)))
@@ -274,6 +272,7 @@ if __name__ == '__main__':
   training_labels, \
   test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
 
+  # this step can take a long time, especially for the whole image or a large chunk
   save_naip_as_jpeg(raster_data_path, 
                     way_bitmap, 
                     training_labels, 
@@ -285,13 +284,14 @@ if __name__ == '__main__':
 
   onehot_training_labels, \
   onehot_test_labels = format_as_onehot_arrays(training_labels, test_labels)
+
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} from the IR band, 50\% test data".format(tiles*2, h, w))
 
   # train and test the neural net
-  train_neural_net(numpy.asarray([img_loc_tuple[0] for img_loc_tuple in training_images]), 
-                    numpy.asarray(onehot_training_labels), 
-                    numpy.asarray([img_loc_tuple[0] for img_loc_tuple in test_images]), 
-                    numpy.asarray(onehot_test_labels))
+  train_neural_net(numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images]), 
+                   numpy.asarray(onehot_training_labels), 
+                   numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images]), 
+                   numpy.asarray(onehot_test_labels))
 
 
   
