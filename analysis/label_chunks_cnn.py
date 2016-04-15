@@ -77,7 +77,7 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
   sess.run(tf.initialize_all_variables())
 
-  batch_size = 100
+  batch_size = 1000
   for i in range(int(len(train_images)/batch_size)):
     batch = data_sets.train.next_batch(batch_size)
     #if i%5 == 0:
