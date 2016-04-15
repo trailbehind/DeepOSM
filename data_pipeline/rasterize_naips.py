@@ -6,7 +6,6 @@ from extract_ways import WayMap, download_file
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
-import random
 
 tile_size = 12
 top_y = 2500
@@ -46,7 +45,7 @@ def tile_naip(raster_dataset, bands_data):
   for col in range(left_x, right_x-tile_size, tile_size):
     for row in range(top_y, bottom_y-tile_size, tile_size):
       new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
-      if random.random() < .7:#row > (bottom_y-top_y)*.75:
+      if row > (bottom_y-top_y)*.75:
         training_tiled_data.append((new_tile,(col, row)))
       else:
         test_tiled_data.append((new_tile,(col, row)))
@@ -219,7 +218,7 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
         for r in range(row,row+tile_size):
           for c in range(col,col+tile_size):
             labels_bitmap[r][c] = 1
-      if random.random() < .7:#row > (bottom_y-top_y)*.75:
+      if row  > (bottom_y-top_y)*.75:
         training_labels.append((new_tile,(col, row)))
       else:
         test_labels.append((new_tile,(col, row)))
