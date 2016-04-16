@@ -11,7 +11,7 @@ import tensorflow.python.platform
 import numpy
 
 
-def train_neural_net(train_images, train_labels, test_images, test_labels):  
+def train_neural_net(image_size, train_images, train_labels, test_images, test_labels):  
   data_sets = DataSets()
   data_sets.train = DataSet(train_images, train_labels, dtype=tf.uint8)
   data_sets.test = DataSet(test_images, test_labels, dtype=tf.uint8)
@@ -34,7 +34,6 @@ def train_neural_net(train_images, train_labels, test_images, test_labels):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
 
-  image_size = 12
   # placeholder for inputs
   x = tf.placeholder("float", shape=[None, image_size*image_size])
 

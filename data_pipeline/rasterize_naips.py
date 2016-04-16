@@ -1,4 +1,5 @@
 import numpy, os
+from random import shuffle
 from osgeo import gdal
 from PIL import Image
 from pyproj import Proj, transform
@@ -7,11 +8,24 @@ from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
-tile_size = 12
-top_y = 2500
-bottom_y = 6500
-left_x = 500
-right_x = 4000
+# tile the NAIP and training data into NxN tiles with this dimension
+TILE_SIZE = 12
+
+# the remainder is allocated as test data
+PERCENT_FOR_TRAINING_DATA = .8
+
+'''
+big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
+TOP_Y = 2500
+BOTTOM_Y = 6500
+LEFT_X = 500
+RIGHT_X = 4000
+'''
+
+TOP_Y = 2500
+BOTTOM_Y = 3500
+LEFT_X = 500
+RIGHT_X = 1000
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
@@ -42,10 +56,10 @@ def tile_naip(raster_dataset, bands_data):
 
   training_tiled_data = []
   test_tiled_data = []
-  for col in range(left_x, right_x-tile_size, tile_size):
-    for row in range(top_y, bottom_y-tile_size, tile_size):
-      new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:1]
-      if row > (bottom_y-top_y)*.75:
+  for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
+    for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
+      new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:1]
+      if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
         training_tiled_data.append((new_tile,(col, row)))
       else:
         test_tiled_data.append((new_tile,(col, row)))
@@ -106,8 +120,8 @@ def empty_tile_matrix(rows, cols):
   return tile_matrix
 
 def bounds_for_naip(raster_dataset, rows, cols):
-  sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
-  ne = pixelToLatLng(raster_dataset, right_x, top_y)
+  sw = pixelToLatLng(raster_dataset, LEFT_X, BOTTOM_Y)
+  ne = pixelToLatLng(raster_dataset, RIGHT_X, TOP_Y)
   return {'sw': sw, 'ne': ne}
 
 def pixels_between(start_pixel, end_pixel, cols):
@@ -171,8 +185,8 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
   for label in training_labels:
     start_x = label[1][0]
     start_y = label[1][1]
-    for x in range(start_x, start_x+tile_size):
-      for y in range(start_y, start_y+tile_size):
+    for x in range(start_x, start_x+TILE_SIZE):
+      for y in range(start_y, start_y+TILE_SIZE):
         r, g, b, a = im.getpixel((x, y))
         if has_ways(label[0]):
           im.putpixel((x, y), (r, g, b, 255))
@@ -183,8 +197,8 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
   for label in test_labels:
     start_x = label[1][0]
     start_y = label[1][1]
-    for x in range(start_x, start_x+tile_size):
-      for y in range(start_y, start_y+tile_size):
+    for x in range(start_x, start_x+TILE_SIZE):
+      for y in range(start_y, start_y+TILE_SIZE):
         r, g, b, a = im.getpixel((x, y))
         if has_ways(label[0]):
           im.putpixel((x, y), (r, g, b, 255))
@@ -211,14 +225,14 @@ def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
   training_labels = []
   way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols))
 
-  for row in range(top_y, bottom_y-tile_size, tile_size):
-    for col in range(left_x, right_x-tile_size, tile_size):
-      new_tile = way_bitmap_npy[row:row+tile_size, col:col+tile_size]
+  for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
+    for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
+      new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
       if has_ways(new_tile):
-        for r in range(row,row+tile_size):
-          for c in range(col,col+tile_size):
+        for r in range(row,row+TILE_SIZE):
+          for c in range(col,col+TILE_SIZE):
             labels_bitmap[r][c] = 1
-      if row  > (bottom_y-top_y)*.75:
+      if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
         training_labels.append((new_tile,(col, row)))
       else:
         test_labels.append((new_tile,(col, row)))
@@ -247,6 +261,7 @@ def format_as_onehot_arrays(training_labels, test_labels):
   print "ONE HOT for way presence - {} test labels and {} training labels in".format(len(onehot_training_labels), len(onehot_test_labels))
   return onehot_training_labels, onehot_test_labels
 
+
 def has_ways(tile):
   '''
      returns true if any pixel on the NxN tile is set to 1
@@ -256,6 +271,20 @@ def has_ways(tile):
       if tile[col][row] == 1:
         return True
   return False
+
+def shuffle_in_unison(a, b):
+  '''
+      http://stackoverflow.com/questions/11765061/better-way-to-shuffle-two-related-lists
+  '''
+  a_shuf = []
+  b_shuf = []
+  index_shuf = range(len(a))
+  shuffle(index_shuf)
+  for i in index_shuf:
+      a_shuf.append(a[i])
+      b_shuf.append(b[i])
+  return a_shuf, b_shuf
+
 
 if __name__ == '__main__':
   
@@ -272,16 +301,14 @@ if __name__ == '__main__':
   training_labels, \
   test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
 
+  test_images, test_labels = shuffle_in_unison(test_images, test_labels)
+  training_images, training_labels = shuffle_in_unison(training_images, training_labels)
+
   # this step can take a long time, especially for the whole image or a large chunk
-  '''
   save_naip_as_jpeg(raster_data_path, 
                     way_bitmap, 
                     training_labels, 
                     test_labels, path="data/naip/labels.png")
-  '''
-
-  onehot_training_labels, \
-  onehot_test_labels = format_as_onehot_arrays(training_labels, test_labels)
 
   tiles = len(training_labels)
   # how to log this better?
@@ -289,13 +316,17 @@ if __name__ == '__main__':
   w = len(training_labels[0])
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} from the IR band".format(tiles*2, h, w))
 
+  onehot_training_labels, \
+  onehot_test_labels = format_as_onehot_arrays(training_labels, test_labels)
+
   npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
   npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
   npy_training_labels = numpy.asarray(onehot_training_labels)
   npy_test_labels = numpy.asarray(onehot_test_labels)
 
   # train and test the neural net
-  train_neural_net(npy_training_images, 
+  train_neural_net(TILE_SIZE,
+                   npy_training_images, 
                    npy_training_labels, 
                    npy_test_images, 
                    npy_test_labels)
