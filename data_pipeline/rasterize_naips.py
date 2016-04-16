@@ -14,18 +14,19 @@ TILE_SIZE = 12
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .8
 
-'''
-big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
+# big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
 TOP_Y = 2500
 BOTTOM_Y = 6500
 LEFT_X = 500
 RIGHT_X = 4000
-'''
 
+'''
+# small city chunk in middle
 TOP_Y = 3500
 BOTTOM_Y = 4500
-LEFT_X = 2200
-RIGHT_X = 2700
+LEFT_X = 2700
+RIGHT_X = 3200
+'''
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
@@ -37,22 +38,23 @@ def read_naip(file_path):
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
   coord = pixelToLatLng(raster_dataset, 0, 0)
   proj = raster_dataset.GetProjectionRef()
+  
   bands_data = []
   for b in range(1, raster_dataset.RasterCount+1):
+    # just using the IR band for now
     if b == 4:
       band = raster_dataset.GetRasterBand(b)
       bands_data.append(band.ReadAsArray())
-
   bands_data = numpy.dstack(bands_data)
-
+  
   training_images, test_images = tile_naip(raster_dataset, bands_data)
-
+  
   return training_images, test_images, raster_dataset, bands_data
 
 def tile_naip(raster_dataset, bands_data):
   rows, cols, n_bands = bands_data.shape
   print("OPENED NAIP with {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
-  print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset, rows, cols)))
+  print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset)))
 
   training_tiled_data = []
   test_tiled_data = []
@@ -79,12 +81,11 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
     print "CREATING LABELS"
 
   way_bitmap = empty_tile_matrix(rows, cols)
-  bounds = bounds_for_naip(raster_dataset, rows, cols)
+  bounds = bounds_for_naip(raster_dataset)
   ways_on_naip = []
   for way in ways:
     for point_tuple in way['linestring']:
-      #print(bounds, point_tuple, bounds_contains_node(bounds, point_tuple))
-      if bounds_contains_node(bounds, point_tuple):
+      if bounds_contains_point(bounds, point_tuple):
         ways_on_naip.append(way)
         break
   print("EXTRACTED {} highways that overlap the NAIP, out of {} ways in the PBF".format(len(ways_on_naip), len(ways)))
@@ -93,8 +94,8 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
     for x in range(len(w['linestring'])-1):
       current_point = w['linestring'][x]
       next_point = w['linestring'][x+1]
-      if not bounds_contains_node(bounds, current_point) or \
-         not bounds_contains_node(bounds, next_point):
+      if not bounds_contains_point(bounds, current_point) or \
+         not bounds_contains_point(bounds, next_point):
         continue
       current_pix = latLonToPixel(raster_dataset, current_point)
       next_pix = latLonToPixel(raster_dataset, next_point)
@@ -104,7 +105,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
           continue
         else:
           way_bitmap[p[1]][p[0]] = 1
-  print "caching way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
+  print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
   numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
   return way_bitmap
 
@@ -119,7 +120,10 @@ def empty_tile_matrix(rows, cols):
       tile_matrix[x].append(0)
   return tile_matrix
 
-def bounds_for_naip(raster_dataset, rows, cols):
+def bounds_for_naip(raster_dataset):
+  '''
+      clip the NAIP to LEFT_X to RIGHT_X, BOTTOM_Y to TOP_Y
+  '''
   sw = pixelToLatLng(raster_dataset, LEFT_X, BOTTOM_Y)
   ne = pixelToLatLng(raster_dataset, RIGHT_X, TOP_Y)
   return {'sw': sw, 'ne': ne}
@@ -152,7 +156,10 @@ def pixels_between(start_pixel, end_pixel, cols):
         pixels.append(p)
     return pixels
 
-def bounds_contains_node(bounds, point_tuple):
+def bounds_contains_point(bounds, point_tuple):
+  '''
+      returns True if the bounds geographically contains the point_tuple
+  '''
   if point_tuple[0] > bounds['ne'][0]:
     return False
   if point_tuple[0] < bounds['sw'][0]:
@@ -214,6 +221,10 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
   im.save(outfile, "PNG")
 
 def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
+  '''
+      download a certain PBF file from geofabrik unless it exists locally already,
+      tile it into training/test labels to match the NAIP image tiles
+  '''
   waymap = WayMap()
   file_path = os.path.join(GEO_DATA_DIR, 'district-of-columbia-latest.osm.pbf')
   if not os.path.exists(file_path):
@@ -305,10 +316,12 @@ if __name__ == '__main__':
   training_images, training_labels = shuffle_in_unison(training_images, training_labels)
 
   # this step can take a long time, especially for the whole image or a large chunk
+  '''
   save_naip_as_jpeg(raster_data_path, 
                     way_bitmap, 
                     training_labels, 
                     test_labels, path="data/naip/labels.png")
+  '''
 
   tiles = len(training_labels)
   # how to log this better?
