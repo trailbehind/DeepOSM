@@ -22,10 +22,10 @@ LEFT_X = 500
 RIGHT_X = 4000
 '''
 
-TOP_Y = 2500
-BOTTOM_Y = 3500
-LEFT_X = 500
-RIGHT_X = 1000
+TOP_Y = 3500
+BOTTOM_Y = 4500
+LEFT_X = 2200
+RIGHT_X = 2700
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
