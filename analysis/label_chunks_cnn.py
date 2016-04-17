@@ -62,13 +62,13 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64])
   h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
-  keep_prob = tf.placeholder("float")
-  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+  #keep_prob = tf.placeholder("float")
+  #h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
   W_fc2 = weight_variable([1024, 2])
   b_fc2 = bias_variable([2])
 
-  y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+  y_conv=tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2)
 
   cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
   train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
@@ -81,14 +81,15 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
     batch = data_sets.train.next_batch(batch_size)
     #if i%5 == 0:
     train_accuracy = accuracy.eval(feed_dict={
-      x:batch[0], y_: batch[1], keep_prob: 1.0})
+      x:batch[0], y_: batch[1]})
     print("step %d, training accuracy %g"%(i, train_accuracy))
-    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+    train_step.run(feed_dict={x: batch[0], y_: batch[1]})
 
   print("test accuracy %g"%accuracy.eval(feed_dict={
-      x: data_sets.test.images, y_: data_sets.test.labels, keep_prob: 1.0}))
+      x: data_sets.test.images, y_: data_sets.test.labels,}))
 
-    
+  prediction=tf.argmax(y_conv,1)
+  print prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)
   
 if __name__ == '__main__':
   parameters_message = "parameters are: download-data, train"
