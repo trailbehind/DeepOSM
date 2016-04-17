@@ -1,4 +1,4 @@
-import numpy, os
+import numpy, os, sys
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
@@ -8,25 +8,31 @@ from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
+import argparse
+
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 12
+TILE_SIZE = 40
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .8
 
+DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
+DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
+
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
 TOP_Y = 2500
-BOTTOM_Y = 6500
-LEFT_X = 500
-RIGHT_X = 4000
+BOTTOM_Y = 6800
+LEFT_X = 600
+RIGHT_X = 4500
 
 '''
 # small city chunk in middle
 TOP_Y = 3500
-BOTTOM_Y = 4500
+BOTTOM_Y = 6500
 LEFT_X = 2700
-RIGHT_X = 3200
+RIGHT_X = 3500
 '''
+
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
@@ -40,16 +46,13 @@ def read_naip(file_path):
   proj = raster_dataset.GetProjectionRef()
   
   bands_data = []
+  # 4 bands of raster data, RGB and IR
   for b in range(1, raster_dataset.RasterCount+1):
-    # just using the IR band for now
-    # if b == 1:
     band = raster_dataset.GetRasterBand(b)
     bands_data.append(band.ReadAsArray())
   bands_data = numpy.dstack(bands_data)
   
-  training_images, test_images = tile_naip(raster_dataset, bands_data)
-  
-  return training_images, test_images, raster_dataset, bands_data
+  return raster_dataset, bands_data
 
 def tile_naip(raster_dataset, bands_data):
   rows, cols, n_bands = bands_data.shape
@@ -68,17 +71,20 @@ def tile_naip(raster_dataset, bands_data):
 
   return training_tiled_data, test_tiled_data
 
-def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
+def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
   try:
-    arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
-    print "CACHED: read label data from disk"
-    return arr
+    if use_pbf_cache:
+      arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
+      print "CACHED: read label data from disk"
+      return arr
+    else:
+      print "CREATING LABELS from PBF file"
   except:
-    print "CREATING LABELS"
+    print "CREATING LABELS from PBF file"
 
   way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset)
@@ -104,9 +110,11 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols):
         if p[0] < 0 or p[1] < 0 or p[0] >= cols or p[1] >= rows:
           continue
         else:
-          way_bitmap[p[1]][p[0]] = 1
+          way_bitmap[p[1]][p[0]] = w['highway_type']
+
   print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
   numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
+
   return way_bitmap
 
 def empty_tile_matrix(rows, cols):
@@ -170,7 +178,129 @@ def bounds_contains_point(bounds, point_tuple):
     return False
   return True
 
-def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels, path=None):
+def download_and_extract_pbf():
+  '''
+      download a certain PBF file from geofabrik unless it exists locally already,
+      and extract its ways
+  '''
+  waymap = WayMap()
+  file_path = os.path.join(GEO_DATA_DIR, DEFAULT_SAVE_PBF_PATH)
+  if not os.path.exists(file_path):
+    file_path = download_file(DEFAULT_PBF_URL)
+  waymap.run_extraction(file_path)
+  return waymap
+
+def format_as_onehot_arrays(types, training_labels, test_labels):
+  '''
+     each label gets converted from an NxN tile with way bits flipped,
+     into a one hot array of whether the tile contains ways (i.e. [0,1] or [1,0] for each)
+
+    types_hot = []
+    for highway_type in types:
+      types_hot.append(0)
+  '''
+  
+  print "CREATING TEST one-hot labels"
+  onehot_test_labels = onehot_for_labels(test_labels)
+  print "CREATING TRAINING one-hot labels"
+  onehot_training_labels = onehot_for_labels(training_labels)
+
+  return onehot_training_labels, onehot_test_labels
+
+
+def onehot_for_labels(labels):
+  '''
+     returns a list of one-hot array labels, for a list of tiles
+  '''
+  on_count = 0
+  off_count = 0
+
+  onehot_labels = []
+  for label in labels:
+    road_pixel_count = 0
+    for x in range(len(label[0])):
+      for y in range(len(label[0][0])):
+        pixel_value = label[0][x][y]
+        if pixel_value != '0':
+          road_pixel_count += 1
+
+    if road_pixel_count >= len(label[0]):
+      onehot_labels.append([0,1])
+      on_count += 1
+    else:
+      onehot_labels.append([1,0])
+      off_count += 1
+
+  print "ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels)))
+  return onehot_labels
+
+def has_ways(tile):
+  '''
+     returns true if any pixel on the NxN tile is set to 1
+  '''
+  for col in range(0, len(tile)):
+    for row in range(0, len(tile[col])):
+      if tile[col][row] != '0':
+        return True
+  return False
+
+def run_analysis(use_pbf_cache=False, render_results=False):
+  
+  # dowload and convert NAIP
+  naiper = NAIPDownloader()
+  raster_data_path = naiper.download_naips()
+  raster_dataset, bands_data = read_naip(raster_data_path)
+  rows = bands_data.shape[0]
+  cols = bands_data.shape[1]
+  
+  # tile images and labels
+  waymap = download_and_extract_pbf()
+  way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
+  test_labels = []
+  training_labels = []
+  for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
+    for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
+      new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
+      if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
+        training_labels.append((new_tile,(col, row)))
+      else:
+        test_labels.append((new_tile,(col, row)))
+  training_images, test_images = tile_naip(raster_dataset, bands_data)
+
+  # package data for tensorflow
+  print_data_dimensions(training_labels)
+  onehot_training_labels, \
+  onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, training_labels, test_labels)
+  npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
+  npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
+  npy_training_labels = numpy.asarray(onehot_training_labels)
+  npy_test_labels = numpy.asarray(onehot_test_labels)
+
+  # train and test the neural net
+  predictions = train_neural_net(TILE_SIZE,
+                   npy_training_images, 
+                   npy_training_labels, 
+                   npy_test_images, 
+                   npy_test_labels)
+  print predictions
+
+  # this step can take a long time, especially for the whole image or a large chunk
+  if render_results:
+    render_results_as_image(raster_data_path, 
+                            way_bitmap_npy, 
+                            training_labels, 
+                            test_labels, 
+                            path="data/naip/output.png", 
+                            predictions=predictions)
+
+def print_data_dimensions(training_labels):
+  tiles = len(training_labels)
+  h = len(training_labels[0][0])
+  w = len(training_labels[0][0][0])
+  bands = len(training_labels[0][0][0][0])
+  print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
+
+def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, path=None, predictions=None):
   '''
       save the source TIFF as a JPEG, with labels and data overlaid
   '''
@@ -186,164 +316,50 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
   r, g, b, ir = im.split()
   for x in range(cols):
     for y in range(rows):
-      r.putpixel((x, y),(255))
-  im = Image.merge("RGBA", (ir, ir, ir, r))
+      ir.putpixel((x, y),(0))
+  im = Image.merge("RGBA", (r, g, b, r))
   
-  # shade training labels
-  for label in training_labels:
-    start_x = label[1][0]
-    start_y = label[1][1]
-    for x in range(start_x, start_x+TILE_SIZE):
-      for y in range(start_y, start_y+TILE_SIZE):
-        r, g, b, a = im.getpixel((x, y))
-        if has_ways(label[0]):
-          im.putpixel((x, y), (r, g, b, 255))
-        else:
-          im.putpixel((x, y), (r, g, 255, 255))
-
-  # shade test labels
-  for label in test_labels:
-    start_x = label[1][0]
-    start_y = label[1][1]
-    for x in range(start_x, start_x+TILE_SIZE):
-      for y in range(start_y, start_y+TILE_SIZE):
-        r, g, b, a = im.getpixel((x, y))
-        if has_ways(label[0]):
-          im.putpixel((x, y), (r, g, b, 255))
-        else:
-          im.putpixel((x, y), (r, 255, b, 255))
+  shade_labels(training_labels, im, shade_b=255)
+  shade_labels(test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
 
   # show raw data that spawned the labels
   for row in range(0, rows):
     for col in range(0, cols):
-      if way_bitmap[row][col]:
+      if way_bitmap[row][col] != '0':
         im.putpixel((col, row), (255,0,0, 255))
 
   im.save(outfile, "PNG")
 
-def download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols):
-  '''
-      download a certain PBF file from geofabrik unless it exists locally already,
-      tile it into training/test labels to match the NAIP image tiles
-  '''
-  waymap = WayMap()
-  file_path = os.path.join(GEO_DATA_DIR, 'district-of-columbia-latest.osm.pbf')
-  if not os.path.exists(file_path):
-    file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
-  waymap.run_extraction(file_path)
+def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
+  label_index = 0
+  for label in labels:
+    start_x = label[1][0]
+    start_y = label[1][1]
+    for x in range(start_x, start_x+TILE_SIZE):
+      for y in range(start_y, start_y+TILE_SIZE):
+        r, g, b, a = image.getpixel((x, y))
+        if shade_r:
+          r = shade_r
+        if shade_g:
+          g = shade_g
+        if shade_b:
+          b = shade_b
+        if show_predictions and predictions[label_index] == 1:
+          image.putpixel((x, y), (0, 0, 0, 255))
+        elif has_ways(label[0]):
+          image.putpixel((x, y), (r, g, b, 255))
+        else:
+          image.putpixel((x, y), (shade_r, shade_g, shade_b, 255))
+    label_index += 1
 
-  labels_bitmap = empty_tile_matrix(rows, cols)
-  test_labels = []
-  training_labels = []
-  way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols))
-
-  for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
-    for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
-      new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
-      if has_ways(new_tile):
-        for r in range(row,row+TILE_SIZE):
-          for c in range(col,col+TILE_SIZE):
-            labels_bitmap[r][c] = 1
-      if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
-        training_labels.append((new_tile,(col, row)))
-      else:
-        test_labels.append((new_tile,(col, row)))
-
-  return way_bitmap_npy, labels_bitmap, training_labels, test_labels
-
-def format_as_onehot_arrays(training_labels, test_labels):
-  '''
-     each label gets converted from an NxN tile with,
-     into a one hot array of whether the tile contains ways (i.e. [0,1] or [1,0] for each)
-  '''
-  onehot_test_labels = []
-  for label in test_labels:
-    if has_ways(label[0]):
-      onehot_test_labels.append([0,1])
-    else:
-      onehot_test_labels.append([1,0])
-
-  onehot_training_labels = []
-  for label in training_labels:
-    if has_ways(label[0]):
-      onehot_training_labels.append([0,1])
-    else:
-      onehot_training_labels.append([1,0])
-
-  print "ONE HOT for way presence - {} test labels and {} training labels in".format(len(onehot_training_labels), len(onehot_test_labels))
-  return onehot_training_labels, onehot_test_labels
-
-
-def has_ways(tile):
-  '''
-     returns true if any pixel on the NxN tile is set to 1
-  '''
-  for col in range(0, len(tile)):
-    for row in range(0, len(tile[col])):
-      if tile[col][row] == 1:
-        return True
-  return False
-
-def shuffle_in_unison(a, b):
-  '''
-      http://stackoverflow.com/questions/11765061/better-way-to-shuffle-two-related-lists
-  '''
-  a_shuf = []
-  b_shuf = []
-  index_shuf = range(len(a))
-  shuffle(index_shuf)
-  for i in index_shuf:
-      a_shuf.append(a[i])
-      b_shuf.append(b[i])
-  return a_shuf, b_shuf
-
-
-if __name__ == '__main__':
-  
-  # dowload and tile NAIP into images to label
-  naiper = NAIPDownloader()
-  raster_data_path = naiper.download_naips()
-  training_images, test_images, raster_dataset, bands_data = read_naip(raster_data_path)
-  rows = bands_data.shape[0]
-  cols = bands_data.shape[1]
-  
-  # download and tile labels from PBF file
-  way_bitmap, \
-  labels_bitmap, \
-  training_labels, \
-  test_labels = download_and_tile_pbf(raster_data_path, raster_dataset, rows, cols)
-
-  test_images, test_labels = shuffle_in_unison(test_images, test_labels)
-  training_images, training_labels = shuffle_in_unison(training_images, training_labels)
-
-  # this step can take a long time, especially for the whole image or a large chunk
-  '''
-  save_naip_as_jpeg(raster_data_path, 
-                    way_bitmap, 
-                    training_labels, 
-                    test_labels, path="data/naip/labels.png")
-  '''
-
-  tiles = len(training_labels)
-  # how to log this better?
-  h = len(training_labels[0])
-  w = len(training_labels[0])
-  print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} from the IR band".format(tiles*2, h, w))
-
-  onehot_training_labels, \
-  onehot_test_labels = format_as_onehot_arrays(training_labels, test_labels)
-
-  npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
-  npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
-  npy_training_labels = numpy.asarray(onehot_training_labels)
-  npy_test_labels = numpy.asarray(onehot_test_labels)
-
-  # train and test the neural net
-  train_neural_net(TILE_SIZE,
-                   npy_training_images, 
-                   npy_training_labels, 
-                   npy_test_images, 
-                   npy_test_labels)
-
-
-  
+parser = argparse.ArgumentParser()
+parser.add_argument("use_pbf_cache")
+parser.add_argument("render_results")
+args = parser.parse_args()
+render_results = False
+if args.render_results:
+  render_results = True
+if args.use_pbf_cache:
+  run_analysis(use_pbf_cache=True, render_results=render_results)
+else:
+  run_analysis(use_pbf_cache=False, render_results=render_results)

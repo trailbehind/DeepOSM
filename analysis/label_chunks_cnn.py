@@ -40,7 +40,7 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   y_ = tf.placeholder(tf.float32, [None, 2])
 
   # first layer of convolution
-  W_conv1 = weight_variable([5, 5, 1, 32])
+  W_conv1 = weight_variable([3, 3, 1, 32])
   b_conv1 = bias_variable([32])
 
   x_image = tf.reshape(x, [-1,image_size,image_size,1])
@@ -50,7 +50,7 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
 
   # second layer
 
-  W_conv2 = weight_variable([5, 5, 32, 64])
+  W_conv2 = weight_variable([3, 3, 32, 64])
   b_conv2 = bias_variable([64])
 
   h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
@@ -79,9 +79,7 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   batch_size = 100
   for i in range(int(len(train_images)/batch_size)):
     batch = data_sets.train.next_batch(batch_size)
-    #if i%5 == 0:
-    train_accuracy = accuracy.eval(feed_dict={
-      x:batch[0], y_: batch[1]})
+    train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     print("step %d, training accuracy %g"%(i, train_accuracy))
     train_step.run(feed_dict={x: batch[0], y_: batch[1]})
 
@@ -90,11 +88,18 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
 
   prediction=tf.argmax(y_conv,1)
   index = 0
+
+  '''
+  print prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)  
   for pred in prediction.eval(feed_dict={x: data_sets.test.images}, session=sess):
     if pred == 1:
       print index
-    index += 1
   
+    index += 1
+  '''
+  return prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)
+
+
 if __name__ == '__main__':
   parameters_message = "parameters are: download-data, train"
   if len(sys.argv) == 1:

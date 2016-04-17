@@ -21,7 +21,6 @@ class WayMap():
       extracter = WayExtracter()
       extracter.apply_file(file_path, locations=True)
       self.extracter = extracter
-      return
       for key in self.extracter.way_dict:
         combined_line = {'id':key, 'linestring':[]}
         for way_dict in self.extracter.way_dict[key]:
@@ -47,19 +46,33 @@ class WayExtracter(o.SimpleHandler):
 
     def way(self, w):
         is_highway = False
+        is_big = False
         name = ''
+        highway_type = None
+        self.types = []
 
         for tag in w.tags:
           if tag.k == 'name':
             name = tag.v
-          if tag.k == 'highway':
+          if tag.k == 'highway': 
+            # and tag.v in ['primary', 'secondary', 'tertiary', 'trunk']:
+            highway_type = tag.v
             is_highway = True
+          #if tag.k == 'lanes' and int(tag.v[len(tag.v)-1]) >= 2:
+          #  is_big = True
+            #for t in w.tags:
+            #  print "tag {} {}".format(t.k, t.v)
+
         if not is_highway:
           return
+        
+        if not highway_type in self.types:
+          self.types.append(highway_type)
 
         way_dict = {'visible': w.visible,
                     'deleted': w.deleted,
                     'uid': w.uid,
+                    'highway_type': highway_type,
                     'ends_have_same_id': w.ends_have_same_id(),
                     'id': w.id,
                     'tags':[]}
