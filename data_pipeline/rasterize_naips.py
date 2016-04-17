@@ -15,18 +15,18 @@ TILE_SIZE = 12
 PERCENT_FOR_TRAINING_DATA = .8
 
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
-'''
 TOP_Y = 2500
 BOTTOM_Y = 6500
 LEFT_X = 500
 RIGHT_X = 4000
-'''
 
+'''
 # small city chunk in middle
 TOP_Y = 3500
 BOTTOM_Y = 4500
 LEFT_X = 2700
 RIGHT_X = 3200
+'''
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
@@ -42,9 +42,9 @@ def read_naip(file_path):
   bands_data = []
   for b in range(1, raster_dataset.RasterCount+1):
     # just using the IR band for now
-    if b == 4:
-      band = raster_dataset.GetRasterBand(b)
-      bands_data.append(band.ReadAsArray())
+    # if b == 1:
+    band = raster_dataset.GetRasterBand(b)
+    bands_data.append(band.ReadAsArray())
   bands_data = numpy.dstack(bands_data)
   
   training_images, test_images = tile_naip(raster_dataset, bands_data)
@@ -60,7 +60,7 @@ def tile_naip(raster_dataset, bands_data):
   test_tiled_data = []
   for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
     for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
-      new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:1]
+      new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:4]
       if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
         training_tiled_data.append((new_tile,(col, row)))
       else:

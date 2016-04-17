@@ -35,7 +35,7 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
                           strides=[1, 2, 2, 1], padding='SAME')
 
   # placeholder for inputs
-  x = tf.placeholder("float", shape=[None, image_size*image_size])
+  x = tf.placeholder("float", shape=[None, image_size*image_size*4])
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
@@ -56,10 +56,10 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
   h_pool2 = max_pool_2x2(h_conv2)
 
-  W_fc1 = weight_variable([image_size/4 * image_size/4 * 64, 1024])
+  W_fc1 = weight_variable([image_size/4 * image_size/4 * 64 * 4, 1024])
   b_fc1 = bias_variable([1024])
 
-  h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64])
+  h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64 * 4])
   h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
   #keep_prob = tf.placeholder("float")
@@ -89,7 +89,11 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
       x: data_sets.test.images, y_: data_sets.test.labels,}))
 
   prediction=tf.argmax(y_conv,1)
-  print prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)
+  index = 0
+  for pred in prediction.eval(feed_dict={x: data_sets.test.images}, session=sess):
+    if pred == 1:
+      print index
+    index += 1
   
 if __name__ == '__main__':
   parameters_message = "parameters are: download-data, train"
