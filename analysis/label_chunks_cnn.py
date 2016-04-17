@@ -39,8 +39,10 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
+  patch_size = 16
+
   # first layer of convolution
-  W_conv1 = weight_variable([3, 3, 1, 32])
+  W_conv1 = weight_variable([patch_size, patch_size, 1, 32])
   b_conv1 = bias_variable([32])
 
   x_image = tf.reshape(x, [-1,image_size,image_size,1])
@@ -49,8 +51,7 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   h_pool1 = max_pool_2x2(h_conv1)
 
   # second layer
-
-  W_conv2 = weight_variable([3, 3, 32, 64])
+  W_conv2 = weight_variable([patch_size, patch_size, 32, 64])
   b_conv2 = bias_variable([64])
 
   h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)

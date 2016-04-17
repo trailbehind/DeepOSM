@@ -1,4 +1,4 @@
-import numpy, os, sys
+import numpy, os, sys, time
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
@@ -11,11 +11,12 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 40
+TILE_SIZE = 56
 
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .8
+PERCENT_FOR_TRAINING_DATA = .5
 
+# use Washington DC for analysis by default
 DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
 DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 
@@ -23,7 +24,7 @@ DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 TOP_Y = 2500
 BOTTOM_Y = 6800
 LEFT_X = 600
-RIGHT_X = 4500
+RIGHT_X = 1600
 
 '''
 # small city chunk in middle
@@ -33,9 +34,9 @@ LEFT_X = 2700
 RIGHT_X = 3500
 '''
 
-
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
+
 
 def read_naip(file_path):
   '''
@@ -224,7 +225,7 @@ def onehot_for_labels(labels):
         if pixel_value != '0':
           road_pixel_count += 1
 
-    if road_pixel_count >= len(label[0]):
+    if road_pixel_count >= len(label[0])*.75:
       onehot_labels.append([0,1])
       on_count += 1
     else:
@@ -282,7 +283,14 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                    npy_training_labels, 
                    npy_test_images, 
                    npy_test_labels)
-  print predictions
+
+  prediction_on_count = 0
+  for p in predictions:
+    if p != 0:
+      prediction_on_count += 1
+      if prediction_on_count == 1:
+        print "PREDICTION LIST HAS ON VALUES"
+  print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions)))
 
   # this step can take a long time, especially for the whole image or a large chunk
   if render_results:
@@ -290,7 +298,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                             way_bitmap_npy, 
                             training_labels, 
                             test_labels, 
-                            path="data/naip/output.png", 
+                            path="data/naip/output-new.png", 
                             predictions=predictions)
 
 def print_data_dimensions(training_labels):
@@ -306,27 +314,40 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   '''
   outfile = path
   if not outfile:
-    outfile = os.path.splitext(raster_data_path)[0] + ".png"
+    outfile = os.path.splitext(raster_data_path)[0] + "-convolve5.png"
   im = Image.open(raster_data_path)
   print "GENERATING PNG for %s" % raster_data_path
   rows = len(way_bitmap)
   cols = len(way_bitmap[0])
 
   # TIFF to JPEG bit from: from: http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
+  t0 = time.time()
   r, g, b, ir = im.split()
   for x in range(cols):
     for y in range(rows):
       ir.putpixel((x, y),(0))
   im = Image.merge("RGBA", (r, g, b, r))
-  
-  shade_labels(training_labels, im, shade_b=255)
-  shade_labels(test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
+  t1 = time.time()
+  print "{} elapsed for FLATTEN 4 BAND TIFF TO JPEG".format(t1-t0)
 
+  t0 = time.time()
+  shade_labels(training_labels, im, shade_b=255)
+  t1 = time.time()
+  print "{} elapsed for SHADE TRAINING LABELS".format(t1-t0)
+
+  t0 = time.time()
+  shade_labels(test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
+  t1 = time.time()
+  print "{} elapsed for SHADE TEST LABELS".format(t1-t0)
+
+  t0 = time.time()
   # show raw data that spawned the labels
   for row in range(0, rows):
     for col in range(0, cols):
       if way_bitmap[row][col] != '0':
         im.putpixel((col, row), (255,0,0, 255))
+  t1 = time.time()
+  print "{} elapsed for DRAW WAYS".format(t1-t0)
 
   im.save(outfile, "PNG")
 
@@ -337,6 +358,7 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
     start_y = label[1][1]
     for x in range(start_x, start_x+TILE_SIZE):
       for y in range(start_y, start_y+TILE_SIZE):
+        '''
         r, g, b, a = image.getpixel((x, y))
         if shade_r:
           r = shade_r
@@ -344,17 +366,21 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
           g = shade_g
         if shade_b:
           b = shade_b
+        '''
         if show_predictions and predictions[label_index] == 1:
           image.putpixel((x, y), (0, 0, 0, 255))
+        
+        '''
         elif has_ways(label[0]):
           image.putpixel((x, y), (r, g, b, 255))
         else:
           image.putpixel((x, y), (shade_r, shade_g, shade_b, 255))
+        '''
     label_index += 1
 
 parser = argparse.ArgumentParser()
-parser.add_argument("use_pbf_cache")
-parser.add_argument("render_results")
+parser.add_argument("--use_pbf_cache", default=False, help="enable this to not reparse PBF")
+parser.add_argument("--render_results", default=False, help="enable this to print data/predictions to JPEG")
 args = parser.parse_args()
 render_results = False
 if args.render_results:
