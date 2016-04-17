@@ -15,18 +15,18 @@ TILE_SIZE = 12
 PERCENT_FOR_TRAINING_DATA = .8
 
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
+'''
 TOP_Y = 2500
 BOTTOM_Y = 6500
 LEFT_X = 500
 RIGHT_X = 4000
-
 '''
+
 # small city chunk in middle
 TOP_Y = 3500
 BOTTOM_Y = 4500
 LEFT_X = 2700
 RIGHT_X = 3200
-'''
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
@@ -172,7 +172,7 @@ def bounds_contains_point(bounds, point_tuple):
 
 def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels, path=None):
   '''
-      http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
+      save the source TIFF as a JPEG, with labels and data overlaid
   '''
   outfile = path
   if not outfile:
@@ -182,6 +182,7 @@ def save_naip_as_jpeg(raster_data_path, way_bitmap, training_labels, test_labels
   rows = len(way_bitmap)
   cols = len(way_bitmap[0])
 
+  # TIFF to JPEG bit from: from: http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
   r, g, b, ir = im.split()
   for x in range(cols):
     for y in range(rows):

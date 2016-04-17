@@ -13,8 +13,8 @@ import numpy
 
 def train_neural_net(image_size, train_images, train_labels, test_images, test_labels):  
   data_sets = DataSets()
-  data_sets.train = DataSet(train_images, train_labels, dtype=tf.uint8)
-  data_sets.test = DataSet(test_images, test_labels, dtype=tf.uint8)
+  data_sets.train = DataSet(train_images, train_labels, dtype=tf.float32)
+  data_sets.test = DataSet(test_images, test_labels, dtype=tf.float32)
   print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(train_images), len(test_images), len(train_labels), len(test_labels)))
 
   sess = tf.InteractiveSession()
@@ -88,8 +88,8 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   print("test accuracy %g"%accuracy.eval(feed_dict={
       x: data_sets.test.images, y_: data_sets.test.labels, keep_prob: 1.0}))
 
-  print(sess.run(y, feed_dict={x: data_sets.test.images}))
-
+    
+  
 if __name__ == '__main__':
   parameters_message = "parameters are: download-data, train"
   if len(sys.argv) == 1:
