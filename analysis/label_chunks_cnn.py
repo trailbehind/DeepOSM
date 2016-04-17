@@ -11,10 +11,16 @@ import tensorflow.python.platform
 import numpy
 
 
-def train_neural_net(image_size, train_images, train_labels, test_images, test_labels):  
+def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_images, test_labels):  
+
+  on_band_count = 0
+  for b in bands_to_use:
+    if b == 1:
+      on_band_count += 1
+
   data_sets = DataSets()
-  data_sets.train = DataSet(train_images, train_labels, dtype=tf.float32)
-  data_sets.test = DataSet(test_images, test_labels, dtype=tf.float32)
+  data_sets.train = DataSet(on_band_count, train_images, train_labels, dtype=tf.float32)
+  data_sets.test = DataSet(on_band_count, test_images, test_labels, dtype=tf.float32)
   print("CREATED DATASET: {} training images, {} test images, with {} training labels, and {} test labels".format(len(train_images), len(test_images), len(train_labels), len(test_labels)))
 
   sess = tf.InteractiveSession()
@@ -35,7 +41,7 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
                           strides=[1, 2, 2, 1], padding='SAME')
 
   # placeholder for inputs
-  x = tf.placeholder("float", shape=[None, image_size*image_size*4])
+  x = tf.placeholder("float", shape=[None, image_size*image_size*on_band_count])
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
@@ -57,10 +63,10 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
   h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
   h_pool2 = max_pool_2x2(h_conv2)
 
-  W_fc1 = weight_variable([image_size/4 * image_size/4 * 64 * 4, 1024])
+  W_fc1 = weight_variable([image_size/4 * image_size/4 * 64 * on_band_count, 1024])
   b_fc1 = bias_variable([1024])
 
-  h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64 * 4])
+  h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64 * on_band_count])
   h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
   #keep_prob = tf.placeholder("float")
@@ -82,6 +88,8 @@ def train_neural_net(image_size, train_images, train_labels, test_images, test_l
     batch = data_sets.train.next_batch(batch_size)
     train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     print("step %d, training accuracy %g"%(i, train_accuracy))
+    # print the prediction matrix at this step
+    print tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess)
     train_step.run(feed_dict={x: batch[0], y_: batch[1]})
 
   print("test accuracy %g"%accuracy.eval(feed_dict={

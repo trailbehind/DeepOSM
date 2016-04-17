@@ -10,7 +10,7 @@ class DataSet(object):
     '''
        a DataSet that Tensorflow likes to consume
     '''
-    def __init__(self, images, labels, dtype=tf.float32):
+    def __init__(self, band_count, images, labels, dtype=tf.float32):
         """
         Construct a DataSet.
         `dtype` can be either `uint8` to leave the input as `[0, 255]`,
@@ -25,7 +25,7 @@ class DataSet(object):
 
         # Convert shape from [num examples, rows, columns, depth]
         # to [num examples, rows*columns] (assuming depth == 1)
-        assert images.shape[3] == 4
+        assert images.shape[3] == band_count
 
         # Store the width and height of the images before flattening it, if only for reference.
         image_height, image_width = images.shape[1], images.shape[2]

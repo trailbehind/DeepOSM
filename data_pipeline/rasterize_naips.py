@@ -11,20 +11,23 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 56
+TILE_SIZE = 40
 
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .5
+PERCENT_FOR_TRAINING_DATA = .9
 
 # use Washington DC for analysis by default
 DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
 DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 
+# the bands to use from the NAIP for analysis (R G B IR)
+BANDS_TO_USE = [0,0,0,1]
+
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
 TOP_Y = 2500
 BOTTOM_Y = 6800
 LEFT_X = 600
-RIGHT_X = 1600
+RIGHT_X = 4500
 
 '''
 # small city chunk in middle
@@ -37,8 +40,7 @@ RIGHT_X = 3500
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
 
-
-def read_naip(file_path):
+def read_naip(file_path, bands_to_use):
   '''
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
@@ -48,14 +50,23 @@ def read_naip(file_path):
   
   bands_data = []
   # 4 bands of raster data, RGB and IR
+  index = 0
   for b in range(1, raster_dataset.RasterCount+1):
     band = raster_dataset.GetRasterBand(b)
-    bands_data.append(band.ReadAsArray())
+    if bands_to_use[index] == 1:
+      bands_data.append(band.ReadAsArray())
+    index += 1
   bands_data = numpy.dstack(bands_data)
   
   return raster_dataset, bands_data
 
-def tile_naip(raster_dataset, bands_data):
+def tile_naip(raster_dataset, bands_data, bands_to_use):
+
+  on_band_count = 0
+  for b in bands_to_use:
+    if b == 1:
+      on_band_count += 1
+
   rows, cols, n_bands = bands_data.shape
   print("OPENED NAIP with {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
   print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset)))
@@ -64,7 +75,7 @@ def tile_naip(raster_dataset, bands_data):
   test_tiled_data = []
   for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
     for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
-      new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:4]
+      new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
       if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
         training_tiled_data.append((new_tile,(col, row)))
       else:
@@ -250,7 +261,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   # dowload and convert NAIP
   naiper = NAIPDownloader()
   raster_data_path = naiper.download_naips()
-  raster_dataset, bands_data = read_naip(raster_data_path)
+  raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
   rows = bands_data.shape[0]
   cols = bands_data.shape[1]
   
@@ -266,7 +277,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
         training_labels.append((new_tile,(col, row)))
       else:
         test_labels.append((new_tile,(col, row)))
-  training_images, test_images = tile_naip(raster_dataset, bands_data)
+  training_images, test_images = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
 
   # package data for tensorflow
   print_data_dimensions(training_labels)
@@ -278,7 +289,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   npy_test_labels = numpy.asarray(onehot_test_labels)
 
   # train and test the neural net
-  predictions = train_neural_net(TILE_SIZE,
+  predictions = train_neural_net(BANDS_TO_USE, TILE_SIZE,
                    npy_training_images, 
                    npy_training_labels, 
                    npy_test_images, 
@@ -290,8 +301,8 @@ def run_analysis(use_pbf_cache=False, render_results=False):
       prediction_on_count += 1
       if prediction_on_count == 1:
         print "PREDICTION LIST HAS ON VALUES"
+  print predictions
   print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions)))
-
   # this step can take a long time, especially for the whole image or a large chunk
   if render_results:
     render_results_as_image(raster_data_path, 
