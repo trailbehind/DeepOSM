@@ -21,7 +21,7 @@ DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-col
 DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [0,0,0,1]
+BANDS_TO_USE = [1,1,1,1]
 
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
 TOP_Y = 2500
@@ -71,17 +71,13 @@ def tile_naip(raster_dataset, bands_data, bands_to_use):
   print("OPENED NAIP with {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
   print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset)))
 
-  training_tiled_data = []
-  test_tiled_data = []
+  all_tiled_data = []
   for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
     for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
       new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
-      if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
-        training_tiled_data.append((new_tile,(col, row)))
-      else:
-        test_tiled_data.append((new_tile,(col, row)))
+      all_tiled_data.append((new_tile,(col, row)))
 
-  return training_tiled_data, test_tiled_data
+  return all_tiled_data
 
 def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
   '''
@@ -256,6 +252,19 @@ def has_ways(tile):
         return True
   return False
 
+def shuffle_in_unison(a, b):
+   '''
+       http://stackoverflow.com/questions/11765061/better-way-to-shuffle-two-related-lists
+   '''
+   a_shuf = []
+   b_shuf = []
+   index_shuf = range(len(a))
+   shuffle(index_shuf)
+   for i in index_shuf:
+       a_shuf.append(a[i])
+       b_shuf.append(b[i])
+   return a_shuf, b_shuf
+
 def run_analysis(use_pbf_cache=False, render_results=False):
   
   # dowload and convert NAIP
@@ -268,16 +277,30 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   # tile images and labels
   waymap = download_and_extract_pbf()
   way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
-  test_labels = []
-  training_labels = []
+  road_labels = []
   for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
     for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
       new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
-      if row < (TOP_Y + (BOTTOM_Y-TOP_Y)*PERCENT_FOR_TRAINING_DATA):
-        training_labels.append((new_tile,(col, row)))
-      else:
-        test_labels.append((new_tile,(col, row)))
-  training_images, test_images = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
+      road_labels.append((new_tile,(col, row)))
+      
+  naip_tiles = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
+
+  test_labels = []
+  training_labels = []
+  test_images = []
+  training_images = []
+
+  assert len(road_labels) == len(naip_tiles)
+
+  shuffle_in_unison(naip_tiles, road_labels)
+
+  for x in range(0, len(road_labels)):
+    if PERCENT_FOR_TRAINING_DATA > float(x)/len(road_labels):
+      training_images.append(naip_tiles[x])
+      training_labels.append(road_labels[x])
+    else:
+      test_images.append(naip_tiles[x])
+      test_labels.append(road_labels[x])
 
   # package data for tensorflow
   print_data_dimensions(training_labels)
