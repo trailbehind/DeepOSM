@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 40
+TILE_SIZE = 12
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9

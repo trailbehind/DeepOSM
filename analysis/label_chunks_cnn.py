@@ -45,7 +45,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
-  patch_size = 16
+  patch_size = 6
 
   # first layer of convolution
   W_conv1 = weight_variable([patch_size, patch_size, 1, 32])
@@ -89,7 +89,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
     train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     print("step %d, training accuracy %g"%(i, train_accuracy))
     # print the prediction matrix at this step
-    print tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess)
+    print "{} test labesl are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
     train_step.run(feed_dict={x: batch[0], y_: batch[1]})
 
   print("test accuracy %g"%accuracy.eval(feed_dict={
