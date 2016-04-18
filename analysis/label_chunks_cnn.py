@@ -78,6 +78,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
   y_conv=tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2)
 
   cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
+  loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
   train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
   correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
@@ -88,9 +89,13 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
     batch = data_sets.train.next_batch(batch_size)
     train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     print("step %d, training accuracy %g"%(i, train_accuracy))
+
+    _, loss_val = sess.run([train_step, cross_entropy],
+                           feed_dict={x: batch[0], y_: batch[1]})
+    print('loss = {}'.format(loss_val))
+
     # print the prediction matrix at this step
-    print "{} test labesl are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
-    train_step.run(feed_dict={x: batch[0], y_: batch[1]})
+    print "{} test labels are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
 
   print("test accuracy %g"%accuracy.eval(feed_dict={
       x: data_sets.test.images, y_: data_sets.test.labels,}))

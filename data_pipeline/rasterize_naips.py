@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 24
+TILE_SIZE = 12
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9
@@ -21,7 +21,7 @@ DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-col
 DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [1,1,1,1]
+BANDS_TO_USE = [0,0,0,1]
 
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
 TOP_Y = 2500
@@ -307,6 +307,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   onehot_training_labels, \
   onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, training_labels, test_labels)
   npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
+  
   npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
   npy_training_labels = numpy.asarray(onehot_training_labels)
   npy_test_labels = numpy.asarray(onehot_test_labels)
