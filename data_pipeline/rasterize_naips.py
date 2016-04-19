@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 12
+TILE_SIZE = 40
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9
@@ -292,7 +292,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
 
   assert len(road_labels) == len(naip_tiles)
 
-  shuffle_in_unison(naip_tiles, road_labels)
+  naip_tiles, road_labels = shuffle_in_unison(naip_tiles, road_labels)
 
   for x in range(0, len(road_labels)):
     if PERCENT_FOR_TRAINING_DATA > float(x)/len(road_labels):
