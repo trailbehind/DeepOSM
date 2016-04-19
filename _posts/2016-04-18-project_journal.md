@@ -1,12 +1,14 @@
 ---
-title: Project Journal - April 18, 2016
+title: Project Journal
 category: notes
 layout: post
 ---
 
+# April 18, 2016
+
 I decided to start journaling because I have a bit of traction, and the analysis isn't totally wrong. Also Lacker said I should have a notebook, but I mever write stuff with pens.
 
-# Data Science
+## Data Science
 
 * Ran 5000 training batches last night over night, noticed the data wasn't being properly randomized. 
 
@@ -18,7 +20,7 @@ I decided to start journaling because I have a bit of traction, and the analysis
 
 * Ran a new test of 500 batches with a bigger patch (7px patch). 
 
-# Programming
+## Programming
 
  * fix a bug in data randomization
  * added todos list 
