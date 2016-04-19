@@ -28,9 +28,6 @@ title: Deep OSM Journal
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         {% for category in site.categories %}
-          <h1>
-            {% assign words = category | first | split: ' ' %}
-          </h1>
           <ul>
             {% for post in category.last %}
               <li>

@@ -1,10 +1,8 @@
 ---
-title: Project Journal
+title: Project Journal - April 18, 2016
 category: notes
 layout: post
 ---
-
-# April 18, 2016
 
 I decided to start journaling because I have a bit of traction, and the analysis isn't totally wrong. Also Lacker said I should have a notebook, but I mever write stuff with pens.
 
