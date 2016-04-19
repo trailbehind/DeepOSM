@@ -1,5 +1,3 @@
-baseurl: Deep-OSM/
-url: "trailbehind.github.io"
+url: "trailbehind.github.io/Deep-OSM/"
 markdown: kramdown
 encoding:     "utf-8"
-permalink:     /:title
