@@ -1,5 +1,5 @@
 ---
-title: Gaia GPS Release Notes
+title: Deep OSM Journal
 ---
 
 <!DOCTYPE html>
@@ -9,11 +9,9 @@ title: Gaia GPS Release Notes
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Gaia GPS Release Notes : Information about software updates" />
-
+    <meta name="description" content="Deep OSM Journal" />
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Gaia GPS Release Notes</title>
+    <title>Deep OSM Journal</title>
   </head>
 
   <body>
@@ -21,33 +19,27 @@ title: Gaia GPS Release Notes
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
-          <h1 id="project_title">Gaia GPS Release Notes</h1>
-          <h2 id="project_tagline">iOS, Android, and Web (gaiagps.com)</h2>
+          <h1 id="project_title">Deep OSM Journal</h1>
+          <h2 id="project_tagline">Data Science and Programming</h2>
          </header>
     </div>
 
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-
-  {% for category in site.categories %}
-  <h1>
-    {% assign words = category | first | split: ' ' %}
-  {% for word in words %}
-    {{ word | capitalize | replace: 'Ios','iOS' }}
-  {% endfor %}
-  </h1>
-<ul>
-  {% for post in category.last %}
-    <li>
-      <a href="{{ post.url }}">{{ post.title }}</a>
-    </li>
-  {% endfor %}
-</ul>
-  {% endfor %}
+        {% for category in site.categories %}
+          <h1>
+            {% assign words = category | first | split: ' ' %}
+          </h1>
+          <ul>
+            {% for post in category.last %}
+              <li>
+                <a href="{{ post.url }}">{{ post.title }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
       </section>
     </div>
-
-    <!-- FOOTER  -->
   </body>
 </html>
