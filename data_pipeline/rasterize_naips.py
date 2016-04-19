@@ -333,7 +333,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                             way_bitmap_npy, 
                             training_labels, 
                             test_labels, 
-                            path="data/naip/output-new.png", 
+                            #path="data/naip/output-new.png", 
                             predictions=predictions)
 
 def print_data_dimensions(training_labels):
@@ -404,7 +404,8 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
         '''
         if show_predictions and predictions[label_index] == 1:
           image.putpixel((x, y), (0, 0, 0, 255))
-        
+        elif show_predictions and predictions[label_index] == 0:
+          image.putpixel((x, y), (255, 0, 255, 255))
         '''
         elif has_ways(label[0]):
           image.putpixel((x, y), (r, g, b, 255))

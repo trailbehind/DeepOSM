@@ -45,7 +45,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
-  patch_size = 6
+  patch_size = 7
 
   # first layer of convolution
   W_conv1 = weight_variable([patch_size, patch_size, 1, 32])
@@ -85,17 +85,17 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
   sess.run(tf.initialize_all_variables())
 
   batch_size = 100
-  for i in range(5000):
+  for i in range(500):
     batch = data_sets.train.next_batch(batch_size)
     train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
-    print("step %d, training accuracy %g"%(i, train_accuracy))
+    # print("step %d, training accuracy %g"%(i, train_accuracy))
 
     _, loss_val = sess.run([train_step, cross_entropy],
                            feed_dict={x: batch[0], y_: batch[1]})
-    print('loss = {}'.format(loss_val))
+    print('step {}, loss = {}'.format(i, loss_val))
 
     # print the prediction matrix at this step
-    print "{} test labels are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
+    # print "{} test labels are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
 
   print("test accuracy %g"%accuracy.eval(feed_dict={
       x: data_sets.test.images, y_: data_sets.test.labels,}))
