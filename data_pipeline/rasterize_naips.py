@@ -232,7 +232,8 @@ def onehot_for_labels(labels):
         if pixel_value != '0':
           road_pixel_count += 1
 
-    if road_pixel_count >= len(label[0])*.75:
+    if road_pixel_count >= 1:
+      #if road_pixel_count >= len(label[0])*.75:
       onehot_labels.append([0,1])
       on_count += 1
     else:
@@ -349,7 +350,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   '''
   outfile = path
   if not outfile:
-    outfile = os.path.splitext(raster_data_path)[0] + "-convolve5.png"
+    outfile = os.path.splitext(raster_data_path)[0] + "-convolve-1px-per-road.png"
   im = Image.open(raster_data_path)
   print "GENERATING PNG for %s" % raster_data_path
   rows = len(way_bitmap)
