@@ -2,7 +2,7 @@
 Some notes on todos, didn't want to muck with Github issues for this.
 
 ## What's Next
-* print how much loss is falling
+* ~print how much loss is falling, rolling average, help with debugging~
 * run this on the Linux box with a GPU, see if that's tons faster
 * assign more pixels for roads, based on road type (this will turn on more tiles, should be more accurate)
 * try just classifying big roads, with 2 or more lanes, or throwing out non motorways

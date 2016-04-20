@@ -85,6 +85,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
   sess.run(tf.initialize_all_variables())
 
   batch_size = 100
+  loss_total = 0
   for i in range(5000):
     batch = data_sets.train.next_batch(batch_size)
     train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
@@ -92,7 +93,8 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
     _, loss_val = sess.run([train_step, cross_entropy],
                            feed_dict={x: batch[0], y_: batch[1]})
-    print('step {}, loss = {}'.format(i, loss_val))
+    loss_total += loss_val
+    print('step {}, loss = {}, loss rolling avg = {} '.format(i, loss_val, loss_total/(i+1)))
 
     # print the prediction matrix at this step
     # print "{} test labels are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
