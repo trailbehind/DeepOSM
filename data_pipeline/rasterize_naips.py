@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 40
+TILE_SIZE = 48
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9
@@ -225,15 +225,7 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    road_pixel_count = 0
-    for x in range(len(label[0])):
-      for y in range(len(label[0][0])):
-        pixel_value = label[0][x][y]
-        if pixel_value != '0':
-          road_pixel_count += 1
-
-    if road_pixel_count >= 1:
-      #if road_pixel_count >= len(label[0])*.75:
+    if has_ways(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
     else:
@@ -247,10 +239,14 @@ def has_ways(tile):
   '''
      returns true if any pixel on the NxN tile is set to 1
   '''
-  for col in range(0, len(tile)):
-    for row in range(0, len(tile[col])):
-      if tile[col][row] != '0':
-        return True
+  road_pixel_count = 0
+  for x in range(0, len(tile)):
+    for y in range(0, len(tile[x])):
+      pixel_value = tile[x][y]
+      if pixel_value != '0':
+        road_pixel_count += 1
+  if road_pixel_count >= len(tile)*.75:
+    return True
   return False
 
 def shuffle_in_unison(a, b):
@@ -286,22 +282,44 @@ def run_analysis(use_pbf_cache=False, render_results=False):
       
   naip_tiles = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
 
+  assert len(road_labels) == len(naip_tiles)
+
+  road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
+
+  wayless_indices = []
+  way_indices = []
+  for x in range(len(road_labels)):
+    tile = road_labels[x][0]
+    if has_ways(tile):
+      way_indices.append(x)
+    else:
+      wayless_indices.append(x)
+
+  count_wayless = len(wayless_indices)
+  count_withways = len(way_indices)
+
+  equal_count_way_list = []
+  equal_count_tile_list = []
+  for x in range(min(count_wayless, count_withways)):
+    way_index = way_indices[x]
+    wayless_index = wayless_indices[x]
+    equal_count_way_list.append(road_labels[way_index])
+    equal_count_way_list.append(road_labels[wayless_index])
+    equal_count_tile_list.append(naip_tiles[way_index])
+    equal_count_tile_list.append(naip_tiles[wayless_index])
+
   test_labels = []
   training_labels = []
   test_images = []
   training_images = []
 
-  assert len(road_labels) == len(naip_tiles)
-
-  naip_tiles, road_labels = shuffle_in_unison(naip_tiles, road_labels)
-
-  for x in range(0, len(road_labels)):
-    if PERCENT_FOR_TRAINING_DATA > float(x)/len(road_labels):
-      training_images.append(naip_tiles[x])
-      training_labels.append(road_labels[x])
+  for x in range(0, len(equal_count_way_list)):
+    if PERCENT_FOR_TRAINING_DATA > float(x)/len(equal_count_tile_list):
+      training_images.append(equal_count_tile_list[x])
+      training_labels.append(equal_count_way_list[x])
     else:
-      test_images.append(naip_tiles[x])
-      test_labels.append(road_labels[x])
+      test_images.append(equal_count_tile_list[x])
+      test_labels.append(equal_count_way_list[x])
 
   # package data for tensorflow
   print_data_dimensions(training_labels)
@@ -394,8 +412,8 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
     start_y = label[1][1]
     for x in range(start_x, start_x+TILE_SIZE):
       for y in range(start_y, start_y+TILE_SIZE):
-        '''
         r, g, b, a = image.getpixel((x, y))
+        '''
         if shade_r:
           r = shade_r
         if shade_g:
@@ -404,9 +422,9 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
           b = shade_b
         '''
         if show_predictions and predictions[label_index] == 1:
-          image.putpixel((x, y), (0, 0, 0, 255))
+          image.putpixel((x, y), (r, g, 255, 255))
         elif show_predictions and predictions[label_index] == 0:
-          image.putpixel((x, y), (255, 0, 255, 255))
+          image.putpixel((x, y), (r, 255, b, 255))
         '''
         elif has_ways(label[0]):
           image.putpixel((x, y), (r, g, b, 255))
