@@ -6,7 +6,7 @@ Detect roads and features in satellite imagery, by training neural networks with
 * Download ways (i.e. road/trails) for that area from OSM
 * Generate training and evaluation data
 
-This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either.
+This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either. [I am blogging my work journal too](http://trailbehind.github.io/Deep-OSM/).
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
 
