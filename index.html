@@ -3,7 +3,6 @@ title: Deep OSM Journal
 ---
 
 <!DOCTYPE html>
-
 <html>
 
   <head>
@@ -19,15 +18,25 @@ title: Deep OSM Journal
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
+          <a id="forkme_banner" href="https://github.com/trailbehind/Deep-OSM">View on GitHub</a>
+
           <h1 id="project_title">Deep OSM Journal</h1>
           <h2 id="project_tagline">Data Science and Programming</h2>
-         </header>
+
+          <!-- section id="downloads">
+            <a class="zip_download_link" href="#">Download this project as a .zip file</a>
+            <a class="tar_download_link" href="#">Download this project as a tar.gz file</a>
+          </section -->
+        </header>
     </div>
 
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        {% for category in site.categories %}
+          <p>
+            This is my journal from working on Deep OSM, data science recording mostly, and comments on the coding.
+          </p>
+          {% for category in site.categories %}
           <ul>
             {% for post in category.last %}
               <li>
@@ -36,7 +45,17 @@ title: Deep OSM Journal
             {% endfor %}
           </ul>
         {% endfor %}
+
       </section>
     </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p>Deep-OSM by <a href="https://github.com/andrewljohnson">andrewljohnson</a> and other contributors.</p>
+        <p class="copyright">This Jekyll theme maintained by <a href="https://github.com/jasoncostello">Jason Costello</a></p>
+      </footer>
+    </div>
+
   </body>
 </html>
