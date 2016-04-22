@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 12
+TILE_SIZE = 40
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9
@@ -35,14 +35,6 @@ TOP_Y = 2500
 BOTTOM_Y = 6800
 LEFT_X = 600
 RIGHT_X = 4500
-'''
-
-'''
-# small city chunk in middle
-TOP_Y = 3500
-BOTTOM_Y = 6500
-LEFT_X = 2700
-RIGHT_X = 3500
 '''
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
@@ -69,6 +61,10 @@ def read_naip(file_path, bands_to_use):
   return raster_dataset, bands_data
 
 def tile_naip(raster_dataset, bands_data, bands_to_use):
+  '''
+     cut a 4-band raster image into tiles,
+     tiles are cubes - up to 4 bands, and N height x N width based on TILE_SIZE settings
+  '''
 
   on_band_count = 0
   for b in bands_to_use:
@@ -91,6 +87,10 @@ def tile_naip(raster_dataset, bands_data, bands_to_use):
   return all_tiled_data
 
 def pixel_bounds(rows, cols):
+  '''
+     returns 0, cols, 0, rows
+     unless constants are sets to override: LEFT_X, RIGHT_X, TOP_Y, BOTTOM_Y
+  '''
   left_x = LEFT_X
   if left_x == -1:
     left_x = 0
