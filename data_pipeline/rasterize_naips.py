@@ -81,11 +81,9 @@ def tile_naip(raster_dataset, bands_data, bands_to_use):
 
   for col in range(left_x, right_x, TILE_SIZE):
     for row in range(top_y, bottom_y, TILE_SIZE):
-      try:
+      if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
         new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row)))
-      except:
-        print "HIT FRINGE of image"
  
   return all_tiled_data
 
@@ -309,11 +307,9 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
   for row in range(top_y, bottom_y, TILE_SIZE):
     for col in range(left_x, right_x, TILE_SIZE):
-      try:
+      if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
         new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
         road_labels.append((new_tile,(col, row)))
-      except:
-        print "HIT FRINGE of NAIP size"
       
   naip_tiles = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
 

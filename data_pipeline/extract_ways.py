@@ -67,12 +67,15 @@ class WayExtracter(o.SimpleHandler):
             # and tag.v in ['primary', 'secondary', 'tertiary', 'trunk']:
             highway_type = tag.v
             is_highway = True
-          #if tag.k == 'lanes' and int(tag.v[len(tag.v)-1]) >= 2:
-          #  is_big = True
-            #for t in w.tags:
-            #  print "tag {} {}".format(t.k, t.v)
+          try:
+            if tag.k == 'lanes' and int(tag.v[len(tag.v)-1]) >= 2:
+              is_big = True
+              #for t in w.tags:
+              #  print "tag {} {}".format(t.k, t.v)
+          except:
+            print("exception, weird lanes designation {}".format(tag.v))
 
-        if not is_highway:
+        if not is_highway or not is_big:
           return
         
         if not highway_type in self.types:
