@@ -41,7 +41,7 @@ class NAIPDownloader:
     filename = 'm_3807708_ne_18_1_20130924.tif'
     full_path = os.path.join(NAIP_DATA_DIR, filename)
     if os.path.exists(full_path):
-      print("{} already downloaded".format(full_path))
+      print("NAIP {} already downloaded".format(full_path))
     else:
       s3_client.download_file('aws-naip', 'md/2013/1m/rgbir/38077/{}'.format(filename), full_path, {'RequestPayer':'requester'})
     return full_path

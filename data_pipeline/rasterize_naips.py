@@ -3,7 +3,7 @@ from random import shuffle
 from osgeo import gdal
 from PIL import Image
 from pyproj import Proj, transform
-from extract_ways import WayMap, download_file
+from extract_ways import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 48
+TILE_SIZE = 12
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9
@@ -23,11 +23,19 @@ DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 # the bands to use from the NAIP for analysis (R G B IR)
 BANDS_TO_USE = [0,0,0,1]
 
+# entire NAIP
+TOP_Y = -1
+BOTTOM_Y = -1
+LEFT_X = -1
+RIGHT_X = -1
+
 # big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
+'''
 TOP_Y = 2500
 BOTTOM_Y = 6800
 LEFT_X = 600
 RIGHT_X = 4500
+'''
 
 '''
 # small city chunk in middle
@@ -69,15 +77,37 @@ def tile_naip(raster_dataset, bands_data, bands_to_use):
 
   rows, cols, n_bands = bands_data.shape
   print("OPENED NAIP with {} rows, {} cols, and {} bands".format(rows, cols, n_bands))
-  print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset)))
+  print("GEO-BOUNDS for image chunk is {}".format(bounds_for_naip(raster_dataset, rows, cols)))
 
   all_tiled_data = []
-  for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
-    for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
+
+  left_x, right_x, top_y, bottom_y = pixel_bounds(rows,cols)
+
+  for col in range(left_x, right_x-TILE_SIZE, TILE_SIZE):
+    for row in range(top_y, bottom_y-TILE_SIZE, TILE_SIZE):
       new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
       all_tiled_data.append((new_tile,(col, row)))
 
   return all_tiled_data
+
+def pixel_bounds(rows, cols):
+  left_x = LEFT_X
+  if left_x == -1:
+    left_x = 0
+
+  right_x = RIGHT_X
+  if right_x == -1:
+    right_x = cols
+
+  top_y = TOP_Y
+  if top_y == -1:
+    top_y = 0
+
+  bottom_y = BOTTOM_Y
+  if bottom_y == -1:
+    bottom_y = rows
+
+  return left_x, right_x, top_y, bottom_y
 
 def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
   '''
@@ -95,7 +125,7 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
     print "CREATING LABELS from PBF file"
 
   way_bitmap = empty_tile_matrix(rows, cols)
-  bounds = bounds_for_naip(raster_dataset)
+  bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
   for way in ways:
     for point_tuple in way['linestring']:
@@ -136,12 +166,13 @@ def empty_tile_matrix(rows, cols):
       tile_matrix[x].append(0)
   return tile_matrix
 
-def bounds_for_naip(raster_dataset):
+def bounds_for_naip(raster_dataset, rows, cols):
   '''
       clip the NAIP to LEFT_X to RIGHT_X, BOTTOM_Y to TOP_Y
   '''
-  sw = pixelToLatLng(raster_dataset, LEFT_X, BOTTOM_Y)
-  ne = pixelToLatLng(raster_dataset, RIGHT_X, TOP_Y)
+  left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
+  sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
+  ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
 
 def pixels_between(start_pixel, end_pixel, cols):
@@ -191,11 +222,7 @@ def download_and_extract_pbf():
       download a certain PBF file from geofabrik unless it exists locally already,
       and extract its ways
   '''
-  waymap = WayMap()
-  file_path = os.path.join(GEO_DATA_DIR, DEFAULT_SAVE_PBF_PATH)
-  if not os.path.exists(file_path):
-    file_path = download_file(DEFAULT_PBF_URL)
-  waymap.run_extraction(file_path)
+  waymap = download_and_extract()
   return waymap
 
 def format_as_onehot_arrays(types, training_labels, test_labels):
@@ -245,7 +272,7 @@ def has_ways(tile):
       pixel_value = tile[x][y]
       if pixel_value != '0':
         road_pixel_count += 1
-  if road_pixel_count >= len(tile)*.75:
+  if road_pixel_count >= len(tile)*.25:
     return True
   return False
 
@@ -275,8 +302,10 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   waymap = download_and_extract_pbf()
   way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
   road_labels = []
-  for row in range(TOP_Y, BOTTOM_Y-TILE_SIZE, TILE_SIZE):
-    for col in range(LEFT_X, RIGHT_X-TILE_SIZE, TILE_SIZE):
+
+  left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
+  for row in range(top_y, bottom_y-TILE_SIZE, TILE_SIZE):
+    for col in range(left_x, right_x-TILE_SIZE, TILE_SIZE):
       new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
       road_labels.append((new_tile,(col, row)))
       
@@ -406,6 +435,9 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   im.save(outfile, "PNG")
 
 def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
+  '''
+      visualize predicted ON labels as blue, OFF as green
+  '''
   label_index = 0
   for label in labels:
     start_x = label[1][0]
@@ -422,8 +454,10 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
           b = shade_b
         '''
         if show_predictions and predictions[label_index] == 1:
+          # shade ON predictions blue
           image.putpixel((x, y), (r, g, 255, 255))
         elif show_predictions and predictions[label_index] == 0:
+          # shade OFF predictions green
           image.putpixel((x, y), (r, 255, b, 255))
         '''
         elif has_ways(label[0]):

@@ -12,15 +12,24 @@ wkbfab = o.geom.WKBFactory()
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 
+# enough to cover a NAIP around DC
+DEFAULT_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
+                     'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
+
 class WayMap():
     def __init__(self):
       pass
 
+    def extract_files(self, file_list):
+      extracter = WayExtracter()
+      self.extracter = extracter
+      for path in file_list:
+        print "EXTRACTING PBF {}".format(path)
+        self.run_extraction(path)
+
     def run_extraction(self, file_path):
       # extract ways
-      extracter = WayExtracter()
-      extracter.apply_file(file_path, locations=True)
-      self.extracter = extracter
+      self.extracter.apply_file(file_path, locations=True)
       for key in self.extracter.way_dict:
         combined_line = {'id':key, 'linestring':[]}
         for way_dict in self.extracter.way_dict[key]:
@@ -79,13 +88,24 @@ class WayExtracter(o.SimpleHandler):
         for tag in w.tags:
           way_dict['tags'].append((tag.k, tag.v))
 
-        wkb = wkbfab.create_linestring(w)
+        try:
+          wkb = wkbfab.create_linestring(w)
+        except:
+          # throws on single point ways
+          return
         line = wkblib.loads(wkb, hex=True)
         reverse_points = []
         for point in list(line.coords):
           reverse_points.append([point[1],point[0]])
         way_dict['linestring'] = reverse_points
         self.ways.append(way_dict)
+
+def download_and_extract():
+    file_urls = DEFAULT_FILE_URLS
+    file_paths = download_files(file_urls)               
+    w = WayMap()
+    w.extract_files(file_paths)
+    return w
 
 def download_file(url):
     local_filename = url.split('/')[-1]
@@ -97,14 +117,15 @@ def download_file(url):
           f.write(chunk)
     return full_local_filename
 
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-      file_path = download_file('http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf')
-    elif len(sys.argv) != 2:
-      print("Usage: python extract_ways.py <osmfile>")
-      sys.exit(-1)
+def download_files(url_list):
+  paths = []
+  for url in url_list:
+    local_filename = url.split('/')[-1]
+    full_local_filename = os.path.join(GEO_DATA_DIR, local_filename)
+    if not os.path.exists(full_local_filename):
+      paths.append(download_file(url))
     else:
-      file_path = sys.argv[1]
+      paths.append(full_local_filename)
+      print("PBF {} already downloaded".format(full_local_filename))
+  return paths
 
-    w = WayMap()
-    w.run_extraction(file_path)
