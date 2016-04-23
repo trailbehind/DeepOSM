@@ -1,4 +1,4 @@
-# Deep OSM
+# DeepOSM
 
 Detect roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. The gist:
 
@@ -6,7 +6,7 @@ Detect roads and features in satellite imagery, by training neural networks with
 * Download ways (i.e. road/trails) for that area from OSM
 * Generate training and evaluation data
 
-This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either. [I am blogging my work journal too](http://trailbehind.github.io/Deep-OSM/).
+This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either. [I am blogging my work journal too](http://trailbehind.github.io/DeepOSM/).
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
 
@@ -122,7 +122,7 @@ This will use a convolutional neural network (CNN) from TensorFlow tutorial 2, i
 
 This was the general idea to start:
 
-![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
+![DeepOSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
 
 ## Background
 
