@@ -11,7 +11,7 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 40
+TILE_SIZE = 64
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .9
@@ -115,15 +115,15 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
-  try:
-    if use_pbf_cache:
-      arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
-      print "CACHED: read label data from disk"
-      return arr
-    else:
-      print "CREATING LABELS from PBF file"
-  except:
-    print "CREATING LABELS from PBF file"
+  #try:
+  #  if use_pbf_cache:
+  #    arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
+  #    print "CACHED: read label data from disk"
+  #    return arr
+  #  else:
+  #    print "CREATING LABELS from PBF file"
+  #except:
+  #  print "CREATING LABELS from PBF file"
 
   way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
@@ -151,8 +151,8 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
         else:
           way_bitmap[p[1]][p[0]] = w['highway_type']
 
-  print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
-  numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
+  # print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
+  # numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
 
   return way_bitmap
 
@@ -294,24 +294,29 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   
   # dowload and convert NAIP
   naiper = NAIPDownloader()
-  raster_data_path = naiper.download_naips()
-  raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
-  rows = bands_data.shape[0]
-  cols = bands_data.shape[1]
+  raster_data_paths = naiper.download_naips()
   
+  road_labels = []
+  naip_tiles = []
   # tile images and labels
   waymap = download_and_extract_pbf()
-  way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
-  road_labels = []
 
-  left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
-  for row in range(top_y, bottom_y, TILE_SIZE):
-    for col in range(left_x, right_x, TILE_SIZE):
-      if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
-        new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
-        road_labels.append((new_tile,(col, row)))
-      
-  naip_tiles = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
+  for raster_data_path in raster_data_paths:
+    raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
+    rows = bands_data.shape[0]
+    cols = bands_data.shape[1]
+  
+    way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
+
+    left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
+    for row in range(top_y, bottom_y, TILE_SIZE):
+      for col in range(left_x, right_x, TILE_SIZE):
+        if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
+          new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
+          road_labels.append((new_tile,(col, row)))
+        
+    for tile in tile_naip(raster_dataset, bands_data, BANDS_TO_USE):
+      naip_tiles.append(tile)
 
   assert len(road_labels) == len(naip_tiles)
 

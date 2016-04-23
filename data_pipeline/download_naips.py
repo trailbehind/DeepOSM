@@ -36,15 +36,38 @@ class NAIPDownloader:
     return new_dir
 
   def download_naips(self):
+    
+    state = 'md'
+    year = '2013'
+    resolution = '1m'
+    spectrum = 'rgbir' 
+    grid = '38077'
+    filenames = [
+                 'm_3807708_ne_18_1_20130924',
+                 'm_3807708_nw_18_1_20130904',
+                 'm_3807708_se_18_1_20130924',
+                 'm_3807708_se_18_1_20130924'
+
+    ]
+    filetype = 'tif'
+
     # Return the full path downloaded to.
     s3_client = boto3.client('s3')
     filename = 'm_3807708_ne_18_1_20130924.tif'
-    full_path = os.path.join(NAIP_DATA_DIR, filename)
-    if os.path.exists(full_path):
-      print("NAIP {} already downloaded".format(full_path))
-    else:
-      s3_client.download_file('aws-naip', 'md/2013/1m/rgbir/38077/{}'.format(filename), full_path, {'RequestPayer':'requester'})
-    return full_path
+
+    paths = []
+
+    for filename in filenames:
+      full_path = os.path.join(NAIP_DATA_DIR, filename)
+      if os.path.exists(full_path):
+        print("NAIP {} already downloaded".format(full_path))
+      else:
+        s3_url = '{}/{}/{}/{}/{}/{}.{}'.format(state, year, resolution, spectrum, grid, filename, filetype)
+        print s3_url
+        s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
+      paths.append(full_path)
+
+    return paths
 
 if __name__ == '__main__':
   parameters_message = "parameters are: download"
