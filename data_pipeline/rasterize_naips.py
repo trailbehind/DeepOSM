@@ -11,10 +11,10 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 64
+TILE_SIZE = 20
 
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .9
+PERCENT_FOR_TRAINING_DATA = .95
 
 # use Washington DC for analysis by default
 DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
@@ -375,13 +375,23 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                    npy_test_images, 
                    npy_test_labels)
 
+  training_labels_by_naip = {}
+  test_labels_by_naip = {}
   predictions_by_naip = {}
   for raster_data_path in raster_data_paths:
     predictions_by_naip[raster_data_path] = []
+    test_labels_by_naip[raster_data_path] = []
+    training_labels_by_naip[raster_data_path] = []
 
   index = 0
   for label in test_labels:
     predictions_by_naip[label[2]].append(predictions[index])
+    test_labels_by_naip[label[2]].append(test_labels[index])
+    index += 1
+
+  index = 0
+  for label in training_labels:
+    training_labels_by_naip[label[2]].append(training_labels[index])
     index += 1
 
   #prediction_on_count = 0
@@ -392,8 +402,8 @@ def run_analysis(use_pbf_cache=False, render_results=False):
       for raster_data_path in raster_data_paths:
         render_results_as_image(raster_data_path, 
                                 way_bitmap_npy[raster_data_path], 
-                                training_labels, 
-                                test_labels, 
+                                training_labels_by_naip[raster_data_path], 
+                                test_labels_by_naip[raster_data_path], 
                                 predictions=predictions_by_naip[raster_data_path])
 
 def print_data_dimensions(training_labels):
@@ -425,12 +435,12 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   print "{} elapsed for FLATTEN 4 BAND TIFF TO JPEG".format(t1-t0)
 
   t0 = time.time()
-  shade_labels(raster_data_path, training_labels, im, shade_b=255)
+  shade_labels(training_labels, im, shade_b=255)
   t1 = time.time()
   print "{} elapsed for SHADE TRAINING LABELS".format(t1-t0)
 
   t0 = time.time()
-  shade_labels(raster_data_path, test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
+  shade_labels(test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
   t1 = time.time()
   print "{} elapsed for SHADE TEST LABELS".format(t1-t0)
 
@@ -445,7 +455,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
 
   im.save(outfile, "PNG")
 
-def shade_labels(raster_data_path, labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
+def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
   '''
       visualize predicted ON labels as blue, OFF as green
   '''
@@ -464,10 +474,10 @@ def shade_labels(raster_data_path, labels, image, shade_r=0, shade_g=0, shade_b=
         if shade_b:
           b = shade_b
         '''
-        if show_predictions and predictions[raster_data_path][label_index] == 1:
+        if show_predictions and predictions[label_index] == 1:
           # shade ON predictions blue
           image.putpixel((x, y), (r, g, 255, 255))
-        elif show_predictions and predictions[raster_data_path][label_index] == 0:
+        elif show_predictions and predictions[label_index] == 0:
           # shade OFF predictions green
           image.putpixel((x, y), (r, 255, b, 255))
         '''
