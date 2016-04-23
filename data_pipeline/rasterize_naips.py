@@ -375,17 +375,26 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                    npy_test_images, 
                    npy_test_labels)
 
-  prediction_on_count = 0
+  predictions_by_naip = {}
   for raster_data_path in raster_data_paths:
-    print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions[raster_data_path])))
-  # this step can take a long time, especially for the whole image or a large chunk
-  if render_results:
-    for raster_data_path in raster_data_paths:
-      render_results_as_image(raster_data_path, 
-                              way_bitmap_npy[raster_data_path], 
-                              training_labels, 
-                              test_labels, 
-                              predictions=predictions[raster_data_path])
+    predictions_by_naip[raster_data_path] = []
+
+  index = 0
+  for label in test_labels:
+    predictions_by_naip[label[2]].append(predictions[index])
+    index += 1
+
+  #prediction_on_count = 0
+  for raster_data_path in raster_data_paths:
+    #print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions[raster_data_path])))
+    # this step can take a long time, especially for the whole image or a large chunk
+    if render_results:
+      for raster_data_path in raster_data_paths:
+        render_results_as_image(raster_data_path, 
+                                way_bitmap_npy[raster_data_path], 
+                                training_labels, 
+                                test_labels, 
+                                predictions=predictions_by_naip[raster_data_path])
 
 def print_data_dimensions(training_labels):
   tiles = len(training_labels)
