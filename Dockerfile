@@ -4,7 +4,7 @@ FROM geodata/gdal
 # geodata/gdal sets the user to noboby so re-set to root
 USER root
 
-# Install pythons and setup virtualenv, from https://github.com/GoogleCloudPlatform/python-docker/blob/master/Dockerfile
+# Install python and setup virtualenv, from https://github.com/GoogleCloudPlatform/python-docker/blob/master/Dockerfile
 RUN apt-get -q update && \
  apt-get install --no-install-recommends -y -q \
    libbz2-dev python2.7 python2.7-dev cmake python-pip build-essential git mercurial \
@@ -43,6 +43,8 @@ ENV GEO_DATA_DIR /Deep-OSM/data
 COPY run_jupyter.sh /
 COPY jupyter_notebook_config.py /root/.jupyter/
 EXPOSE 8888
+
+RUN apt-get install -y s3cmd
 
 ADD . /Deep-OSM
 WORKDIR /Deep-OSM

@@ -4,7 +4,7 @@
 
 '''
 
-import sys, os
+import sys, os, subprocess
 import boto3
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
@@ -36,7 +36,11 @@ class NAIPDownloader:
     return new_dir
 
   def download_naips(self):
-    
+    '''
+    bashCommand = "s3cmd ls --recursive --skip-existing s3://aws-naip/md/2013/1m/rgbir/ --requester-pays"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    output = process.communicate()[0]
+    '''
     state = 'md'
     year = '2013'
     resolution = '1m'

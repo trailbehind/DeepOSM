@@ -60,7 +60,7 @@ def read_naip(file_path, bands_to_use):
   
   return raster_dataset, bands_data
 
-def tile_naip(raster_dataset, bands_data, bands_to_use):
+def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
   '''
      cut a 4-band raster image into tiles,
      tiles are cubes - up to 4 bands, and N height x N width based on TILE_SIZE settings
@@ -83,7 +83,7 @@ def tile_naip(raster_dataset, bands_data, bands_to_use):
     for row in range(top_y, bottom_y, TILE_SIZE):
       if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
         new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
-        all_tiled_data.append((new_tile,(col, row)))
+        all_tiled_data.append((new_tile,(col, row),raster_data_path))
  
   return all_tiled_data
 
@@ -300,22 +300,23 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   naip_tiles = []
   # tile images and labels
   waymap = download_and_extract_pbf()
+  way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
     raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
   
-    way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
 
     left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
     for row in range(top_y, bottom_y, TILE_SIZE):
       for col in range(left_x, right_x, TILE_SIZE):
         if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
-          new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
-          road_labels.append((new_tile,(col, row)))
+          new_tile = way_bitmap_npy[raster_data_path][row:row+TILE_SIZE, col:col+TILE_SIZE]
+          road_labels.append((new_tile,(col, row),raster_data_path))
         
-    for tile in tile_naip(raster_dataset, bands_data, BANDS_TO_USE):
+    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, BANDS_TO_USE):
       naip_tiles.append(tile)
 
   assert len(road_labels) == len(naip_tiles)
@@ -375,21 +376,16 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                    npy_test_labels)
 
   prediction_on_count = 0
-  for p in predictions:
-    if p != 0:
-      prediction_on_count += 1
-      if prediction_on_count == 1:
-        print "PREDICTION LIST HAS ON VALUES"
-  print predictions
-  print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions)))
+  for raster_data_path in raster_data_paths:
+    print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions[raster_data_path])))
   # this step can take a long time, especially for the whole image or a large chunk
   if render_results:
-    render_results_as_image(raster_data_path, 
-                            way_bitmap_npy, 
-                            training_labels, 
-                            test_labels, 
-                            #path="data/naip/output-new.png", 
-                            predictions=predictions)
+    for raster_data_path in raster_data_paths:
+      render_results_as_image(raster_data_path, 
+                              way_bitmap_npy[raster_data_path], 
+                              training_labels, 
+                              test_labels, 
+                              predictions=predictions[raster_data_path])
 
 def print_data_dimensions(training_labels):
   tiles = len(training_labels)
@@ -398,13 +394,12 @@ def print_data_dimensions(training_labels):
   bands = len(training_labels[0][0][0][0])
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
-def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, path=None, predictions=None):
+def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, predictions=None):
   '''
       save the source TIFF as a JPEG, with labels and data overlaid
   '''
-  outfile = path
-  if not outfile:
-    outfile = os.path.splitext(raster_data_path)[0] + "-convolve-1px-per-road.png"
+  timestr = time.strftime("%Y%m%d-%H%M%S")
+  outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".png"
   im = Image.open(raster_data_path)
   print "GENERATING PNG for %s" % raster_data_path
   rows = len(way_bitmap)
@@ -415,18 +410,18 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   r, g, b, ir = im.split()
   for x in range(cols):
     for y in range(rows):
-      ir.putpixel((x, y),(0))
+      ir.putpixel((x, y),(0))    
   im = Image.merge("RGBA", (r, g, b, r))
   t1 = time.time()
   print "{} elapsed for FLATTEN 4 BAND TIFF TO JPEG".format(t1-t0)
 
   t0 = time.time()
-  shade_labels(training_labels, im, shade_b=255)
+  shade_labels(raster_data_path, training_labels, im, shade_b=255)
   t1 = time.time()
   print "{} elapsed for SHADE TRAINING LABELS".format(t1-t0)
 
   t0 = time.time()
-  shade_labels(test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
+  shade_labels(raster_data_path, test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
   t1 = time.time()
   print "{} elapsed for SHADE TEST LABELS".format(t1-t0)
 
@@ -441,7 +436,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
 
   im.save(outfile, "PNG")
 
-def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
+def shade_labels(raster_data_path, labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
   '''
       visualize predicted ON labels as blue, OFF as green
   '''
@@ -460,10 +455,10 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
         if shade_b:
           b = shade_b
         '''
-        if show_predictions and predictions[label_index] == 1:
+        if show_predictions and predictions[raster_data_path][label_index] == 1:
           # shade ON predictions blue
           image.putpixel((x, y), (r, g, 255, 255))
-        elif show_predictions and predictions[label_index] == 0:
+        elif show_predictions and predictions[raster_data_path][label_index] == 0:
           # shade OFF predictions green
           image.putpixel((x, y), (r, 255, b, 255))
         '''
