@@ -1,5 +1,5 @@
 ---
-title: Project Journal - April 22, 2016
+title: Project Journal - April 24, 2016
 category: notes
 layout: post
 ---
