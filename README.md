@@ -1,34 +1,28 @@
-# Deep OSM
+# DeepOSM
 
 Detect roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. The gist:
 
 * Download a chunk of satellite imagery
-* Download ways (i.e. road/trails) for that area from OSM
+* Download OSM data that shows roads/features for that area
 * Generate training and evaluation data
 
-This is a work in progress. Experiment 1 went well, and now the goal is better data Experiment 2. Read below to run the code for either. [I am blogging my work journal too](http://trailbehind.github.io/Deep-OSM/).
+Read below to run the code. [I am blogging my work journal too](http://trailbehind.github.io/Deep-OSM/). 
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
 
-# Experiment 2 - NAIPs and OSM PBF
+## Background on Data - NAIPs and OSM PBF
 
-## Overview
+For training data, DeepOSM cuts tiles out of [NAIP images](http://www.fsa.usda.gov/programs-and-services/aerial-photography/imagery-programs/naip-imagery/), which provide 1 meter per pixel resolution, and RGB+infrared data bands.
 
-For the experiment 2, I decided to tile/clip [NAIP images](http://www.fsa.usda.gov/programs-and-services/aerial-photography/imagery-programs/naip-imagery/) instead of using Mapquest imagery tiles, based on things I heard from a couple of people:
+For training labels, DeepOSM uses PBF extracts of OSM data, which contain features/ways in binary format.
 
-* the IR bands are supposed to be important for the analysis
-* the images are higher resolution
-* the images aren't smashed into spherical mercator, which might matter at the poles?
-
-When I switched to NAIPs, it no longer made sense to use pre-sliced vector tiles for the training labels. Instead, I'm extracting OSM data from PBF extracts, and manually clipping them to match arbitrary NAIP tiles.
-
-I am currently working on this stage. The [NAIPs come from a requester pays bucket on S3 set up by Mapbox](http://www.slideshare.net/AmazonWebServices/open-data-innovation-building-on-open-data-sets-for-innovative-applications), and the OSM extracts come [from geofabrik](http://download.geofabrik.de/).
+The [NAIPs come from a requester pays bucket on S3 set up by Mapbox](http://www.slideshare.net/AmazonWebServices/open-data-innovation-building-on-open-data-sets-for-innovative-applications), and the OSM extracts come [from geofabrik](http://download.geofabrik.de/).
 
 ## Install Requirements
 
 ### AWS Credentials
 
-You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
+You need AWS credentials to download NAIPs from an S3 requester-pays bucket. This only costs a few cents for a bunch of images, but you need a credit card on file.
 
  * get your [AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from AWS](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
@@ -40,11 +34,9 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
 ### Install Docker
 
-I also needed to set my VirtualBox default memory to 4GB, from the default 1GB, to get libosmium to work.
+I also needed to set my VirtualBox default memory to 12GB. libosmium needed 4GB, and the neural net needed even more.
 
-Then, I needed to up it again, to 16 GB, to get the neural net to work.
-
-## Run Scripts
+### Run Scripts
 
 Start Docker, then run:
 
@@ -52,7 +44,7 @@ Start Docker, then run:
 make dev
 ```
 
-## Download NAIP, PBF, and Analyze
+### Download NAIP, PBF, and Analyze
 
 The following Python script will work in the Docker machine. It will download all source data, tile it into training/test data and labels, and train the neural net.
 
@@ -60,9 +52,11 @@ The following Python script will work in the Docker machine. It will download al
 
 This will download four NAIPs, and tile it into NxNx1 bands of data (IR band). Then it will download some PBF files and extract the ways for the NAIPs.
 
-It will produce PNGs of the ways, labels, and predictions overlaid on the tiff.
+It will produce PNGs of the ways, labels, and predictions overlaid on the tiff. It will be able to guess with 69% accuracy if a 64x64px tiles contains highways.
 
-![NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
+![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
+
+### Jupyter Notebook
 
 Alternately, development/research can be done via jupyter notebooks:
 
@@ -83,47 +77,7 @@ default   *        virtualbox   Running   tcp://192.168.99.100:2376           v1
 The notebook server is accessible via port 8888, so in this case you'd go to:
 http://192.168.99.100:8888
 
-# Experiment 1 - TMS Tiles
-
-## Overview
-
-I first trained on a set of Mapzen vector tiles, which conveniently map onto Mapquest imagery tiles. This was the simplest possible thing I thought to do... this data jammed right into the [Tensorflow](http://tensorflow.org) tutorials.
-
-The label_chunks_cnn.py script seemed to be able to guess whether a 256px tile at some zooms has an OSM way on it with ~70% accuracy for very small image sets. The label_chunks_softmax.py was worse. There is also some chance the output was just random and buggy too.
-
-## Install Requirements
-
-This has been run on OSX Yosemite (10.10.5).
-
-    brew install libjpeg
-    pip3 install -r requirements.txt
-    sudo easy_install --upgrade six
-
-Install globalmaptiles.py
-
-    mkdir lib
-    cd lib
-    git clone git@gist.github.com:d5bf14750eff1197e8c5.git global_map
-    cd ..
-    export PYTHONPATH=$PYTHONPATH:./lib/global_map:./data_pipeline
-
-## Run the Script
-This will download vectors, imagery, and run the analysis.
-
-    python3 analysis/label_chunks_softmax.py download-data MAPZEN_KEY
-    python3 analysis/label_chunks_softmax.py train
-
-This will use a convolutional neural network (CNN) from TensorFlow tutorial 2, instead of the softmax from tutorial 1.
-
-    python3 analysis/label_chunks_cnn.py train
-
-# Background
-
-This was the general idea to start:
-
-![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
-
-## Background
+### Readings
 
 * [TensorFlow](https://www.tensorflow.org/) - using this for the deep learning, do multilayer, deep CNN
 * [Learning to Detect Roads in High-Resolution Aerial
@@ -138,3 +92,9 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
     * all the other links to Nielsen’s book and [Colah’s blog](http://colah.github.io/posts/2015-08-Backprop/)
 * Deep Background
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
+
+### Original Idea
+
+This was the general idea to start, and working with TMS tiles sort of worked, so DeepOSM got switched to better data:
+
+![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
