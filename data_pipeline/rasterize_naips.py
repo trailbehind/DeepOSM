@@ -298,7 +298,8 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   
   road_labels = []
   naip_tiles = []
-  # tile images and labels
+
+  # tile images and labels  
   waymap = download_and_extract_pbf()
   way_bitmap_npy = {}
 

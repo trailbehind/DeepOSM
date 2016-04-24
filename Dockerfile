@@ -1,10 +1,12 @@
 # https://hub.docker.com/r/homme/gdal/
 FROM geodata/gdal
 
-# geodata/gdal sets the user to noboby so re-set to root
+# geodata/gdal sets the user to noboby, so reset to root
 USER root
 
-# Install python and setup virtualenv, from https://github.com/GoogleCloudPlatform/python-docker/blob/master/Dockerfile
+# Based on https://github.com/GoogleCloudPlatform/python-docker/blob/master/Dockerfile
+# Link above installs stuff for Python, virtualenv
+# Also kludged in stuff for Osmium and Git
 RUN apt-get -q update && \
  apt-get install --no-install-recommends -y -q \
    libbz2-dev python2.7 python2.7-dev cmake python-pip build-essential git mercurial \
@@ -21,8 +23,7 @@ RUN apt-get -q update && \
    && \
  apt-get clean
 
-# Copy requirements.txt and run pip to install all
-# dependencies into the virtualenv.
+# copy requirements.txt and run pip to install all dependencies into the virtualenv.
 ADD requirements.txt /Deep-OSM/requirements.txt
 RUN pip install -r /Deep-OSM/requirements.txt
 RUN ln -s /home/vmagent/data_pipeline /Deep-OSM
@@ -33,7 +34,7 @@ RUN cd /libosmium && mkdir build && cd build && cmake .. && make
 RUN git clone https://github.com/osmcode/pyosmium.git /pyosmium
 RUN cd /pyosmium && pwd && python setup.py install
 
-# Update PYTHONPATH
+# update PYTHONPATH
 ENV PYTHONPATH /Deep-OSM:/Deep-OSM/analysis:$PYTHONPATH
 ENV GEO_DATA_DIR /Deep-OSM/data
 
@@ -44,8 +45,11 @@ COPY run_jupyter.sh /
 COPY jupyter_notebook_config.py /root/.jupyter/
 EXPOSE 8888
 
+# install s3cmd, used to ls the RequesterPays bucket 
+# copy s3cmd
 RUN apt-get --no-install-recommends -y -q install wget
 RUN wget http://netix.dl.sourceforge.net/project/s3tools/s3cmd/1.6.0/s3cmd-1.6.0.tar.gz && tar xvfz s3cmd-1.6.0.tar.gz && cd s3cmd-1.6.0 && python setup.py install
+COPY s3config-default /root/.s3cfg
 
 ADD . /Deep-OSM
 WORKDIR /Deep-OSM

@@ -36,6 +36,19 @@ class NAIPDownloader:
     return new_dir
 
   def download_naips(self):
+
+    # configure s3cmd with AWS credentials
+    file_path = '/' + os.environ.get("HOME")+'/.s3cfg'
+    f = open(file_path,'r')
+    filedata = f.read()
+    f.close()
+    newdata = filedata.replace("AWS_ACCESS_KEY",os.environ.get("AWS_ACCESS_KEY_ID"))
+    newdata = newdata.replace("AWS_SECRET_KEY",os.environ.get("AWS_SECRET_ACCESS_KEY"))
+    f = open(file_path,'w')
+    f.write(newdata)
+    f.close()
+
+    # list the contents of the bucket directory
     bashCommand = "s3cmd ls --recursive --skip-existing s3://aws-naip/md/2013/1m/rgbir/ --requester-pays"
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output = process.communicate()[0]

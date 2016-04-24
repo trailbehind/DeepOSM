@@ -54,17 +54,13 @@ make dev
 
 ## Download NAIP, PBF, and Analyze
 
-Run this and enter your AWS credentiald again, because I haven't automated this part:
-
-    s3cmd --configure
-
-Then the following Python script will work in the Docker machine.
+The following Python script will work in the Docker machine. It will download all source data, tile it into training/test data and labels, and train the neural net.
 
     python data_pipeline/rasterize_naips.py --render_results=True
 
-This will download one NAIP, and tile it into cubes (NxNx4 bands of data). Then it will download a PBF file and extract the ways for the NAIP.
+This will download four NAIPs, and tile it into NxNx1 bands of data (IR band). Then it will download some PBF files and extract the ways for the NAIPs.
 
-It will produce a JPEG of the ways, labels, and predictions overlaid on the tiff.
+It will produce PNGs of the ways, labels, and predictions overlaid on the tiff.
 
 ![NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
 
