@@ -399,12 +399,11 @@ def run_analysis(use_pbf_cache=False, render_results=False):
     #print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions[raster_data_path])))
     # this step can take a long time, especially for the whole image or a large chunk
     if render_results:
-      for raster_data_path in raster_data_paths:
-        render_results_as_image(raster_data_path, 
-                                way_bitmap_npy[raster_data_path], 
-                                training_labels_by_naip[raster_data_path], 
-                                test_labels_by_naip[raster_data_path], 
-                                predictions=predictions_by_naip[raster_data_path])
+      render_results_as_image(raster_data_path, 
+                              way_bitmap_npy[raster_data_path], 
+                              training_labels_by_naip[raster_data_path], 
+                              test_labels_by_naip[raster_data_path], 
+                              predictions=predictions_by_naip[raster_data_path])
 
 def print_data_dimensions(training_labels):
   tiles = len(training_labels)
