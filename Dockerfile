@@ -44,7 +44,8 @@ COPY run_jupyter.sh /
 COPY jupyter_notebook_config.py /root/.jupyter/
 EXPOSE 8888
 
-RUN apt-get install -y s3cmd
+RUN apt-get --no-install-recommends -y -q install wget
+RUN wget http://netix.dl.sourceforge.net/project/s3tools/s3cmd/1.6.0/s3cmd-1.6.0.tar.gz && tar xvfz s3cmd-1.6.0.tar.gz && cd s3cmd-1.6.0 && python setup.py install
 
 ADD . /Deep-OSM
 WORKDIR /Deep-OSM

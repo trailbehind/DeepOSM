@@ -36,11 +36,11 @@ class NAIPDownloader:
     return new_dir
 
   def download_naips(self):
-    '''
     bashCommand = "s3cmd ls --recursive --skip-existing s3://aws-naip/md/2013/1m/rgbir/ --requester-pays"
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output = process.communicate()[0]
-    '''
+    print output
+    
     state = 'md'
     year = '2013'
     resolution = '1m'

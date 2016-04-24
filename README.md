@@ -34,7 +34,6 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket.
 
  * export them as environment variables (and maybe add to your bash or zprofile)
 
-
     export AWS_ACCESS_KEY_ID='FOO'
 
     export AWS_SECRET_ACCESS_KEY='BAR'
@@ -53,7 +52,21 @@ Start Docker, then run:
 make dev
 ```
 
+## Download NAIP, PBF, and Analyze
+
+Run this and enter your AWS credentiald again, because I haven't automated this part:
+
+    s3cmd --configure
+
 Then the following Python script will work in the Docker machine.
+
+    python data_pipeline/rasterize_naips.py --render_results=True
+
+This will download one NAIP, and tile it into cubes (NxNx4 bands of data). Then it will download a PBF file and extract the ways for the NAIP.
+
+It will produce a JPEG of the ways, labels, and predictions overlaid on the tiff.
+
+![NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
 
 Alternately, development/research can be done via jupyter notebooks:
 
@@ -73,16 +86,6 @@ default   *        virtualbox   Running   tcp://192.168.99.100:2376           v1
 
 The notebook server is accessible via port 8888, so in this case you'd go to:
 http://192.168.99.100:8888
-
-## Download NAIP, PBF, and Analyze
-
-    python data_pipeline/rasterize_naips.py --use_pbf_cache=True --render_results=True
-
-This will download one NAIP, and tile it into cubes (NxNx4 bands of data). Then it will download a PBF file and extract the ways for the NAIP.
-
-It will produce a JPEG of the ways, labels, and predictions overlaid on the tiff.
-
-![NAIP with Ways](https://pbs.twimg.com/media/Cft3GbeUkAAqqAd.jpg)
 
 # Experiment 1 - TMS Tiles
 
