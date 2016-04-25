@@ -11,10 +11,10 @@ from label_chunks_cnn import train_neural_net
 import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 40
+TILE_SIZE = 64
 
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .9
+PERCENT_FOR_TRAINING_DATA = .95
 
 # use Washington DC for analysis by default
 DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
@@ -60,7 +60,7 @@ def read_naip(file_path, bands_to_use):
   
   return raster_dataset, bands_data
 
-def tile_naip(raster_dataset, bands_data, bands_to_use):
+def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
   '''
      cut a 4-band raster image into tiles,
      tiles are cubes - up to 4 bands, and N height x N width based on TILE_SIZE settings
@@ -79,11 +79,12 @@ def tile_naip(raster_dataset, bands_data, bands_to_use):
 
   left_x, right_x, top_y, bottom_y = pixel_bounds(rows,cols)
 
-  for col in range(left_x, right_x-TILE_SIZE, TILE_SIZE):
-    for row in range(top_y, bottom_y-TILE_SIZE, TILE_SIZE):
-      new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
-      all_tiled_data.append((new_tile,(col, row)))
-
+  for col in range(left_x, right_x, TILE_SIZE):
+    for row in range(top_y, bottom_y, TILE_SIZE):
+      if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
+        new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
+        all_tiled_data.append((new_tile,(col, row),raster_data_path))
+ 
   return all_tiled_data
 
 def pixel_bounds(rows, cols):
@@ -114,15 +115,15 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
-  try:
-    if use_pbf_cache:
-      arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
-      print "CACHED: read label data from disk"
-      return arr
-    else:
-      print "CREATING LABELS from PBF file"
-  except:
-    print "CREATING LABELS from PBF file"
+  #try:
+  #  if use_pbf_cache:
+  #    arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
+  #    print "CACHED: read label data from disk"
+  #    return arr
+  #  else:
+  #    print "CREATING LABELS from PBF file"
+  #except:
+  #  print "CREATING LABELS from PBF file"
 
   way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
@@ -150,8 +151,8 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
         else:
           way_bitmap[p[1]][p[0]] = w['highway_type']
 
-  print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
-  numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
+  # print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
+  # numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
 
   return way_bitmap
 
@@ -293,23 +294,31 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   
   # dowload and convert NAIP
   naiper = NAIPDownloader()
-  raster_data_path = naiper.download_naips()
-  raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
-  rows = bands_data.shape[0]
-  cols = bands_data.shape[1]
+  raster_data_paths = naiper.download_naips()
   
-  # tile images and labels
-  waymap = download_and_extract_pbf()
-  way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
   road_labels = []
+  naip_tiles = []
 
-  left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
-  for row in range(top_y, bottom_y-TILE_SIZE, TILE_SIZE):
-    for col in range(left_x, right_x-TILE_SIZE, TILE_SIZE):
-      new_tile = way_bitmap_npy[row:row+TILE_SIZE, col:col+TILE_SIZE]
-      road_labels.append((new_tile,(col, row)))
-      
-  naip_tiles = tile_naip(raster_dataset, bands_data, BANDS_TO_USE)
+  # tile images and labels  
+  waymap = download_and_extract_pbf()
+  way_bitmap_npy = {}
+
+  for raster_data_path in raster_data_paths:
+    raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
+    rows = bands_data.shape[0]
+    cols = bands_data.shape[1]
+  
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
+
+    left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
+    for row in range(top_y, bottom_y, TILE_SIZE):
+      for col in range(left_x, right_x, TILE_SIZE):
+        if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
+          new_tile = way_bitmap_npy[raster_data_path][row:row+TILE_SIZE, col:col+TILE_SIZE]
+          road_labels.append((new_tile,(col, row),raster_data_path))
+        
+    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, BANDS_TO_USE):
+      naip_tiles.append(tile)
 
   assert len(road_labels) == len(naip_tiles)
 
@@ -367,22 +376,35 @@ def run_analysis(use_pbf_cache=False, render_results=False):
                    npy_test_images, 
                    npy_test_labels)
 
-  prediction_on_count = 0
-  for p in predictions:
-    if p != 0:
-      prediction_on_count += 1
-      if prediction_on_count == 1:
-        print "PREDICTION LIST HAS ON VALUES"
-  print predictions
-  print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions)))
-  # this step can take a long time, especially for the whole image or a large chunk
-  if render_results:
-    render_results_as_image(raster_data_path, 
-                            way_bitmap_npy, 
-                            training_labels, 
-                            test_labels, 
-                            #path="data/naip/output-new.png", 
-                            predictions=predictions)
+  training_labels_by_naip = {}
+  test_labels_by_naip = {}
+  predictions_by_naip = {}
+  for raster_data_path in raster_data_paths:
+    predictions_by_naip[raster_data_path] = []
+    test_labels_by_naip[raster_data_path] = []
+    training_labels_by_naip[raster_data_path] = []
+
+  index = 0
+  for label in test_labels:
+    predictions_by_naip[label[2]].append(predictions[index])
+    test_labels_by_naip[label[2]].append(test_labels[index])
+    index += 1
+
+  index = 0
+  for label in training_labels:
+    training_labels_by_naip[label[2]].append(training_labels[index])
+    index += 1
+
+  #prediction_on_count = 0
+  for raster_data_path in raster_data_paths:
+    #print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions[raster_data_path])))
+    # this step can take a long time, especially for the whole image or a large chunk
+    if render_results:
+      render_results_as_image(raster_data_path, 
+                              way_bitmap_npy[raster_data_path], 
+                              training_labels_by_naip[raster_data_path], 
+                              test_labels_by_naip[raster_data_path], 
+                              predictions=predictions_by_naip[raster_data_path])
 
 def print_data_dimensions(training_labels):
   tiles = len(training_labels)
@@ -391,13 +413,12 @@ def print_data_dimensions(training_labels):
   bands = len(training_labels[0][0][0][0])
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
-def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, path=None, predictions=None):
+def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, predictions=None):
   '''
       save the source TIFF as a JPEG, with labels and data overlaid
   '''
-  outfile = path
-  if not outfile:
-    outfile = os.path.splitext(raster_data_path)[0] + "-convolve-1px-per-road.png"
+  timestr = time.strftime("%Y%m%d-%H%M%S")
+  outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".png"
   im = Image.open(raster_data_path)
   print "GENERATING PNG for %s" % raster_data_path
   rows = len(way_bitmap)
@@ -408,7 +429,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   r, g, b, ir = im.split()
   for x in range(cols):
     for y in range(rows):
-      ir.putpixel((x, y),(0))
+      ir.putpixel((x, y),(0))    
   im = Image.merge("RGBA", (r, g, b, r))
   t1 = time.time()
   print "{} elapsed for FLATTEN 4 BAND TIFF TO JPEG".format(t1-t0)
