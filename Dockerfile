@@ -24,9 +24,9 @@ RUN apt-get -q update && \
  apt-get clean
 
 # copy requirements.txt and run pip to install all dependencies into the virtualenv.
-ADD requirements.txt /Deep-OSM/requirements.txt
-RUN pip install -r /Deep-OSM/requirements.txt
-RUN ln -s /home/vmagent/data_pipeline /Deep-OSM
+ADD requirements.txt /DeepOSM/requirements.txt
+RUN pip install -r /DeepOSM/requirements.txt
+RUN ln -s /home/vmagent/data_pipeline /DeepOSM
 
 # install libosmium and pyosmium bindings
 RUN git clone https://github.com/osmcode/libosmium /libosmium
@@ -35,8 +35,8 @@ RUN git clone https://github.com/osmcode/pyosmium.git /pyosmium
 RUN cd /pyosmium && pwd && python setup.py install
 
 # update PYTHONPATH
-ENV PYTHONPATH /Deep-OSM:/Deep-OSM/analysis:$PYTHONPATH
-ENV GEO_DATA_DIR /Deep-OSM/data
+ENV PYTHONPATH /DeepOSM:/DeepOSM/analysis:$PYTHONPATH
+ENV GEO_DATA_DIR /DeepOSM/data
 
 # Jupyter has issues with being run directly:
 #    https://github.com/ipython/ipython/issues/7062
@@ -51,5 +51,5 @@ RUN apt-get --no-install-recommends -y -q install wget
 RUN wget http://netix.dl.sourceforge.net/project/s3tools/s3cmd/1.6.0/s3cmd-1.6.0.tar.gz && tar xvfz s3cmd-1.6.0.tar.gz && cd s3cmd-1.6.0 && python setup.py install
 COPY s3config-default /root/.s3cfg
 
-ADD . /Deep-OSM
-WORKDIR /Deep-OSM
+ADD . /DeepOSM
+WORKDIR /DeepOSM
