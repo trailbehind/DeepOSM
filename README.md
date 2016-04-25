@@ -12,9 +12,9 @@ Contributions are welcome. Open an issue if you want to discuss something to do,
 
 ## Background on Data - NAIPs and OSM PBF
 
-For training data, DeepOSM cuts tiles out of [NAIP images](http://www.fsa.usda.gov/programs-and-services/aerial-photography/imagery-programs/naip-imagery/), which provide 1 meter per pixel resolution, and RGB+infrared data bands.
+For training data, DeepOSM cuts tiles out of [NAIP images](http://www.fsa.usda.gov/programs-and-services/aerial-photography/imagery-programs/naip-imagery/), which provide 1 meter per pixel resolution, with RGB+infrared data bands.
 
-For training labels, DeepOSM uses PBF extracts of OSM data, which contain features/ways in binary format.
+For training labels, DeepOSM uses PBF extracts of OSM data, which contain features/ways in binary format, which can be munged with Python.
 
 The [NAIPs come from a requester pays bucket on S3 set up by Mapbox](http://www.slideshare.net/AmazonWebServices/open-data-innovation-building-on-open-data-sets-for-innovative-applications), and the OSM extracts come [from geofabrik](http://download.geofabrik.de/).
 
@@ -34,7 +34,13 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket. Thi
 
 ### Install Docker
 
-I also needed to set my VirtualBox default memory to 12GB. libosmium needed 4GB, and the neural net needed even more.
+First, [install a Docker Binary](https://docs.docker.com/engine/installation/).
+
+I also needed to set my VirtualBox default memory to 12GB. libosmium needed 4GB, and the neural net needed even more. This is easy:
+
+ * start Docker, per the install instructions
+ * stop Docker
+ * open VirtualBox, and increase the memory of the VM Docker made
 
 ### Run Scripts
 
@@ -46,7 +52,7 @@ make dev
 
 ### Download NAIP, PBF, and Analyze
 
-The following Python script will work in the Docker machine. It will download all source data, tile it into training/test data and labels, and train the neural net.
+Inside Docker, the following Python script will work. It will download all source data, tile it into training/test data and labels, train the neural net, and generate image and text output.
 
     python data_pipeline/rasterize_naips.py --render_results=True
 
@@ -64,8 +70,7 @@ Alternately, development/research can be done via jupyter notebooks:
 make notebook
 ```
 
-To access the notebook via a browser on your host machine, find the IP VirtualBox is giving your
-default docker container by running:
+To access the notebook via a browser on your host machine, find the IP VirtualBox is giving your default docker container by running:
 
 ```bash
 docker-machine ls
@@ -95,6 +100,6 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
 
 ### Original Idea
 
-This was the general idea to start, and working with TMS tiles sort of worked, so DeepOSM got switched to better data:
+This was the general idea to start, and working with TMS tiles sort of worked (see first 50 or so commits), so DeepOSM got switched to better data:
 
 ![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
