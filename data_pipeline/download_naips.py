@@ -24,7 +24,8 @@ class NAIPDownloader:
     self.resolution = '1m'
     self.spectrum = 'rgbir' 
     self.grid = '38077'
-    self.url_base = 's3://aws-naip/{}/{}/{}/{}/'.format(self.state,self.year,self.resolution,self.spectrum)
+    self.bucket_url = 's3://aws-naip/'
+    self.url_base = '{}{}/{}/{}/{}/{}/'.format(self.bucket_url, self.state,self.year,self.resolution,self.spectrum,self.grid)
 
     self.make_directory(NAIP_DATA_DIR, full_path=True)
 
@@ -82,15 +83,14 @@ class NAIPDownloader:
     bash_command = "s3cmd ls --recursive --skip-existing {} --requester-pays".format(self.url_base)
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output = process.communicate()[0]
-    
     naip_filenames = []
     for line in output.split('\n'):
-      try:
-        fn = line.split(url_base + grid + '/')[1]
-        naip_filenames.append(fn)
-      except:
-        pass 
-        # print "WARNING: no problem, skipping a line in the ls response from AWS"
+      parts = line.split(self.url_base)
+      if len(parts) == 2:
+        naip_filenames.append(parts[1])
+      else:
+        pass
+        # skip non filename lines from response
     return naip_filenames
 
   def download_from_s3(self, naip_filenames):
@@ -108,7 +108,8 @@ class NAIPDownloader:
       if os.path.exists(full_path):
         print("NAIP {} already downloaded".format(full_path))
       else:
-        s3_url = '{}/{}/{}'.format(self.url_base, self.grid, filename)
+        url_without_prefix = self.url_base.split(self.bucket_url)[1]
+        s3_url = '{}{}'.format(url_without_prefix, filename)
         s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
       naip_local_paths.append(full_path)
 
