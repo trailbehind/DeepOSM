@@ -5,7 +5,7 @@ from osgeo import gdal
 from PIL import Image
 from pyproj import Proj, transform
 
-from extract_ways import WayMap, download_and_extract
+from download_labels import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
@@ -15,10 +15,6 @@ TILE_SIZE = 64
 
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .95
-
-# use Washington DC for analysis by default
-DEFAULT_PBF_URL = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
-DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 
 # the bands to use from the NAIP for analysis (R G B IR)
 BANDS_TO_USE = [0,0,0,1]
@@ -69,7 +65,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
  
   return all_tiled_data
 
-def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, use_pbf_cache):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, use_pbf_cache=True):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
@@ -129,7 +125,7 @@ def empty_tile_matrix(rows, cols):
 
 def bounds_for_naip(raster_dataset, rows, cols):
   '''
-      clip the NAIP to LEFT_X to RIGHT_X, BOTTOM_Y to TOP_Y
+      clip the NAIP to 0 to cols, 0 to rows
   '''
   left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
   sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
@@ -242,12 +238,15 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(use_pbf_cache=False, render_results=True):
-  
-  # dowload and convert NAIP
-  naiper = NAIPDownloader()
-  raster_data_paths = naiper.download_naips()
-  
+def run_analysis(use_pbf_cache=False, render_results=True):  
+  raster_data_paths = NAIPDownloader().download_naips()  
+  road_labels, naip_tiles = random_training_data(raster_data_paths, use_pbf_cache)
+  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
+  test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
+  predictions = analyze(test_labels, training_labels, test_images, training_images)
+  render_results(raster_data_paths, training_labels, test_labels, predictions)
+
+def random_training_data(raster_data_paths, use_pbf_cache):
   road_labels = []
   naip_tiles = []
 
@@ -275,7 +274,9 @@ def run_analysis(use_pbf_cache=False, render_results=True):
   assert len(road_labels) == len(naip_tiles)
 
   road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
+  return road_labels, naip_tiles
 
+def equalize_data(road_labels, naip_tiles):
   wayless_indices = []
   way_indices = []
   for x in range(len(road_labels)):
@@ -297,7 +298,9 @@ def run_analysis(use_pbf_cache=False, render_results=True):
     equal_count_way_list.append(road_labels[wayless_index])
     equal_count_tile_list.append(naip_tiles[way_index])
     equal_count_tile_list.append(naip_tiles[wayless_index])
+  return equal_count_way_list, equal_count_tile_list
 
+def split_train_test(equal_count_tile_list,equal_count_way_list):
   test_labels = []
   training_labels = []
   test_images = []
@@ -310,8 +313,12 @@ def run_analysis(use_pbf_cache=False, render_results=True):
     else:
       test_images.append(equal_count_tile_list[x])
       test_labels.append(equal_count_way_list[x])
+  return test_labels, training_labels, test_images, training_images
 
-  # package data for tensorflow
+def analyze(test_labels, training_labels, test_images, training_images):
+  ''' 
+      package data for tensorflow and analyze
+  '''
   print_data_dimensions(training_labels)
   onehot_training_labels, \
   onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, training_labels, test_labels)
@@ -327,7 +334,16 @@ def run_analysis(use_pbf_cache=False, render_results=True):
                    npy_training_labels, 
                    npy_test_images, 
                    npy_test_labels)
+  return predictions
 
+def print_data_dimensions(training_labels):
+  tiles = len(training_labels)
+  h = len(training_labels[0][0])
+  w = len(training_labels[0][0][0])
+  bands = len(training_labels[0][0][0][0])
+  print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
+
+def render_results(raster_data_paths, training_labels, test_labels, predictions):
   training_labels_by_naip = {}
   test_labels_by_naip = {}
   predictions_by_naip = {}
@@ -339,7 +355,7 @@ def run_analysis(use_pbf_cache=False, render_results=True):
   index = 0
   for label in test_labels:
     predictions_by_naip[label[2]].append(predictions[index])
-    test_labels_by_naip[label[2]].append(test_labels[index])
+    test_labels_by_naip[label[2]].append(predictions[index])
     index += 1
 
   index = 0
@@ -355,12 +371,6 @@ def run_analysis(use_pbf_cache=False, render_results=True):
                               test_labels_by_naip[raster_data_path], 
                               predictions=predictions_by_naip[raster_data_path])
 
-def print_data_dimensions(training_labels):
-  tiles = len(training_labels)
-  h = len(training_labels[0][0])
-  w = len(training_labels[0][0][0])
-  bands = len(training_labels[0][0][0][0])
-  print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
 def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, predictions=None):
   '''
@@ -384,7 +394,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   print "{} elapsed to FLATTEN 4 BAND TIFF TO PNG".format(t1-t0)
 
   t0 = time.time()
-  shade_labels(im, predictions)
+  shade_labels(im, test_labels, predictions)
   t1 = time.time()
   print "{} elapsed to SHADE PREDICTIONS ON PNG".format(t1-t0)
 
@@ -392,14 +402,19 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   # show raw data that spawned the labels
   for row in range(0, rows):
     for col in range(0, cols):
-      if way_bitmap[row][col] != '0':
+      if way_bitmap[row][col] == 'primary':
         im.putpixel((col, row), (255,0,0, 255))
+      elif way_bitmap[row][col] == 'trunk':
+        im.putpixel((col, row), (0,255,0, 255))
+      elif way_bitmap[row][col] != '0':
+        # secondary and tertiary
+        im.putpixel((col, row), (0,0,255, 255))
   t1 = time.time()
   print "{} elapsed to DRAW WAYS ON PNG".format(t1-t0)
 
   im.save(outfile, "PNG")
 
-def shade_labels(image, predictions):
+def shade_labels(image, labels, predictions):
   '''
       visualize predicted ON labels as blue, OFF as green
   '''
