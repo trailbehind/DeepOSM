@@ -13,7 +13,20 @@ NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 class NAIPDownloader:
 
   def __init__(self):
-  	self.make_directory(NAIP_DATA_DIR, full_path=True)
+    '''
+        download some arbitrary NAIP images from the aws-naip S3 bucket
+    '''
+
+    self.number_of_naips = 4
+
+    self.state = 'md'
+    self.year = '2013'
+    self.resolution = '1m'
+    self.spectrum = 'rgbir' 
+    self.grid = '38077'
+    self.url_base = 's3://aws-naip/{}/{}/{}/{}/'.format(self.state,self.year,self.resolution,self.spectrum)
+
+    self.make_directory(NAIP_DATA_DIR, full_path=True)
 
   def make_directory(self, new_dir, full_path=False):
     '''
@@ -37,10 +50,19 @@ class NAIPDownloader:
 
   def download_naips(self):
     '''
-        download 4 randomish NAIPs from aws-naip bucket
+        download self.number_of_naips randomish NAIPs from aws-naip bucket
     '''
 
-    # configure s3cmd with AWS credentials
+    self.configure_s3cmd()
+    naip_filenames = self.list_naips()
+    shuffle(naip_filenames)
+    naip_local_paths = self.download_from_s3()
+    return naip_local_paths
+
+  def configure_s3cmd(self):
+    ''' 
+        configure s3cmd with AWS credentials
+    '''
     file_path = '/' + os.environ.get("HOME")+'/.s3cfg'
     f = open(file_path,'r')
     filedata = f.read()
@@ -51,41 +73,45 @@ class NAIPDownloader:
     f.write(newdata)
     f.close()
 
+  def list_naips(self):
+    '''
+        make a list of NAIPs based on the init parameters for the class
+    '''
+
     # list the contents of the bucket directory
-    bashCommand = "s3cmd ls --recursive --skip-existing s3://aws-naip/md/2013/1m/rgbir/ --requester-pays"
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    bash_command = "s3cmd ls {} --recursive --skip-existing --requester-pays".format(self.url_base)
+    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output = process.communicate()[0]
     
-    # make a list of 4 random NAIPs from Maryland 2013,
-    # from area '38077' which I assume is a grid number for now
-    state = 'md'
-    year = '2013'
-    resolution = '1m'
-    spectrum = 'rgbir' 
-    grid = '38077'
     naip_filenames = []
     for line in output.split('\n'):
       try:
-        fn = line.split('s3://aws-naip/{}/{}/{}/{}/{}/'.format(state,year,resolution,spectrum,grid))[1]
+        fn = line.split(url_base + grid + '/')[1]
         naip_filenames.append(fn)
       except:
         pass 
         # print "WARNING: no problem, skipping a line in the ls response from AWS"
-    shuffle(naip_filenames)
+    return naip_filenames
 
-    # download the NAIPs
+  def download_from_s3(self):
+    '''
+        download the NAIPs and return a list of the file paths
+    '''
+
     s3_client = boto3.client('s3')
     naip_local_paths = []
-    for filename in naip_filenames[0:4]:
+    max_range = self.number_of_naips
+    if max_range == -1:
+      max_range = len(naip_filenames)
+    for filename in naip_filenames[0:max_range]:
       full_path = os.path.join(NAIP_DATA_DIR, filename)
       if os.path.exists(full_path):
         print("NAIP {} already downloaded".format(full_path))
       else:
-        s3_url = '{}/{}/{}/{}/{}/{}'.format(state, year, resolution, spectrum, grid, filename)
+        s3_url = '{}/{}/{}'.format(self.url_base, self.grid, filename)
         s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
       naip_local_paths.append(full_path)
 
-    return naip_local_paths
 
 if __name__ == '__main__':
   parameters_message = "parameters are: download"

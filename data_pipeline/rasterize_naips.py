@@ -1,14 +1,14 @@
+import argparse
 import numpy, os, sys, time
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
 from pyproj import Proj, transform
+
 from extract_ways import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
-
-import argparse
 
 # tile the NAIP and training data into NxN tiles with this dimension
 TILE_SIZE = 64
@@ -22,23 +22,6 @@ DEFAULT_SAVE_PBF_PATH = 'district-of-columbia-latest.osm.pbf'
 
 # the bands to use from the NAIP for analysis (R G B IR)
 BANDS_TO_USE = [0,0,0,1]
-
-# entire NAIP
-TOP_Y = -1
-BOTTOM_Y = -1
-LEFT_X = -1
-RIGHT_X = -1
-
-# big center chunk that avoids lack of data in Maryland for this PBF/NAIP combo
-'''
-TOP_Y = 2500
-BOTTOM_Y = 6800
-LEFT_X = 600
-RIGHT_X = 4500
-'''
-
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
-DEFAULT_WAY_BITMAP_NPY_FILE = os.path.join(GEO_DATA_DIR, "way_bitmap.npy")
 
 def read_naip(file_path, bands_to_use):
   '''
@@ -65,7 +48,6 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
      cut a 4-band raster image into tiles,
      tiles are cubes - up to 4 bands, and N height x N width based on TILE_SIZE settings
   '''
-
   on_band_count = 0
   for b in bands_to_use:
     if b == 1:
@@ -77,7 +59,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
 
   all_tiled_data = []
 
-  left_x, right_x, top_y, bottom_y = pixel_bounds(rows,cols)
+  left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
 
   for col in range(left_x, right_x, TILE_SIZE):
     for row in range(top_y, bottom_y, TILE_SIZE):
@@ -87,43 +69,21 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
  
   return all_tiled_data
 
-def pixel_bounds(rows, cols):
-  '''
-     returns 0, cols, 0, rows
-     unless constants are sets to override: LEFT_X, RIGHT_X, TOP_Y, BOTTOM_Y
-  '''
-  left_x = LEFT_X
-  if left_x == -1:
-    left_x = 0
-
-  right_x = RIGHT_X
-  if right_x == -1:
-    right_x = cols
-
-  top_y = TOP_Y
-  if top_y == -1:
-    top_y = 0
-
-  bottom_y = BOTTOM_Y
-  if bottom_y == -1:
-    bottom_y = rows
-
-  return left_x, right_x, top_y, bottom_y
-
-def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, use_pbf_cache):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
-  #try:
-  #  if use_pbf_cache:
-  #    arr = numpy.load(DEFAULT_WAY_BITMAP_NPY_FILE)
-  #    print "CACHED: read label data from disk"
-  #    return arr
-  #  else:
-  #    print "CREATING LABELS from PBF file"
-  #except:
-  #  print "CREATING LABELS from PBF file"
+  cache_filename = raster_data_path + '-ways.bitmap'
+  try:
+    if use_pbf_cache:
+      arr = numpy.load(cache_filename)
+      print "CACHED: read label data from disk"
+      return arr
+    else:
+      print "CREATING LABELS from PBF file"
+  except:
+    print "CREATING LABELS from PBF file"
 
   way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
@@ -151,8 +111,8 @@ def way_bitmap_for_naip(ways, raster_dataset, rows, cols, use_pbf_cache):
         else:
           way_bitmap[p[1]][p[0]] = w['highway_type']
 
-  # print "CACHING way_bitmap numpy array to", DEFAULT_WAY_BITMAP_NPY_FILE
-  # numpy.save(DEFAULT_WAY_BITMAP_NPY_FILE, way_bitmap)
+  print "CACHING way_bitmap numpy array to", cache_filename
+  numpy.save(cache_filename, way_bitmap)
 
   return way_bitmap
 
@@ -171,38 +131,38 @@ def bounds_for_naip(raster_dataset, rows, cols):
   '''
       clip the NAIP to LEFT_X to RIGHT_X, BOTTOM_Y to TOP_Y
   '''
-  left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
+  left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
   sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
   ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
 
 def pixels_between(start_pixel, end_pixel, cols):
-    '''
-        returns a list of pixel tuples between current and next, inclusive
-    '''
-    pixels = []
-    if end_pixel[0] - start_pixel[0] == 0:
-      for y in range(min(end_pixel[1], start_pixel[1]),
-                     max(end_pixel[1], start_pixel[1])):
-        p = []
-        p.append(end_pixel[0])
-        p.append(y)
-        pixels.append(p)
-      return pixels
-
-    slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
-    offset = end_pixel[1] - slope*end_pixel[0]
-
-    i = 0
-    while i < cols:
+  '''
+      returns a list of pixel tuples between current and next, inclusive
+  '''
+  pixels = []
+  if end_pixel[0] - start_pixel[0] == 0:
+    for y in range(min(end_pixel[1], start_pixel[1]),
+                   max(end_pixel[1], start_pixel[1])):
       p = []
-      floatx = start_pixel[0] + (end_pixel[0] - start_pixel[0]) * i / float(cols)
-      p.append(int(floatx))
-      p.append(int(offset + slope * floatx))
-      i += 1
-      if not p in pixels:
-        pixels.append(p)
+      p.append(end_pixel[0])
+      p.append(y)
+      pixels.append(p)
     return pixels
+
+  slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
+  offset = end_pixel[1] - slope*end_pixel[0]
+
+  i = 0
+  while i < cols:
+    p = []
+    floatx = start_pixel[0] + (end_pixel[0] - start_pixel[0]) * i / float(cols)
+    p.append(int(floatx))
+    p.append(int(offset + slope * floatx))
+    i += 1
+    if not p in pixels:
+      pixels.append(p)
+  return pixels
 
 def bounds_contains_point(bounds, point_tuple):
   '''
@@ -217,14 +177,6 @@ def bounds_contains_point(bounds, point_tuple):
   if point_tuple[1] < bounds['sw'][1]:
     return False
   return True
-
-def download_and_extract_pbf():
-  '''
-      download a certain PBF file from geofabrik unless it exists locally already,
-      and extract its ways
-  '''
-  waymap = download_and_extract()
-  return waymap
 
 def format_as_onehot_arrays(types, training_labels, test_labels):
   '''
@@ -290,7 +242,7 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(use_pbf_cache=False, render_results=False):
+def run_analysis(use_pbf_cache=False, render_results=True):
   
   # dowload and convert NAIP
   naiper = NAIPDownloader()
@@ -300,7 +252,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
   naip_tiles = []
 
   # tile images and labels  
-  waymap = download_and_extract_pbf()
+  waymap = download_and_extract()
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
@@ -308,9 +260,9 @@ def run_analysis(use_pbf_cache=False, render_results=False):
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
   
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_dataset, rows, cols, use_pbf_cache))  
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, use_pbf_cache))  
 
-    left_x, right_x, top_y, bottom_y = pixel_bounds(rows, cols)
+    left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
     for row in range(top_y, bottom_y, TILE_SIZE):
       for col in range(left_x, right_x, TILE_SIZE):
         if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
@@ -395,10 +347,7 @@ def run_analysis(use_pbf_cache=False, render_results=False):
     training_labels_by_naip[label[2]].append(training_labels[index])
     index += 1
 
-  #prediction_on_count = 0
   for raster_data_path in raster_data_paths:
-    #print "{:.1%} of predictions guess True".format(prediction_on_count/float(len(predictions[raster_data_path])))
-    # this step can take a long time, especially for the whole image or a large chunk
     if render_results:
       render_results_as_image(raster_data_path, 
                               way_bitmap_npy[raster_data_path], 
@@ -432,17 +381,12 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
       ir.putpixel((x, y),(0))    
   im = Image.merge("RGBA", (r, g, b, r))
   t1 = time.time()
-  print "{} elapsed for FLATTEN 4 BAND TIFF TO JPEG".format(t1-t0)
+  print "{} elapsed to FLATTEN 4 BAND TIFF TO PNG".format(t1-t0)
 
   t0 = time.time()
-  shade_labels(training_labels, im, shade_b=255)
+  shade_labels(im, predictions)
   t1 = time.time()
-  print "{} elapsed for SHADE TRAINING LABELS".format(t1-t0)
-
-  t0 = time.time()
-  shade_labels(test_labels, im, shade_g=255, show_predictions=True, predictions=predictions)
-  t1 = time.time()
-  print "{} elapsed for SHADE TEST LABELS".format(t1-t0)
+  print "{} elapsed to SHADE PREDICTIONS ON PNG".format(t1-t0)
 
   t0 = time.time()
   # show raw data that spawned the labels
@@ -451,11 +395,11 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
       if way_bitmap[row][col] != '0':
         im.putpixel((col, row), (255,0,0, 255))
   t1 = time.time()
-  print "{} elapsed for DRAW WAYS".format(t1-t0)
+  print "{} elapsed to DRAW WAYS ON PNG".format(t1-t0)
 
   im.save(outfile, "PNG")
 
-def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_predictions=False, predictions=None):
+def shade_labels(image, predictions):
   '''
       visualize predicted ON labels as blue, OFF as green
   '''
@@ -466,31 +410,17 @@ def shade_labels(labels, image, shade_r=0, shade_g=0, shade_b=0, show_prediction
     for x in range(start_x, start_x+TILE_SIZE):
       for y in range(start_y, start_y+TILE_SIZE):
         r, g, b, a = image.getpixel((x, y))
-        '''
-        if shade_r:
-          r = shade_r
-        if shade_g:
-          g = shade_g
-        if shade_b:
-          b = shade_b
-        '''
-        if show_predictions and predictions[label_index] == 1:
+        if predictions[label_index] == 1:
           # shade ON predictions blue
           image.putpixel((x, y), (r, g, 255, 255))
-        elif show_predictions and predictions[label_index] == 0:
+        else:
           # shade OFF predictions green
           image.putpixel((x, y), (r, 255, b, 255))
-        '''
-        elif has_ways(label[0]):
-          image.putpixel((x, y), (r, g, b, 255))
-        else:
-          image.putpixel((x, y), (shade_r, shade_g, shade_b, 255))
-        '''
     label_index += 1
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--use_pbf_cache", default=False, help="enable this to not reparse PBF")
-parser.add_argument("--render_results", default=False, help="enable this to print data/predictions to JPEG")
+parser.add_argument("--render_results", default=True, help="enable this to print data/predictions to JPEG")
 args = parser.parse_args()
 render_results = False
 if args.render_results:

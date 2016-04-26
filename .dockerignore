@@ -1,7 +1,4 @@
 .dockerignore
 Dockerfile
 .git
-**/*.npy
-**/*.pbf
-**/*.jpg
-**/*.tif
+./data/**
