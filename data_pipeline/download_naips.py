@@ -1,6 +1,6 @@
 '''
     a class to download NAIP imagery from 
-    the aws-naip RequesterPays bucket
+    the s3://aws-naip RequesterPays bucket
 '''
 
 import boto3
@@ -17,7 +17,7 @@ class NAIPDownloader:
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
-    self.number_of_naips = 4
+    self.number_of_naips = 5
 
     self.state = 'md'
     self.year = '2013'
@@ -56,7 +56,7 @@ class NAIPDownloader:
     self.configure_s3cmd()
     naip_filenames = self.list_naips()
     shuffle(naip_filenames)
-    naip_local_paths = self.download_from_s3()
+    naip_local_paths = self.download_from_s3(naip_filenames)
     return naip_local_paths
 
   def configure_s3cmd(self):
@@ -79,7 +79,7 @@ class NAIPDownloader:
     '''
 
     # list the contents of the bucket directory
-    bash_command = "s3cmd ls {} --recursive --skip-existing --requester-pays".format(self.url_base)
+    bash_command = "s3cmd ls --recursive --skip-existing {} --requester-pays".format(self.url_base)
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output = process.communicate()[0]
     
@@ -93,7 +93,7 @@ class NAIPDownloader:
         # print "WARNING: no problem, skipping a line in the ls response from AWS"
     return naip_filenames
 
-  def download_from_s3(self):
+  def download_from_s3(self, naip_filenames):
     '''
         download the NAIPs and return a list of the file paths
     '''
