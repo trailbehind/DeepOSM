@@ -112,6 +112,7 @@ class NAIPDownloader:
         s3_url = '{}{}'.format(url_without_prefix, filename)
         s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
       naip_local_paths.append(full_path)
+    return naip_local_paths
 
 
 if __name__ == '__main__':
