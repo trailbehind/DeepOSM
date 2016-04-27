@@ -4,7 +4,7 @@
      https://github.com/trailbehind/DeepOSM/blob/246a2312828ccc0e5b395f8033825a46025232cc/mnist_tutorials/tutorial-mnist-expert.py
 '''
 
-import sys
+import sys, time
 from DataSet import DataSet, DataSets
 import tensorflow as tf
 import tensorflow.python.platform
@@ -86,7 +86,10 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
   batch_size = 100
   loss_total = 0
-  for i in range(1):
+
+  print("TRAINING...") 
+  t0 = time.time()
+  for i in range(5000):
     batch = data_sets.train.next_batch(batch_size)
     # train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     # print("step %d, training accuracy %g"%(i, train_accuracy))
@@ -99,6 +102,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
     # print the prediction matrix at this step
     # print "{} test labels are predicted to be ON".format(tf.argmax(y_conv,1).eval(feed_dict={x: data_sets.test.images}, session=sess).sum()/float(len(data_sets.test.images)))
 
+  print("training time {0:.1f}s".format(time.time()-t0))
   print("test accuracy %g"%accuracy.eval(feed_dict={
       x: data_sets.test.images, y_: data_sets.test.labels,}))
 

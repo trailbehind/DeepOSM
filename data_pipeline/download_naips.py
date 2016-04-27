@@ -5,10 +5,14 @@
 
 import boto3
 from random import shuffle
-import sys, os, subprocess
+import sys, os, subprocess, time
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
+
+# set this to True for production data science, False for debugging infrastructure
+# speeds up downloads and matrix making when False
+RANDOMIZE_NAIPS = True
 
 class NAIPDownloader:
 
@@ -17,7 +21,7 @@ class NAIPDownloader:
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
-    self.number_of_naips = 1
+    self.number_of_naips = -1
 
     self.state = 'md'
     self.year = '2013'
@@ -56,7 +60,8 @@ class NAIPDownloader:
 
     self.configure_s3cmd()
     naip_filenames = self.list_naips()
-    shuffle(naip_filenames)
+    if RANDOMIZE_NAIPS:
+      shuffle(naip_filenames)
     naip_local_paths = self.download_from_s3(naip_filenames)
     return naip_local_paths
 
@@ -103,15 +108,20 @@ class NAIPDownloader:
     max_range = self.number_of_naips
     if max_range == -1:
       max_range = len(naip_filenames)
+    t0 = time.time()
     for filename in naip_filenames[0:max_range]:
+    #for filename in ['m_3807708_ne_18_1_20130924.tif']:
       full_path = os.path.join(NAIP_DATA_DIR, filename)
       if os.path.exists(full_path):
         print("NAIP {} already downloaded".format(full_path))
       else:
+        print("DOWNLOADING {} NAIPs...".format(max_range)) 
         url_without_prefix = self.url_base.split(self.bucket_url)[1]
         s3_url = '{}{}'.format(url_without_prefix, filename)
         s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
       naip_local_paths.append(full_path)
+    if time.time()-t0 > 0.01:
+      print("downloads took {0:.1f}s".format(time.time()-t0))
     return naip_local_paths
 
 

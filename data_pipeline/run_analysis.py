@@ -14,7 +14,7 @@ from label_chunks_cnn import train_neural_net
 TILE_SIZE = 64
 
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .95
+PERCENT_FOR_TRAINING_DATA = .93
 
 # the bands to use from the NAIP for analysis (R G B IR)
 BANDS_TO_USE = [0,0,0,1]
@@ -65,32 +65,36 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
  
   return all_tiled_data
 
-def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, use_pbf_cache=True):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp=False):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
   cache_filename = raster_data_path + '-ways.bitmap'
   try:
-    if use_pbf_cache:
+    if cache_way_bmp:
       arr = numpy.load(cache_filename)
       print "CACHED: read label data from disk"
       return arr
-    else:
-      print "CREATING LABELS from PBF file"
   except:
-    print "CREATING LABELS from PBF file"
+    pass
 
   way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
+
+  t0 = time.time()
+  print("FINDING WAYS on NAIP..."),
   for way in ways:
     for point_tuple in way['linestring']:
       if bounds_contains_point(bounds, point_tuple):
         ways_on_naip.append(way)
         break
-  print("EXTRACTED {} highways that overlap the NAIP, out of {} ways in the PBF".format(len(ways_on_naip), len(ways)))
+  print(" {0:.1f}s".format(time.time()-t0))
+  print("EXTRACTED {} highways in NAIP bounds, of {} ways".format(len(ways_on_naip), len(ways)))
 
+  print "MAKING BITMAP for way presence...",
+  t0 = time.time()
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):
       current_point = w['linestring'][x]
@@ -106,9 +110,13 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, use_
           continue
         else:
           way_bitmap[p[1]][p[0]] = w['highway_type']
+  print(" {0:.1f}s".format(time.time()-t0))
 
-  print "CACHING way_bitmap numpy array to", cache_filename
-  numpy.save(cache_filename, way_bitmap)
+  if cache_way_bmp and not os.path.exists(cache_filename):
+    print "CACHING {}...", cache_filename,
+    t0 = time.time()
+    numpy.save(cache_filename, way_bitmap)
+    print(" {0:.1f}s".format(time.time()-t0))
 
   return way_bitmap
 
@@ -205,10 +213,13 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
       types_hot.append(0)
   '''
   
+  print("CREATING ONE-HOT LABELS...")
+  t0 = time.time()
   print "CREATING TEST one-hot labels"
   onehot_test_labels = onehot_for_labels(test_labels)
   print "CREATING TRAINING one-hot labels"
   onehot_training_labels = onehot_for_labels(training_labels)
+  print("one-hotting took {0:.1f}s".format(time.time()-t0))
 
   return onehot_training_labels, onehot_test_labels
 
@@ -259,15 +270,15 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(use_pbf_cache=False, render_results=True):  
+def run_analysis(cache_way_bmp=False, render_results=True):  
   raster_data_paths = NAIPDownloader().download_naips()  
-  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, use_pbf_cache)
+  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   predictions = analyze(test_labels, training_labels, test_images, training_images, waymap)
   render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
 
-def random_training_data(raster_data_paths, use_pbf_cache):
+def random_training_data(raster_data_paths, cache_way_bmp):
   road_labels = []
   naip_tiles = []
 
@@ -280,7 +291,7 @@ def random_training_data(raster_data_paths, use_pbf_cache):
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
   
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, use_pbf_cache))  
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp))  
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
     for row in range(top_y, bottom_y, TILE_SIZE):
@@ -376,7 +387,7 @@ def render_results_as_images(raster_data_paths, training_labels, test_labels, pr
   index = 0
   for label in test_labels:
     predictions_by_naip[label[2]].append(predictions[index])
-    test_labels_by_naip[label[2]].append(predictions[index])
+    test_labels_by_naip[label[2]].append(test_labels[index])
     index += 1
 
   index = 0
@@ -412,12 +423,12 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
       ir.putpixel((x, y),(0))    
   im = Image.merge("RGBA", (r, g, b, r))
   t1 = time.time()
-  print "{} elapsed to FLATTEN 4 BAND TIFF TO PNG".format(t1-t0)
+  print "{0:.1f}s to FLATTEN 4 BAND TIFF to PNG".format(t1-t0)
 
   t0 = time.time()
   shade_labels(im, test_labels, predictions)
   t1 = time.time()
-  print "{} elapsed to SHADE PREDICTIONS ON PNG".format(t1-t0)
+  print "{0:.1f}s to SHADE PREDICTIONS on PNG".format(t1-t0)
 
   t0 = time.time()
   # show raw data that spawned the labels
@@ -431,7 +442,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
         # secondary and tertiary
         im.putpixel((col, row), (0,0,255, 255))
   t1 = time.time()
-  print "{} elapsed to DRAW WAYS ON PNG".format(t1-t0)
+  print "{0:.1f}s to DRAW WAYS ON PNG".format(t1-t0)
 
   im.save(outfile, "PNG")
 
@@ -455,13 +466,13 @@ def shade_labels(image, labels, predictions):
     label_index += 1
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--use_pbf_cache", default=False, help="enable this to not reparse PBF")
-parser.add_argument("--render_results", default=True, help="enable this to print data/predictions to JPEG")
+parser.add_argument("--cache_way_bmp", default=False, help="enable this to regenerate way bitmaps each run")
+parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
 args = parser.parse_args()
 render_results = False
 if args.render_results:
   render_results = True
-if args.use_pbf_cache:
-  run_analysis(use_pbf_cache=True, render_results=render_results)
+if args.cache_way_bmp:
+  run_analysis(cache_way_bmp=True, render_results=render_results)
 else:
-  run_analysis(use_pbf_cache=False, render_results=render_results)
+  run_analysis(cache_way_bmp=False, render_results=render_results)

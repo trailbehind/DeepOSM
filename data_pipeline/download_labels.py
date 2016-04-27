@@ -18,18 +18,14 @@ DEFAULT_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-lat
 
 class WayMap():
     def __init__(self):
-      pass
+      self.extracter = WayExtracter()
 
     def extract_files(self, file_list):
-      extracter = WayExtracter()
-      self.extracter = extracter
       for path in file_list:
-        print "EXTRACTING PBF {}".format(path)
         self.run_extraction(path)
 
     def run_extraction(self, file_path):
       # extract ways
-
       cache_path = file_path + '.json'
 
       if os.path.exists(cache_path):
@@ -37,15 +33,15 @@ class WayMap():
         with open(cache_path, 'r') as outfile:
           self.extracter.ways = json.load(outfile)
         t1 = time.time()      
-        elapsed = "{0:.2f}".format(t1-t0)
-        print "USING CACHED WAYS from pbf file {}, fetched from disk in {}".format(file_path, elapsed)
+        elapsed = "{0:.1f}".format(t1-t0)
+        print "USING CACHED WAYS from pbf file {}, fetched from disk in {}s".format(file_path, elapsed)
         return
 
       t0 = time.time()
       self.extracter.apply_file(file_path, locations=True)
       t1 = time.time()      
-      elapsed = "{0:.2f}".format(t1-t0)
-      print "EXTRACTED WAYS with locations from pbf file {}, took {}".format(file_path, elapsed)
+      elapsed = "{0:.1f}".format(t1-t0)
+      print "EXTRACTED WAYS with locations from pbf file {}, took {}s".format(file_path, elapsed)
       with open(cache_path, 'w') as outfile:
         json.dump(self.extracter.ways, outfile)
 
@@ -53,13 +49,14 @@ class WayExtracter(o.SimpleHandler):
     def __init__(self):
         o.SimpleHandler.__init__(self)
         self.ways = []
+        self.way_dict = {}
+        self.types = []
 
     def way(self, w):
         is_highway = False
         is_big = False
         name = ''
         highway_type = None
-        self.types = []
 
         for tag in w.tags:
           if tag.k == 'name':
@@ -124,6 +121,8 @@ def download_file(url):
 
 def download_files(url_list):
   paths = []
+  print("DOWNLOADING {} PBFs...".format(len(url_list)))
+  t0 = time.time()
   for url in url_list:
     local_filename = url.split('/')[-1]
     full_local_filename = os.path.join(GEO_DATA_DIR, local_filename)
@@ -132,5 +131,7 @@ def download_files(url_list):
     else:
       paths.append(full_local_filename)
       print("PBF {} already downloaded".format(full_local_filename))
+  if time.time()-t0 > 0.01:
+    print("downloads took {0:.1f}s".format(time.time()-t0))
   return paths
 
