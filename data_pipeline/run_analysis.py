@@ -17,7 +17,7 @@ TILE_SIZE = 64
 PERCENT_FOR_TRAINING_DATA = .93
 
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [0,0,0,1]
+BANDS_TO_USE = [0,0,1,1]
 
 def read_naip(file_path, bands_to_use):
   '''
