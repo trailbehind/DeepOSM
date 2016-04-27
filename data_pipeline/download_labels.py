@@ -1,9 +1,9 @@
 '''
-Extract Ways in an OSM PBF file
+Extract Ways from OSM PBF files
 '''
 
 import osmium as o
-import sys, os, requests
+import json, os, requests, sys, time
 import shapely.wkb as wkblib
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html
@@ -29,29 +29,30 @@ class WayMap():
 
     def run_extraction(self, file_path):
       # extract ways
-      self.extracter.apply_file(file_path, locations=True)
-      for key in self.extracter.way_dict:
-        combined_line = {'id':key, 'linestring':[]}
-        for way_dict in self.extracter.way_dict[key]:
-          for point in way_dict['linestring']:
-            combined_line['linestring'].append(point)
-        self.extracter.ways.append(combined_line)
 
-      print "EXTRACTED WAYS with locations from pbf file {}".format(file_path)
+      cache_path = file_path + '.json'
+
+      if os.path.exists(cache_path):
+        t0 = time.time()
+        with open(cache_path, 'r') as outfile:
+          self.extracter.ways = json.load(outfile)
+        t1 = time.time()      
+        elapsed = "{0:.2f}".format(t1-t0)
+        print "USING CACHED WAYS from pbf file {}, fetched from disk in {}".format(file_path, elapsed)
+        return
+
+      t0 = time.time()
+      self.extracter.apply_file(file_path, locations=True)
+      t1 = time.time()      
+      elapsed = "{0:.2f}".format(t1-t0)
+      print "EXTRACTED WAYS with locations from pbf file {}, took {}".format(file_path, elapsed)
+      with open(cache_path, 'w') as outfile:
+        json.dump(self.extracter.ways, outfile)
 
 class WayExtracter(o.SimpleHandler):
     def __init__(self):
         o.SimpleHandler.__init__(self)
         self.ways = []
-        self.way_dict = {}
-
-    '''
-    def relation(self, r):
-          relation_dict = {'id': r.id}
-          for tag in r.tags:
-            print "({} {})".format(tag.k, tag.v)
-          print '\n'
-    '''
 
     def way(self, w):
         is_highway = False

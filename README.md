@@ -54,7 +54,7 @@ make dev
 
 Inside Docker, the following Python script will work. It will download all source data, tile it into training/test data and labels, train the neural net, and generate image and text output.
 
-    python data_pipeline/rasterize_naips.py --render_results=True
+    python data_pipeline/run_analysis.py
 
 This will download four NAIPs, and tile it into NxNx1 bands of data (IR band). Then it will download some PBF files and extract the ways for the NAIPs.
 
