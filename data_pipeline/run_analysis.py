@@ -144,6 +144,8 @@ def pixels_between(start_pixel, end_pixel, cols):
       p.append(end_pixel[0])
       p.append(y)
       pixels.append(p)
+      pixels.append([p[0]-1, p[1]])
+      pixels.append([p[0]+1, p[1]])
     return pixels
 
   slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
@@ -158,6 +160,24 @@ def pixels_between(start_pixel, end_pixel, cols):
     i += 1
     if not p in pixels:
       pixels.append(p)
+
+    # make lines 3px thick
+    if slope == 0:
+      top_p = [p[0], p[1]-1]
+      if not top_p in pixels:
+        pixels.append(top_p)
+      bottom_p = [p[0], p[1]+1]
+      if not bottom_p in pixels:
+        pixels.append(bottom_p)
+
+    else:
+      left_p = [p[0]-1, p[1]]
+      if not left_p in pixels:
+        pixels.append(left_p)
+      right_p = [p[0]+1, p[1]]
+      if not right_p in pixels:
+        pixels.append(right_p)
+
 
   return pixels
 
@@ -245,7 +265,7 @@ def run_analysis(use_pbf_cache=False, render_results=True):
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   predictions = analyze(test_labels, training_labels, test_images, training_images, waymap)
-  render_results(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
+  render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
 
 def random_training_data(raster_data_paths, use_pbf_cache):
   road_labels = []
@@ -344,7 +364,7 @@ def print_data_dimensions(training_labels):
   bands = len(training_labels[0][0][0][0])
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
-def render_results(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
+def render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
   training_labels_by_naip = {}
   test_labels_by_naip = {}
   predictions_by_naip = {}
