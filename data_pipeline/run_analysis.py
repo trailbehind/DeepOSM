@@ -245,7 +245,7 @@ def run_analysis(use_pbf_cache=False, render_results=True):
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   predictions = analyze(test_labels, training_labels, test_images, training_images, waymap)
-  render_results(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
+  render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
 
 def random_training_data(raster_data_paths, use_pbf_cache):
   road_labels = []
@@ -344,7 +344,7 @@ def print_data_dimensions(training_labels):
   bands = len(training_labels[0][0][0][0])
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
-def render_results(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
+def render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
   training_labels_by_naip = {}
   test_labels_by_naip = {}
   predictions_by_naip = {}
