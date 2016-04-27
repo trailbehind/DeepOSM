@@ -158,6 +158,7 @@ def pixels_between(start_pixel, end_pixel, cols):
     i += 1
     if not p in pixels:
       pixels.append(p)
+
   return pixels
 
 def bounds_contains_point(bounds, point_tuple):

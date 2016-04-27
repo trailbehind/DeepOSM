@@ -86,7 +86,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
   batch_size = 100
   loss_total = 0
-  for i in range(12000):
+  for i in range(1):
     batch = data_sets.train.next_batch(batch_size)
     # train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     # print("step %d, training accuracy %g"%(i, train_accuracy))
@@ -114,4 +114,3 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
     index += 1
   '''
   return prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)
-  

@@ -17,7 +17,7 @@ class NAIPDownloader:
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
-    self.number_of_naips = 5
+    self.number_of_naips = 1
 
     self.state = 'md'
     self.year = '2013'

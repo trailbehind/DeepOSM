@@ -30,11 +30,11 @@ class WayMap():
     def run_extraction(self, file_path):
       # extract ways
 
-      cache_path = file_path + '.cache'
+      cache_path = file_path + '.json'
 
       if os.path.exists(cache_path):
         t0 = time.time()
-        with open(cache_path, 'w') as outfile:
+        with open(cache_path, 'r') as outfile:
           self.extracter.ways = json.load(outfile)
         t1 = time.time()      
         elapsed = "{0:.2f}".format(t1-t0)
