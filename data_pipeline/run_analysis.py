@@ -170,22 +170,18 @@ def pixels_between(start_pixel, end_pixel, cols):
       pixels.append(p)
 
     # make lines 3px thick
-    if slope == 0:
-      top_p = [p[0], p[1]-1]
-      if not top_p in pixels:
-        pixels.append(top_p)
-      bottom_p = [p[0], p[1]+1]
-      if not bottom_p in pixels:
-        pixels.append(bottom_p)
-
-    else:
-      left_p = [p[0]-1, p[1]]
-      if not left_p in pixels:
-        pixels.append(left_p)
-      right_p = [p[0]+1, p[1]]
-      if not right_p in pixels:
-        pixels.append(right_p)
-
+    top_p = [p[0], p[1]-1]
+    if not top_p in pixels:
+      pixels.append(top_p)
+    bottom_p = [p[0], p[1]+1]
+    if not bottom_p in pixels:
+      pixels.append(bottom_p)
+    left_p = [p[0]-1, p[1]]
+    if not left_p in pixels:
+      pixels.append(left_p)
+    right_p = [p[0]+1, p[1]]
+    if not right_p in pixels:
+      pixels.append(right_p)
 
   return pixels
 
