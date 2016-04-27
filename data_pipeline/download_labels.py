@@ -3,7 +3,7 @@ Extract Ways from OSM PBF files
 '''
 
 import osmium as o
-import os, pickle, requests, sys, time
+import json, os, requests, sys, time
 import shapely.wkb as wkblib
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html
@@ -33,10 +33,12 @@ class WayMap():
       cache_path = file_path + '.cache'
 
       if os.path.exists(cache_path):
-        print "USING CACHED WAYS from pbf file {}".format(file_path)
-        infile = open(cache_path, 'r')
-        self.extracter.ways = pickle.load(infile)
-        infile.close()
+        t0 = time.time()
+        with open(cache_path, 'w') as outfile:
+          self.extracter.ways = json.load(outfile)
+        t1 = time.time()      
+        elapsed = "{0:.2f}".format(t1-t0)
+        print "USING CACHED WAYS from pbf file {}, fetched from disk in {}".format(file_path, elapsed)
         return
 
       t0 = time.time()
@@ -44,9 +46,8 @@ class WayMap():
       t1 = time.time()      
       elapsed = "{0:.2f}".format(t1-t0)
       print "EXTRACTED WAYS with locations from pbf file {}, took {}".format(file_path, elapsed)
-      outfile = open(cache_path, 'w')
-      pickle.dump(self.extracter.ways, outfile)
-      outfile.close()
+      with open(cache_path, 'w') as outfile:
+        json.dump(self.extracter.ways, outfile)
 
 class WayExtracter(o.SimpleHandler):
     def __init__(self):

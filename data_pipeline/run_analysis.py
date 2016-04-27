@@ -240,11 +240,11 @@ def shuffle_in_unison(a, b):
 
 def run_analysis(use_pbf_cache=False, render_results=True):  
   raster_data_paths = NAIPDownloader().download_naips()  
-  road_labels, naip_tiles = random_training_data(raster_data_paths, use_pbf_cache)
+  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, use_pbf_cache)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
-  predictions = analyze(test_labels, training_labels, test_images, training_images)
-  render_results(raster_data_paths, training_labels, test_labels, predictions)
+  predictions = analyze(test_labels, training_labels, test_images, training_images, waymap)
+  render_results(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
 
 def random_training_data(raster_data_paths, use_pbf_cache):
   road_labels = []
@@ -274,7 +274,7 @@ def random_training_data(raster_data_paths, use_pbf_cache):
   assert len(road_labels) == len(naip_tiles)
 
   road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
-  return road_labels, naip_tiles
+  return road_labels, naip_tiles, waymap, way_bitmap_npy
 
 def equalize_data(road_labels, naip_tiles):
   wayless_indices = []
@@ -315,7 +315,7 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
       test_labels.append(equal_count_way_list[x])
   return test_labels, training_labels, test_images, training_images
 
-def analyze(test_labels, training_labels, test_images, training_images):
+def analyze(test_labels, training_labels, test_images, training_images, waymap):
   ''' 
       package data for tensorflow and analyze
   '''
@@ -343,7 +343,7 @@ def print_data_dimensions(training_labels):
   bands = len(training_labels[0][0][0][0])
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
-def render_results(raster_data_paths, training_labels, test_labels, predictions):
+def render_results(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
   training_labels_by_naip = {}
   test_labels_by_naip = {}
   predictions_by_naip = {}

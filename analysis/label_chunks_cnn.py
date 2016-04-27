@@ -86,7 +86,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
   batch_size = 100
   loss_total = 0
-  for i in range(1):
+  for i in range(12000):
     batch = data_sets.train.next_batch(batch_size)
     # train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     # print("step %d, training accuracy %g"%(i, train_accuracy))
@@ -114,26 +114,4 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
     index += 1
   '''
   return prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)
-
-
-if __name__ == '__main__':
-  parameters_message = "parameters are: download-data, train"
-  if len(sys.argv) == 1:
-    print(parameters_message)
-  elif sys.argv[1] == 'download-data':
-    if len(sys.argv) < 3:
-      print('download-data requires a Mapzen APIkey as the 2nd parameter')
-    else:
-      odn = OSMDataNormalizer(sys.argv[2])
-      odn.download_tiles()
-  elif sys.argv[1] == 'train':
-    from marshall_osm_data import OSMDataNormalizer
-    odn = OSMDataNormalizer()
-    
-    # process into matrices
-    odn.process_geojson()
-    odn.process_rasters()
-    # create a DataSet that Tensorflow likes
-    train_neural_net(odn.train_images, odn.train_labels, odn.test_images, odn.test_labels)
-  else:
-    print(parameters_message)
+  
