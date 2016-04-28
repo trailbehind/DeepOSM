@@ -11,7 +11,15 @@ import tensorflow.python.platform
 import numpy
 
 
-def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_images, test_labels):  
+def train_neural_net(bands_to_use, 
+                     image_size, 
+                     train_images, 
+                     train_labels, 
+                     test_images, 
+                     test_labels, 
+                     convolution_patch_size,
+                     number_of_batches,
+                     batch_size):  
 
   on_band_count = 0
   for b in bands_to_use:
@@ -45,7 +53,7 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
 
   y_ = tf.placeholder(tf.float32, [None, 2])
 
-  patch_size = 5
+  patch_size = convolution_patch_size
 
   # first layer of convolution
   W_conv1 = weight_variable([patch_size, patch_size, 1, 32])
@@ -84,12 +92,11 @@ def train_neural_net(bands_to_use, image_size, train_images, train_labels, test_
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
   sess.run(tf.initialize_all_variables())
 
-  batch_size = 100
   loss_total = 0
 
   print("TRAINING...") 
   t0 = time.time()
-  for i in range(5000):
+  for i in range(number_of_batches):
     batch = data_sets.train.next_batch(batch_size)
     # train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
     # print("step %d, training accuracy %g"%(i, train_accuracy))

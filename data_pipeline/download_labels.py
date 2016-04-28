@@ -12,10 +12,6 @@ wkbfab = o.geom.WKBFactory()
 
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 
-# enough to cover a NAIP around DC
-DEFAULT_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                     'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
-
 class WayMap():
     def __init__(self):
       self.extracter = WayExtracter()
@@ -102,8 +98,8 @@ class WayExtracter(o.SimpleHandler):
         way_dict['linestring'] = reverse_points
         self.ways.append(way_dict)
 
-def download_and_extract():
-    file_urls = DEFAULT_FILE_URLS
+def download_and_extract(file_urls_to_download):
+    file_urls = file_urls_to_download
     file_paths = download_files(file_urls)               
     w = WayMap()
     w.extract_files(file_paths)

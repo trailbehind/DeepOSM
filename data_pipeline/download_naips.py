@@ -10,27 +10,25 @@ import sys, os, subprocess, time
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 
-# set this to True for production data science, False for debugging infrastructure
-# speeds up downloads and matrix making when False
-RANDOMIZE_NAIPS = True
-
-# set this to True to test on the original images I achieved 70% with
-USE_FOUR_HARDCODED_NAIPS = True
-
 class NAIPDownloader:
 
-  def __init__(self):
+  def __init__(self, number_of_naips, 
+               should_randomize,
+               state, year, resolution, spectrum, grid, 
+               hardcoded_naip_list=None):
     '''
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
-    self.number_of_naips = 7
+    self.number_of_naips = number_of_naips
+    self.should_randomize = should_randomize
+    self.hardcoded_naip_list = hardcoded_naip_list
 
-    self.state = 'md'
-    self.year = '2013'
-    self.resolution = '1m'
-    self.spectrum = 'rgbir' 
-    self.grid = '38077'
+    self.state = state
+    self.year = year
+    self.resolution = resolution
+    self.spectrum = spectrum
+    self.grid = grid
     self.bucket_url = 's3://aws-naip/'
     self.url_base = '{}{}/{}/{}/{}/{}/'.format(self.bucket_url, self.state,self.year,self.resolution,self.spectrum,self.grid)
 
@@ -62,16 +60,11 @@ class NAIPDownloader:
     '''
 
     self.configure_s3cmd()
-    naip_filenames = self.list_naips()
-    if RANDOMIZE_NAIPS:
+    naip_filenames = self.hardcoded_naip_list 
+    if not naip_filenames:
+     naip_filenames = self.list_naips()
+    if self.should_randomize:
       shuffle(naip_filenames)
-    if USE_FOUR_HARDCODED_NAIPS:
-      naip_filenames = [
-                        'm_3807708_ne_18_1_20130924.tif',
-                        'm_3807708_nw_18_1_20130904.tif',
-                        'm_3807708_se_18_1_20130924.tif',
-                        'm_3807708_se_18_1_20130924.tif'
-                        ]
     naip_local_paths = self.download_from_s3(naip_filenames)
     return naip_local_paths
 

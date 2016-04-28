@@ -9,23 +9,7 @@ from download_labels import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
-
-# the number of pixels to count as road, 
-# on each side of of the centerline pixels
-PIXELS_BESIDE_WAYS = 1
-
-# to count an NxN tile as being "On" for roads,
-# N*.25 pixels on that tiles must have been classified as roads
-PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .25
-
-# tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 64
-
-# the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .93
-
-# the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [0,0,1,1]
+from config_data import *
 
 def read_naip(file_path, bands_to_use):
   '''
@@ -161,7 +145,7 @@ def pixels_between(start_pixel, end_pixel, cols):
       p.append(end_pixel[0])
       p.append(y)
       pixels.append(p)
-      for x in range(1,PIXELS_BESIDE_WAYS)
+      for x in range(1,PIXELS_BESIDE_WAYS):
         pixels.append([p[0]-x, p[1]])
         pixels.append([p[0]+x, p[1]])
     return pixels
@@ -179,7 +163,8 @@ def pixels_between(start_pixel, end_pixel, cols):
     if not p in pixels:
       pixels.append(p)
 
-    for x in range(1, PIXELS_BESIDE_WAYS)
+    for x in range(1, PIXELS_BESIDE_WAYS):
+      print x
       # make lines 3px thick
       top_p = [p[0], p[1]-x]
       if not top_p in pixels:
@@ -277,8 +262,18 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
+
+
+
 def run_analysis(cache_way_bmp=False, render_results=True):  
-  raster_data_paths = NAIPDownloader().download_naips()  
+  raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
+                                     RANDOMIZE_NAIPS,
+                                     NAIP_STATE,
+                                     NAIP_YEAR,
+                                     NAIP_RESOLUTION,
+                                     NAIP_SPECTRUM,
+                                     NAIP_GRID,
+                                     HARDCODED_NAIP_LIST).download_naips()  
   road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
@@ -290,7 +285,7 @@ def random_training_data(raster_data_paths, cache_way_bmp):
   naip_tiles = []
 
   # tile images and labels  
-  waymap = download_and_extract()
+  waymap = download_and_extract(PBF_FILE_URLS)
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
@@ -368,11 +363,15 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap):
   npy_test_labels = numpy.asarray(onehot_test_labels)
 
   # train and test the neural net
-  predictions = train_neural_net(BANDS_TO_USE, TILE_SIZE,
-                   npy_training_images, 
-                   npy_training_labels, 
-                   npy_test_images, 
-                   npy_test_labels)
+  predictions = train_neural_net(BANDS_TO_USE, 
+                                 TILE_SIZE,
+                                 npy_training_images, 
+                                 npy_training_labels, 
+                                 npy_test_images, 
+                                 npy_test_labels,
+                                 CONVOLUTION_PATCH_SIZE,
+                                 NUMBER_OF_BATCHES,
+                                 BATCH_SIZE)
   return predictions
 
 def print_data_dimensions(training_labels):
