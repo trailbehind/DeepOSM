@@ -10,6 +10,14 @@ from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from label_chunks_cnn import train_neural_net
 
+# the number of pixels to count as road, 
+# on each side of of the centerline pixels
+PIXELS_BESIDE_WAYS = 1
+
+# to count an NxN tile as being "On" for roads,
+# N*.25 pixels on that tiles must have been classified as roads
+PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .25
+
 # tile the NAIP and training data into NxN tiles with this dimension
 TILE_SIZE = 64
 
@@ -109,7 +117,8 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
         if p[0] < 0 or p[1] < 0 or p[0] >= cols or p[1] >= rows:
           continue
         else:
-          way_bitmap[p[1]][p[0]] = w['highway_type']
+          way_bitmap[p[1]][p[0]] = 1
+          #way_bitmap[p[1]][p[0]] = w['highway_type']
   print(" {0:.1f}s".format(time.time()-t0))
 
   if cache_way_bmp and not os.path.exists(cache_filename):
@@ -152,8 +161,9 @@ def pixels_between(start_pixel, end_pixel, cols):
       p.append(end_pixel[0])
       p.append(y)
       pixels.append(p)
-      pixels.append([p[0]-1, p[1]])
-      pixels.append([p[0]+1, p[1]])
+      for x in range(1,PIXELS_BESIDE_WAYS)
+        pixels.append([p[0]-x, p[1]])
+        pixels.append([p[0]+x, p[1]])
     return pixels
 
   slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
@@ -169,19 +179,20 @@ def pixels_between(start_pixel, end_pixel, cols):
     if not p in pixels:
       pixels.append(p)
 
-    # make lines 3px thick
-    top_p = [p[0], p[1]-1]
-    if not top_p in pixels:
-      pixels.append(top_p)
-    bottom_p = [p[0], p[1]+1]
-    if not bottom_p in pixels:
-      pixels.append(bottom_p)
-    left_p = [p[0]-1, p[1]]
-    if not left_p in pixels:
-      pixels.append(left_p)
-    right_p = [p[0]+1, p[1]]
-    if not right_p in pixels:
-      pixels.append(right_p)
+    for x in range(1, PIXELS_BESIDE_WAYS)
+      # make lines 3px thick
+      top_p = [p[0], p[1]-x]
+      if not top_p in pixels:
+        pixels.append(top_p)
+      bottom_p = [p[0], p[1]+x]
+      if not bottom_p in pixels:
+        pixels.append(bottom_p)
+      left_p = [p[0]-x, p[1]]
+      if not left_p in pixels:
+        pixels.append(left_p)
+      right_p = [p[0]+x, p[1]]
+      if not right_p in pixels:
+        pixels.append(right_p)
 
   return pixels
 
@@ -247,9 +258,9 @@ def has_ways(tile):
   for x in range(0, len(tile)):
     for y in range(0, len(tile[x])):
       pixel_value = tile[x][y]
-      if pixel_value != '0':
+      if pixel_value != 0:
         road_pixel_count += 1
-  if road_pixel_count >= len(tile)*.25:
+  if road_pixel_count >= len(tile)*PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE:
     return True
   return False
 

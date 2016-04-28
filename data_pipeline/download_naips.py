@@ -14,6 +14,9 @@ NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 # speeds up downloads and matrix making when False
 RANDOMIZE_NAIPS = True
 
+# set this to True to test on the original images I achieved 70% with
+USE_FOUR_HARDCODED_NAIPS = True
+
 class NAIPDownloader:
 
   def __init__(self):
@@ -62,6 +65,13 @@ class NAIPDownloader:
     naip_filenames = self.list_naips()
     if RANDOMIZE_NAIPS:
       shuffle(naip_filenames)
+    if USE_FOUR_HARDCODED_NAIPS:
+      naip_filenames = [
+                        'm_3807708_ne_18_1_20130924.tif',
+                        'm_3807708_nw_18_1_20130904.tif',
+                        'm_3807708_se_18_1_20130924.tif',
+                        'm_3807708_se_18_1_20130924.tif'
+                        ]
     naip_local_paths = self.download_from_s3(naip_filenames)
     return naip_local_paths
 
