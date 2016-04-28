@@ -53,5 +53,7 @@ RUN wget http://netix.dl.sourceforge.net/project/s3tools/s3cmd/1.6.0/s3cmd-1.6.0
 # updated with AWS credentials by Python inside docker
 COPY s3config-default /root/.s3cfg
 
+RUN apt-get install libhdf5-serial-dev
+
 ADD . /DeepOSM
 WORKDIR /DeepOSM

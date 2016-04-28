@@ -8,9 +8,9 @@ Some notes on todos, didn't want to muck with Github issues for this.
 ## Later
 * ORDERED - run this on the Linux box with a GPU, see if that's tons faster
 * use a more suitable (but still off-the-shelf) neural net model
+* rotate training images (makes the training overfit less)
 * instead of roads on/off, classify pixels into types (highway, footway, cycleway, lanes-1, lanes-2, lanes-3, etc)
 * visualize training on TensorBoard (better than print statements?)
-* rotate training images (makes the training overfit less)
 * try recurrent neural nets
 * classify non-road features like buildings, tennis courts, or baseball diamonds
 * move analysis to the cloud
