@@ -53,7 +53,9 @@ RUN wget http://netix.dl.sourceforge.net/project/s3tools/s3cmd/1.6.0/s3cmd-1.6.0
 # updated with AWS credentials by Python inside docker
 COPY s3config-default /root/.s3cfg
 
-RUN apt-get install libhdf5-serial-dev
+# https://github.com/tflearn/tflearn/issues/55
+# its different if we do AWS GPUs
+RUN apt-get install libhdf5-dev
 
 ADD . /DeepOSM
 WORKDIR /DeepOSM
