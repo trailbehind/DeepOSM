@@ -16,6 +16,7 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * move analysis to the cloud
 
 ## Done
+* ~~make config file for all data.analysis constants~~
 * ~~use more geographic area for the analysis~~
 * ~~print how much loss is falling, rolling average, help with debugging~~
 * ~~try just classifying big roads, with 2 or more lanes, or throwing out non motorways (easier as expected)~~

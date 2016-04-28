@@ -37,8 +37,8 @@ HARDCODED_NAIP_LIST = [
                   'm_3807708_se_18_1_20130924.tif'
                   ]
 
-# the hard code the bucket path for NAIPs
-# you can get random NAIPS from here, or the hard-coded ones above
+# values to create the S3 bucket path for some maryland NAIPs
+# you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
 # \todo document how to configure some of these
 NAIP_STATE = 'md'
 NAIP_YEAR = '2013'

@@ -26,7 +26,7 @@ RUN apt-get -q update && \
 # copy requirements.txt and run pip to install all dependencies into the virtualenv.
 ADD requirements.txt /DeepOSM/requirements.txt
 RUN pip install -r /DeepOSM/requirements.txt
-RUN ln -s /home/vmagent/data_pipeline /DeepOSM
+RUN ln -s /home/vmagent/src /DeepOSM
 
 # install libosmium and pyosmium bindings
 RUN git clone https://github.com/osmcode/libosmium /libosmium
@@ -35,7 +35,7 @@ RUN git clone https://github.com/osmcode/pyosmium.git /pyosmium
 RUN cd /pyosmium && pwd && python setup.py install
 
 # update PYTHONPATH
-ENV PYTHONPATH /DeepOSM:/DeepOSM/analysis:$PYTHONPATH
+ENV PYTHONPATH /DeepOSM:/DeepOSM/src:$PYTHONPATH
 ENV GEO_DATA_DIR /DeepOSM/data
 
 # Jupyter has issues with being run directly:
