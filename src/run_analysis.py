@@ -137,17 +137,17 @@ def pixels_between(start_pixel, end_pixel, cols):
   '''
       returns a list of pixel tuples between current and next, inclusive
   '''
-  pixels = []
+  pixels = set()
   if end_pixel[0] - start_pixel[0] == 0:
     for y in range(min(end_pixel[1], start_pixel[1]),
                    max(end_pixel[1], start_pixel[1])):
       p = []
-      p.append(end_pixel[0])
-      p.append(y)
-      pixels.append(p)
+      p.add(end_pixel[0])
+      p.add(y)
+      pixels.add(p)
       for x in range(1,PIXELS_BESIDE_WAYS+1):
-        pixels.append([p[0]-x, p[1]])
-        pixels.append([p[0]+x, p[1]])
+        pixels.add([p[0]-x, p[1]])
+        pixels.add([p[0]+x, p[1]])
     return pixels
 
   slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
@@ -161,22 +161,22 @@ def pixels_between(start_pixel, end_pixel, cols):
     p.append(int(offset + slope * floatx))
     i += 1
     if not p in pixels:
-      pixels.append(p)
+      pixels.add(p)
 
     for x in range(1, PIXELS_BESIDE_WAYS+1):
       # make lines 3px thick
       top_p = [p[0], p[1]-x]
       if not top_p in pixels:
-        pixels.append(top_p)
+        pixels.add(top_p)
       bottom_p = [p[0], p[1]+x]
       if not bottom_p in pixels:
-        pixels.append(bottom_p)
+        pixels.add(bottom_p)
       left_p = [p[0]-x, p[1]]
       if not left_p in pixels:
-        pixels.append(left_p)
+        pixels.add(left_p)
       right_p = [p[0]+x, p[1]]
       if not right_p in pixels:
-        pixels.append(right_p)
+        pixels.add(right_p)
 
   return pixels
 
