@@ -145,7 +145,7 @@ def pixels_between(start_pixel, end_pixel, cols):
       p.append(end_pixel[0])
       p.append(y)
       pixels.append(p)
-      for x in range(1,PIXELS_BESIDE_WAYS):
+      for x in range(1,PIXELS_BESIDE_WAYS+1):
         pixels.append([p[0]-x, p[1]])
         pixels.append([p[0]+x, p[1]])
     return pixels
@@ -163,8 +163,7 @@ def pixels_between(start_pixel, end_pixel, cols):
     if not p in pixels:
       pixels.append(p)
 
-    for x in range(1, PIXELS_BESIDE_WAYS):
-      print x
+    for x in range(1, PIXELS_BESIDE_WAYS+1):
       # make lines 3px thick
       top_p = [p[0], p[1]-x]
       if not top_p in pixels:
@@ -378,7 +377,7 @@ def print_data_dimensions(training_labels):
   tiles = len(training_labels)
   h = len(training_labels[0][0])
   w = len(training_labels[0][0][0])
-  bands = len(training_labels[0][0][0][0])
+  bands = training_labels[0][0][0][0]
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
 def render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
