@@ -24,7 +24,7 @@ class NAIPDownloader:
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
-    self.number_of_naips = -1
+    self.number_of_naips = 7
 
     self.state = 'md'
     self.year = '2013'
@@ -119,13 +119,16 @@ class NAIPDownloader:
     if max_range == -1:
       max_range = len(naip_filenames)
     t0 = time.time()
+    has_printed = False
     for filename in naip_filenames[0:max_range]:
     #for filename in ['m_3807708_ne_18_1_20130924.tif']:
       full_path = os.path.join(NAIP_DATA_DIR, filename)
       if os.path.exists(full_path):
         print("NAIP {} already downloaded".format(full_path))
       else:
-        print("DOWNLOADING {} NAIPs...".format(max_range)) 
+        if not has_printed:
+          print("DOWNLOADING {} NAIPs...".format(max_range)) 
+          has_printed = True
         url_without_prefix = self.url_base.split(self.bucket_url)[1]
         s3_url = '{}{}'.format(url_without_prefix, filename)
         s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})

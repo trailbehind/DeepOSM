@@ -2,7 +2,6 @@
 Some notes on todos, didn't want to muck with Github issues for this.
 
 ## What's Next
-* assign more pixels for roads, based on road type (this will turn on more tiles, should be more accurate)
 * make it work with 4 bands, not just IR band
 * classify at the pixel level, by guessing at center pixel roadiness, instead of total tile roadiness
 
@@ -21,3 +20,4 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * ~~print how much loss is falling, rolling average, help with debugging~~
 * ~~try just classifying big roads, with 2 or more lanes, or throwing out non motorways (easier as expected)~~
 * ~~add another satellite image as validation data~~
+* ~~assign more pixels for roads, based on road type (this will turn on more tiles, should be more accurate)~~
