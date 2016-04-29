@@ -96,13 +96,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
         continue
       current_pix = latLonToPixel(raster_dataset, current_point)
       next_pix = latLonToPixel(raster_dataset, next_point)
-      pixel_line = pixels_between(current_pix, next_pix, cols)
-      for p in pixel_line:
-        if p[0] < 0 or p[1] < 0 or p[0] >= cols or p[1] >= rows:
-          continue
-        else:
-          way_bitmap[p[1]][p[0]] = 1
-          #way_bitmap[p[1]][p[0]] = w['highway_type']
+      add_pixels_between(current_pix, next_pix, cols, rows, way_bitmap)
   print(" {0:.1f}s".format(time.time()-t0))
 
   if cache_way_bmp and not os.path.exists(cache_filename):
@@ -133,52 +127,42 @@ def bounds_for_naip(raster_dataset, rows, cols):
   ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
 
-def pixels_between(start_pixel, end_pixel, cols):
+def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
   '''
-      returns a list of pixel tuples between current and next, inclusive
+      add the pixels between the start and end to way_bitmap,
+      maybe thickened based on config
   '''
-  pixels = set()
+
   if end_pixel[0] - start_pixel[0] == 0:
     for y in range(min(end_pixel[1], start_pixel[1]),
                    max(end_pixel[1], start_pixel[1])):
-      p = []
-      p.add(end_pixel[0])
-      p.add(y)
-      pixels.add(p)
+      safe_add_pixel(end_pixel[0], y, cols, rows, way_bitmap)
       for x in range(1,PIXELS_BESIDE_WAYS+1):
-        pixels.add([p[0]-x, p[1]])
-        pixels.add([p[0]+x, p[1]])
-    return pixels
+        safe_add_pixel(end_pixel[0]-x, y, cols, rows, way_bitmap)
+        safe_add_pixel(end_pixel[0]+x, y, cols, rows, way_bitmap)
+    return
 
   slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
   offset = end_pixel[1] - slope*end_pixel[0]
 
   i = 0
   while i < cols:
-    p = []
     floatx = start_pixel[0] + (end_pixel[0] - start_pixel[0]) * i / float(cols)
-    p.append(int(floatx))
-    p.append(int(offset + slope * floatx))
+    p = (int(floatx),int(offset + slope * floatx))
+    safe_add_pixel(p[0],p[1], cols, rows, way_bitmap)
     i += 1
-    if not p in pixels:
-      pixels.add(p)
-
     for x in range(1, PIXELS_BESIDE_WAYS+1):
-      # make lines 3px thick
-      top_p = [p[0], p[1]-x]
-      if not top_p in pixels:
-        pixels.add(top_p)
-      bottom_p = [p[0], p[1]+x]
-      if not bottom_p in pixels:
-        pixels.add(bottom_p)
-      left_p = [p[0]-x, p[1]]
-      if not left_p in pixels:
-        pixels.add(left_p)
-      right_p = [p[0]+x, p[1]]
-      if not right_p in pixels:
-        pixels.add(right_p)
+      safe_add_pixel(p[0], p[1]-x, cols, rows, way_bitmap)
+      safe_add_pixel(p[0], p[1]+x, cols, rows, way_bitmap)
+      safe_add_pixel(p[0]-x, p[1], cols, rows, way_bitmap)
+      safe_add_pixel(p[0]+x, p[1], cols, rows, way_bitmap)
 
-  return pixels
+def safe_add_pixel(x, y, cols, rows, way_bitmap):
+  if x < 0 or y < 0 or x >= cols or y >= rows:
+    return
+  else:
+    way_bitmap[y][x] = 1
+    #way_bitmap[p[1]][p[0]] = w['highway_type']
 
 def bounds_contains_point(bounds, point_tuple):
   '''
@@ -443,7 +427,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
         im.putpixel((col, row), (255,0,0, 255))
       elif way_bitmap[row][col] == 'trunk':
         im.putpixel((col, row), (0,255,0, 255))
-      elif way_bitmap[row][col] != '0':
+      elif way_bitmap[row][col] != 0:
         # secondary and tertiary
         im.putpixel((col, row), (0,0,255, 255))
   t1 = time.time()

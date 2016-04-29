@@ -7,7 +7,8 @@ import boto3
 from random import shuffle
 import sys, os, subprocess, time
 
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
+# set in Dockerfile as env variable
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") 
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 
 class NAIPDownloader:

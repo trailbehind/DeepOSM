@@ -10,7 +10,8 @@ import shapely.wkb as wkblib
 # A global factory that creates WKB from a osmium geometry
 wkbfab = o.geom.WKBFactory()
 
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
+# set in Dockerfile as env variable
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") 
 
 class WayMap():
     def __init__(self):

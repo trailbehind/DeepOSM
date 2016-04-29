@@ -27,7 +27,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
     constants for NAIP imagery to use   
 '''
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [0,0,0,1]
+BANDS_TO_USE = [1,1,1,1]
 
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = [
@@ -63,7 +63,7 @@ PERCENT_FOR_TRAINING_DATA = .93
 # the number of batches to train the neural net
 # @lacker recommends 3-5K for statistical significance, as rule of thumb
 # can achieve 70% accuracy with 5000 so far
-NUMBER_OF_BATCHES = 5
+NUMBER_OF_BATCHES = 5000
 
 # the number of tiles for each training round
 BATCH_SIZE = 100
