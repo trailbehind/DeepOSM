@@ -32,9 +32,9 @@ BANDS_TO_USE = [1,1,1,1]
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
-                  'm_3807708_nw_18_1_20130904.tif',
-                  'm_3807708_se_18_1_20130924.tif',
-                  'm_3807708_se_18_1_20130924.tif'
+                  #'m_3807708_nw_18_1_20130904.tif',
+                  #'m_3807708_se_18_1_20130924.tif',
+                  #'m_3807708_se_18_1_20130924.tif'
                   ]
 
 # values to create the S3 bucket path for some maryland NAIPs
@@ -63,7 +63,7 @@ PERCENT_FOR_TRAINING_DATA = .93
 # the number of batches to train the neural net
 # @lacker recommends 3-5K for statistical significance, as rule of thumb
 # can achieve 70% accuracy with 5000 so far
-NUMBER_OF_BATCHES = 5000
+NUMBER_OF_BATCHES = 100
 
 # the number of tiles for each training round
 BATCH_SIZE = 100
