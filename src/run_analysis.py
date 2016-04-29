@@ -137,10 +137,10 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
   if end_pixel[0] - start_pixel[0] == 0:
     for y in range(min(end_pixel[1], start_pixel[1]),
                    max(end_pixel[1], start_pixel[1])):
-      safe_add_pixel(end_pixel[0], y, cols, rows, way_bitmap)
+      safe_add_pixel(end_pixel[0], y, way_bitmap)
       for x in range(1,PIXELS_BESIDE_WAYS+1):
-        safe_add_pixel(end_pixel[0]-x, y, cols, rows, way_bitmap)
-        safe_add_pixel(end_pixel[0]+x, y, cols, rows, way_bitmap)
+        safe_add_pixel(end_pixel[0]-x, y, way_bitmap)
+        safe_add_pixel(end_pixel[0]+x, y, way_bitmap)
     return
 
   slope = (end_pixel[1] - start_pixel[1])/float(end_pixel[0] - start_pixel[0])
@@ -150,20 +150,21 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
   while i < cols:
     floatx = start_pixel[0] + (end_pixel[0] - start_pixel[0]) * i / float(cols)
     p = (int(floatx),int(offset + slope * floatx))
-    safe_add_pixel(p[0],p[1], cols, rows, way_bitmap)
+    safe_add_pixel(p[0],p[1], way_bitmap)
     i += 1
     for x in range(1, PIXELS_BESIDE_WAYS+1):
-      safe_add_pixel(p[0], p[1]-x, cols, rows, way_bitmap)
-      safe_add_pixel(p[0], p[1]+x, cols, rows, way_bitmap)
-      safe_add_pixel(p[0]-x, p[1], cols, rows, way_bitmap)
-      safe_add_pixel(p[0]+x, p[1], cols, rows, way_bitmap)
+      safe_add_pixel(p[0], p[1]-x, way_bitmap)
+      safe_add_pixel(p[0], p[1]+x, way_bitmap)
+      safe_add_pixel(p[0]-x, p[1], way_bitmap)
+      safe_add_pixel(p[0]+x, p[1], way_bitmap)
 
-def safe_add_pixel(x, y, cols, rows, way_bitmap):
-  if x < 0 or y < 0 or x >= cols or y >= rows:
+def safe_add_pixel(x, y, way_bitmap):
+  '''
+     turn on a pixel in way_bitmap if its in bounds
+  '''
+  if x < 0 or y < 0 or x >= len(way_bitmap[0]) or y >= len(way_bitmap):
     return
-  else:
-    way_bitmap[y][x] = 1
-    #way_bitmap[p[1]][p[0]] = w['highway_type']
+  way_bitmap[y][x] = 1
 
 def bounds_contains_point(bounds, point_tuple):
   '''
@@ -399,42 +400,52 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
       save the source TIFF as a JPEG, with labels and data overlaid
   '''
   timestr = time.strftime("%Y%m%d-%H%M%S")
-  outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".png"
+  outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".jpeg"
+  # TIF to JPEG bit from: from: http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
   im = Image.open(raster_data_path)
-  print "GENERATING PNG for %s" % raster_data_path
+  print "GENERATING JPEG for %s" % raster_data_path
   rows = len(way_bitmap)
   cols = len(way_bitmap[0])
-
-  # TIFF to JPEG bit from: from: http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
   t0 = time.time()
   r, g, b, ir = im.split()
-  for x in range(cols):
-    for y in range(rows):
-      ir.putpixel((x, y),(0))    
-  im = Image.merge("RGBA", (r, g, b, r))
+  # visualize single band analysis tinted for R-G-B, 
+  # or grayscale for infrared band  
+  if sum(BANDS_TO_USE) == 1:
+    if BANDS_TO_USE[3] == 1:
+      # visualize IR as grayscale
+      im = Image.merge("RGB", (ir, ir, ir))
+    else:
+      # visualize single-color band analysis as a scale of that color
+      zeros_band = Image.new('RGB', r.size).split()[0]
+      if BANDS_TO_USE[0] == 1:
+        im = Image.merge("RGB", (r, zeros_band, zeros_band))
+      elif BANDS_TO_USE[1] == 1:
+        im = Image.merge("RGB", (zeros_band, g, zeros_band))
+      elif BANDS_TO_USE[2] == 1:
+        im = Image.merge("RGB", (zeros_band, zeros_band, b))
+  else:
+    # visualize multi-band analysis as RGB  
+    im = Image.merge("RGB", (r, g, b))
+
+
   t1 = time.time()
-  print "{0:.1f}s to FLATTEN 4 BAND TIFF to PNG".format(t1-t0)
+  print "{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(BANDS_TO_USE))
 
   t0 = time.time()
   shade_labels(im, test_labels, predictions)
   t1 = time.time()
-  print "{0:.1f}s to SHADE PREDICTIONS on PNG".format(t1-t0)
+  print "{0:.1f}s to SHADE PREDICTIONS on JPEG".format(t1-t0)
 
   t0 = time.time()
   # show raw data that spawned the labels
   for row in range(0, rows):
     for col in range(0, cols):
-      if way_bitmap[row][col] == 'primary':
-        im.putpixel((col, row), (255,0,0, 255))
-      elif way_bitmap[row][col] == 'trunk':
-        im.putpixel((col, row), (0,255,0, 255))
-      elif way_bitmap[row][col] != 0:
-        # secondary and tertiary
-        im.putpixel((col, row), (0,0,255, 255))
+      if way_bitmap[row][col] != 0:
+        im.putpixel((col, row), (255,0,0))
   t1 = time.time()
-  print "{0:.1f}s to DRAW WAYS ON PNG".format(t1-t0)
+  print "{0:.1f}s to DRAW WAYS ON JPEG".format(t1-t0)
 
-  im.save(outfile, "PNG")
+  im.save(outfile, "JPEG")
 
 def shade_labels(image, labels, predictions):
   '''
@@ -446,13 +457,13 @@ def shade_labels(image, labels, predictions):
     start_y = label[1][1]
     for x in range(start_x, start_x+TILE_SIZE):
       for y in range(start_y, start_y+TILE_SIZE):
-        r, g, b, a = image.getpixel((x, y))
+        r, g, b = image.getpixel((x, y))
         if predictions[label_index] == 1:
           # shade ON predictions blue
-          image.putpixel((x, y), (r, g, 255, 255))
+          image.putpixel((x, y), (r, g, 255))
         else:
           # shade OFF predictions green
-          image.putpixel((x, y), (r, 255, b, 255))
+          image.putpixel((x, y), (r, 255, b))
     label_index += 1
 
 parser = argparse.ArgumentParser()
