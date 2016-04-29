@@ -363,7 +363,7 @@ def print_data_dimensions(training_labels):
   tiles = len(training_labels)
   h = len(training_labels[0][0])
   w = len(training_labels[0][0][0])
-  bands = training_labels[0][0][0][0]
+  bands = sum(BANDS_TO_USE)
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
 def render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
