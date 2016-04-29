@@ -5,25 +5,31 @@
 
 import boto3
 from random import shuffle
-import sys, os, subprocess
+import sys, os, subprocess, time
 
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") # set in Dockerfile as env variable
+# set in Dockerfile as env variable
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") 
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 
 class NAIPDownloader:
 
-  def __init__(self):
+  def __init__(self, number_of_naips, 
+               should_randomize,
+               state, year, resolution, spectrum, grid, 
+               hardcoded_naip_list=None):
     '''
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
-    self.number_of_naips = 1
+    self.number_of_naips = number_of_naips
+    self.should_randomize = should_randomize
+    self.hardcoded_naip_list = hardcoded_naip_list
 
-    self.state = 'md'
-    self.year = '2013'
-    self.resolution = '1m'
-    self.spectrum = 'rgbir' 
-    self.grid = '38077'
+    self.state = state
+    self.year = year
+    self.resolution = resolution
+    self.spectrum = spectrum
+    self.grid = grid
     self.bucket_url = 's3://aws-naip/'
     self.url_base = '{}{}/{}/{}/{}/{}/'.format(self.bucket_url, self.state,self.year,self.resolution,self.spectrum,self.grid)
 
@@ -55,8 +61,11 @@ class NAIPDownloader:
     '''
 
     self.configure_s3cmd()
-    naip_filenames = self.list_naips()
-    shuffle(naip_filenames)
+    naip_filenames = self.hardcoded_naip_list 
+    if not naip_filenames:
+     naip_filenames = self.list_naips()
+    if self.should_randomize:
+      shuffle(naip_filenames)
     naip_local_paths = self.download_from_s3(naip_filenames)
     return naip_local_paths
 
@@ -103,15 +112,23 @@ class NAIPDownloader:
     max_range = self.number_of_naips
     if max_range == -1:
       max_range = len(naip_filenames)
+    t0 = time.time()
+    has_printed = False
     for filename in naip_filenames[0:max_range]:
+    #for filename in ['m_3807708_ne_18_1_20130924.tif']:
       full_path = os.path.join(NAIP_DATA_DIR, filename)
       if os.path.exists(full_path):
         print("NAIP {} already downloaded".format(full_path))
       else:
+        if not has_printed:
+          print("DOWNLOADING {} NAIPs...".format(max_range)) 
+          has_printed = True
         url_without_prefix = self.url_base.split(self.bucket_url)[1]
         s3_url = '{}{}'.format(url_without_prefix, filename)
         s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
       naip_local_paths.append(full_path)
+    if time.time()-t0 > 0.01:
+      print("downloads took {0:.1f}s".format(time.time()-t0))
     return naip_local_paths
 
 
