@@ -63,7 +63,7 @@ PERCENT_FOR_TRAINING_DATA = .93
 # the number of batches to train the neural net
 # @lacker recommends 3-5K for statistical significance, as rule of thumb
 # can achieve 70% accuracy with 5000 so far
-NUMBER_OF_BATCHES = 1
+NUMBER_OF_BATCHES = 3000
 
 # the number of tiles for each training round
 BATCH_SIZE = 100
