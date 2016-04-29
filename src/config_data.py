@@ -9,7 +9,7 @@
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
 # tile the NAIP and training data into NxN tiles with this dimension
@@ -27,7 +27,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
     constants for NAIP imagery to use   
 '''
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [1,0,0,1]
+BANDS_TO_USE = [0,0,0,1]
 
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = [
