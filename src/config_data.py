@@ -27,7 +27,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
     constants for NAIP imagery to use   
 '''
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [1,1,1,1]
+BANDS_TO_USE = [1,0,0,1]
 
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = [

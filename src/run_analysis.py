@@ -62,7 +62,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
-  cache_filename = raster_data_path + '-ways.bitmap'
+  cache_filename = raster_data_path + '-ways.bitmap.npy'
   try:
     if cache_way_bmp:
       arr = numpy.load(cache_filename)
@@ -70,6 +70,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
       return arr
   except:
     pass
+    # print "ERROR reading bitmap cache from disk: {}".format(cache_filename)
 
   way_bitmap = empty_tile_matrix(rows, cols)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
