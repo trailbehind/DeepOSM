@@ -112,12 +112,7 @@ def empty_tile_matrix(rows, cols):
   '''
       initialize the array to all zeroes
   '''
-  tile_matrix = []
-  for x in range(0,rows):
-    tile_matrix.append([])
-    for y in range(0,cols):
-      tile_matrix[x].append(0)
-  return tile_matrix
+  return numpy.zeros([rows, cols], dtype=numpy.int)
 
 def bounds_for_naip(raster_dataset, rows, cols):
   '''
@@ -246,8 +241,6 @@ def shuffle_in_unison(a, b):
        a_shuf.append(a[i])
        b_shuf.append(b[i])
    return a_shuf, b_shuf
-
-
 
 
 def run_analysis(cache_way_bmp=False, render_results=True):  
@@ -440,6 +433,10 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   # show raw data that spawned the labels
   for row in range(0, rows):
     for col in range(0, cols):
+      #if way_bitmap[row][col] == 'primary':
+      #  im.putpixel((col, row), (255,0,0, 255))
+      #elif way_bitmap[row][col] == 'trunk':
+      #  im.putpixel((col, row), (0,255,0, 255))
       if way_bitmap[row][col] != 0:
         im.putpixel((col, row), (255,0,0))
   t1 = time.time()
