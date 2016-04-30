@@ -9,7 +9,7 @@
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
 # tile the NAIP and training data into NxN tiles with this dimension
@@ -32,7 +32,7 @@ BANDS_TO_USE = [0,0,0,1]
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
-                  #'m_3807708_nw_18_1_20130904.tif',
+                  'm_3807708_nw_18_1_20130904.tif',
                   #'m_3807708_se_18_1_20130924.tif',
                   #'m_3807708_se_18_1_20130924.tif'
                   ]

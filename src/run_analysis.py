@@ -13,6 +13,8 @@ from config_data import *
 
 def read_naip(file_path, bands_to_use):
   '''
+      read a NAIP from disk
+      bands_to_use is an array of 4 Booleans, in whether to use each band (R, G, B, and IR)
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
@@ -47,11 +49,9 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use):
 
   all_tiled_data = []
 
-  left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
-
-  for col in range(left_x, right_x, TILE_SIZE):
-    for row in range(top_y, bottom_y, TILE_SIZE):
-      if row+TILE_SIZE < bottom_y and col+TILE_SIZE < right_x:
+  for col in range(0, cols, TILE_SIZE):
+    for row in range(0, rows, TILE_SIZE):
+      if row+TILE_SIZE < rows and col+TILE_SIZE < cols:
         new_tile = bands_data[row:row+TILE_SIZE, col:col+TILE_SIZE,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
  
