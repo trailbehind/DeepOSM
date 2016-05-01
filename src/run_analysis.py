@@ -174,12 +174,7 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
   '''
      each label gets converted from an NxN tile with way bits flipped,
      into a one hot array of whether the tile contains ways (i.e. [0,1] or [1,0] for each)
-
-    types_hot = []
-    for highway_type in types:
-      types_hot.append(0)
   '''
-  
   print("CREATING ONE-HOT LABELS...")
   t0 = time.time()
   print "CREATING TEST one-hot labels"
@@ -236,7 +231,6 @@ def shuffle_in_unison(a, b):
        a_shuf.append(a[i])
        b_shuf.append(b[i])
    return a_shuf, b_shuf
-
 
 def run_analysis(cache_way_bmp=False, render_results=True):  
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
@@ -415,7 +409,6 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
     # visualize multi-band analysis as RGB  
     im = Image.merge("RGB", (r, g, b))
 
-
   t1 = time.time()
   print "{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(BANDS_TO_USE))
 
@@ -428,10 +421,6 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   # show raw data that spawned the labels
   for row in range(0, rows):
     for col in range(0, cols):
-      #if way_bitmap[row][col] == 'primary':
-      #  im.putpixel((col, row), (255,0,0, 255))
-      #elif way_bitmap[row][col] == 'trunk':
-      #  im.putpixel((col, row), (0,255,0, 255))
       if way_bitmap[row][col] != 0:
         im.putpixel((col, row), (255,0,0))
   t1 = time.time()
@@ -458,14 +447,15 @@ def shade_labels(image, labels, predictions):
           image.putpixel((x, y), (r, 255, b))
     label_index += 1
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--cache_way_bmp", default=False, help="enable this to regenerate way bitmaps each run")
-parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
-args = parser.parse_args()
-render_results = False
-if args.render_results:
-  render_results = True
-if args.cache_way_bmp:
-  run_analysis(cache_way_bmp=True, render_results=render_results)
-else:
-  run_analysis(cache_way_bmp=False, render_results=render_results)
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--cache_way_bmp", default=False, help="enable this to regenerate way bitmaps each run")
+  parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
+  args = parser.parse_args()
+  render_results = False
+  if args.render_results:
+    render_results = True
+  if args.cache_way_bmp:
+    run_analysis(cache_way_bmp=True, render_results=render_results)
+  else:
+    run_analysis(cache_way_bmp=False, render_results=render_results)

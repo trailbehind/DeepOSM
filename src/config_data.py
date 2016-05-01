@@ -33,8 +33,8 @@ BANDS_TO_USE = [0,0,0,1]
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
                   'm_3807708_nw_18_1_20130904.tif',
-                  #'m_3807708_se_18_1_20130924.tif',
-                  #'m_3807708_se_18_1_20130924.tif'
+                  'm_3807708_se_18_1_20130924.tif',
+                  'm_3807708_se_18_1_20130924.tif'
                   ]
 
 # values to create the S3 bucket path for some maryland NAIPs
@@ -71,5 +71,3 @@ BATCH_SIZE = 100
 # the patch size for both the 32 and 64 feature convolutions
 # used with an NxN tile, where N has usually been 64
 CONVOLUTION_PATCH_SIZE = 5
-
-
