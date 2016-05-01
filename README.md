@@ -86,7 +86,9 @@ http://192.168.99.100:8888
 
 * [TensorFlow](https://www.tensorflow.org/) - using this for the deep learning, do multilayer, deep CNN
 * [Learning to Detect Roads in High-Resolution Aerial
-Images](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.232.1679&rep=rep1&type=pdf) - best/recent paper on doing this, great success with these methods
+Images](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.232.1679&rep=rep1&type=pdf) (Hinton) 
+* [Machine Learning for Aerial Image Labeling](https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf)- Minh's 2013 thesis, student of Hinton's
+best/recent paper on doing this, great success with these methods
 * Similar Efforts with OSM Data
     * [OSM-Crosswalk-Detection](https://github.com/geometalab/OSM-Crosswalk-Detection) - uses Keras to detect crosswalks, a class project (Fall 2015)
     * [OSM-HOT-ConvNet](https://github.com/larsroemheld/OSM-HOT-ConvNet) - attempted use for disaster response, author thinks it's only 69% accurate at pixel level (Fall 2016)

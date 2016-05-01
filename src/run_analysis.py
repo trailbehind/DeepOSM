@@ -449,6 +449,7 @@ def shade_labels(image, labels, predictions):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
+  parser.add_argument("--extract_type", default='highway', help="highway or tennis")
   parser.add_argument("--cache_way_bmp", default=False, help="enable this to regenerate way bitmaps each run")
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
   args = parser.parse_args()
