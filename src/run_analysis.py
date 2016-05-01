@@ -232,7 +232,7 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(cache_way_bmp=False, render_results=True):  
+def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway'):  
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
                                      RANDOMIZE_NAIPS,
                                      NAIP_STATE,
@@ -241,18 +241,19 @@ def run_analysis(cache_way_bmp=False, render_results=True):
                                      NAIP_SPECTRUM,
                                      NAIP_GRID,
                                      HARDCODED_NAIP_LIST).download_naips()  
-  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp)
+  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, extract_type)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   predictions = analyze(test_labels, training_labels, test_images, training_images, waymap)
-  render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
+  if render_results:
+    render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
 
-def random_training_data(raster_data_paths, cache_way_bmp):
+def random_training_data(raster_data_paths, cache_way_bmp, extract_type):
   road_labels = []
   naip_tiles = []
 
   # tile images and labels  
-  waymap = download_and_extract(PBF_FILE_URLS)
+  waymap = download_and_extract(PBF_FILE_URLS, extract_type)
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
@@ -369,12 +370,11 @@ def render_results_as_images(raster_data_paths, training_labels, test_labels, pr
     index += 1
 
   for raster_data_path in raster_data_paths:
-    if render_results:
-      render_results_as_image(raster_data_path, 
-                              way_bitmap_npy[raster_data_path], 
-                              training_labels_by_naip[raster_data_path], 
-                              test_labels_by_naip[raster_data_path], 
-                              predictions=predictions_by_naip[raster_data_path])
+    render_results_as_image(raster_data_path, 
+                            way_bitmap_npy[raster_data_path], 
+                            training_labels_by_naip[raster_data_path], 
+                            test_labels_by_naip[raster_data_path], 
+                            predictions=predictions_by_naip[raster_data_path])
 
 
 def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, predictions=None):
@@ -455,7 +455,10 @@ if __name__ == "__main__":
   render_results = False
   if args.render_results:
     render_results = True
+  cache_way_bmp = False
   if args.cache_way_bmp:
-    run_analysis(cache_way_bmp=True, render_results=render_results)
-  else:
-    run_analysis(cache_way_bmp=False, render_results=render_results)
+    cache_way_bmp = True
+  extract_type = 'highway'
+  if args.extract_type:
+    extract_type = args.extract_type
+  run_analysis(cache_way_bmp=True, render_results=render_results, extract_type=extract_type)

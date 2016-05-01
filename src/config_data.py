@@ -12,6 +12,10 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
                  'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
+# if True, cache the ways extracted from PBFs to disk as JSON
+# faster for multiple runs, unless you want to change what's extracted
+CACHE_WAY_EXTRACTS = False
+
 # tile the NAIP and training data into NxN tiles with this dimension
 TILE_SIZE = 64
 
@@ -27,7 +31,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
     constants for NAIP imagery to use   
 '''
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [0,0,0,1]
+BANDS_TO_USE = [0,1,0,1]
 
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = [
@@ -63,10 +67,10 @@ PERCENT_FOR_TRAINING_DATA = .93
 # the number of batches to train the neural net
 # @lacker recommends 3-5K for statistical significance, as rule of thumb
 # can achieve 70% accuracy with 5000 so far
-NUMBER_OF_BATCHES = 6000
+NUMBER_OF_BATCHES = 1
 
 # the number of tiles for each training round
-BATCH_SIZE = 100
+BATCH_SIZE = 1
 
 # the patch size for both the 32 and 64 feature convolutions
 # used with an NxN tile, where N has usually been 64
