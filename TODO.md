@@ -4,7 +4,7 @@ Some notes on todos, didn't want to muck with Github issues for this.
 ## What's Next
 * use a more suitable (but still off-the-shelf) neural net model
 * make it work with 4 bands, not just IR band
-* make a Tennis Court list for Dan (classify non-road features like buildings, tennis courts, or baseball diamonds)
+* try balancing RGBs between -1 to 1, instead of 0 to 1
 * are major freeways not being rendered?
 
 ## Later
@@ -23,3 +23,4 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * ~~try just classifying big roads, with 2 or more lanes, or throwing out non motorways (easier as expected)~~
 * ~~add another satellite image as validation data~~
 * ~~assign more pixels for roads, based on road type (this will turn on more tiles, should be more accurate)~~
+* ~~make a Tennis Court list for Dan (classify non-road features like buildings, tennis courts, or baseball diamonds)~~
