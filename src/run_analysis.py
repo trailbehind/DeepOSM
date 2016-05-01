@@ -72,7 +72,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
     pass
     # print "ERROR reading bitmap cache from disk: {}".format(cache_filename)
 
-  way_bitmap = empty_tile_matrix(rows, cols)
+  way_bitmap = numpy.zeros([rows, cols], dtype=numpy.int)
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
 
@@ -108,12 +108,6 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
 
   return way_bitmap
 
-def empty_tile_matrix(rows, cols):
-  '''
-      initialize the array to all zeroes
-  '''
-  return numpy.zeros([rows, cols], dtype=numpy.int)
-
 def bounds_for_naip(raster_dataset, rows, cols):
   '''
       clip the NAIP to 0 to cols, 0 to rows
@@ -128,11 +122,11 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
       add the pixels between the start and end to way_bitmap,
       maybe thickened based on config
   '''
-
   if end_pixel[0] - start_pixel[0] == 0:
     for y in range(min(end_pixel[1], start_pixel[1]),
                    max(end_pixel[1], start_pixel[1])):
       safe_add_pixel(end_pixel[0], y, way_bitmap)
+      # if configged, fatten lines
       for x in range(1,PIXELS_BESIDE_WAYS+1):
         safe_add_pixel(end_pixel[0]-x, y, way_bitmap)
         safe_add_pixel(end_pixel[0]+x, y, way_bitmap)
@@ -147,6 +141,7 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
     p = (int(floatx),int(offset + slope * floatx))
     safe_add_pixel(p[0],p[1], way_bitmap)
     i += 1
+    # if configged, fatten lines
     for x in range(1, PIXELS_BESIDE_WAYS+1):
       safe_add_pixel(p[0], p[1]-x, way_bitmap)
       safe_add_pixel(p[0], p[1]+x, way_bitmap)
@@ -163,7 +158,7 @@ def safe_add_pixel(x, y, way_bitmap):
 
 def bounds_contains_point(bounds, point_tuple):
   '''
-      returns True if the bounds geographically contains the point_tuple
+     returns True if the bounds geographically contains the point_tuple
   '''
   if point_tuple[0] > bounds['ne'][0]:
     return False
