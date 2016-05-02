@@ -6,6 +6,7 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * make it work with 4 bands, not just IR band
 * try balancing RGBs between -1 to 1, instead of 0 to 1
 * are major freeways not being rendered?
+* add buildings and any other labelable features too, so there is less image that's just "not road"
 
 ## Later
 * ORDERED - run this on the Linux box with a GPU, see if that's tons faster
@@ -15,6 +16,7 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * visualize training on TensorBoard (better than print statements?)
 * try recurrent neural nets
 * move analysis to the cloud
+* label pixels with elevation data too 
 
 ## Done
 * ~~make config file for all data.analysis constants~~
