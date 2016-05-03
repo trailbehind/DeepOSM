@@ -14,30 +14,29 @@ from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
 
-# Data loading and preprocessing
-from tflearn.datasets import cifar10
-(X, Y), (X_test, Y_test) = cifar10.load_data()
-X, Y = shuffle(X, Y)
-print(Y)
-Y = to_categorical(Y, 10)
-print(Y)
-Y_test = to_categorical(Y_test, 10)
+def train_neural_net(train_images, 
+                     train_labels, 
+                     test_images, 
+                     test_labels):  
 
-# Convolutional network building
-network = input_data(shape=[None, 32, 32, 3])
-network = conv_2d(network, 32, 3, activation='relu')
-network = max_pool_2d(network, 2)
-network = conv_2d(network, 64, 3, activation='relu')
-network = conv_2d(network, 64, 3, activation='relu')
-network = max_pool_2d(network, 2)
-network = fully_connected(network, 512, activation='relu')
-network = dropout(network, 0.5)
-network = fully_connected(network, 10, activation='softmax')
-network = regression(network, optimizer='adam',
-                     loss='categorical_crossentropy',
-                     learning_rate=0.001)
+	X, Y = shuffle(train_images, train_labels)
+	Y_test = test_labels
 
-# Train using classifier
-model = tflearn.DNN(network, tensorboard_verbose=0)
-model.fit(X, Y, n_epoch=50, shuffle=True, validation_set=(X_test, Y_test),
-          show_metric=True, batch_size=96, run_id='cifar10_cnn')
+	# Convolutional network building
+	network = input_data(shape=[None, 32, 32, 3])
+	network = conv_2d(network, 32, 3, activation='relu')
+	network = max_pool_2d(network, 2)
+	network = conv_2d(network, 64, 3, activation='relu')
+	network = conv_2d(network, 64, 3, activation='relu')
+	network = max_pool_2d(network, 2)
+	network = fully_connected(network, 512, activation='relu')
+	network = dropout(network, 0.5)
+	network = fully_connected(network, 2, activation='softmax')
+	network = regression(network, optimizer='adam',
+	                     loss='categorical_crossentropy',
+	                     learning_rate=0.001)
+
+	# Train using classifier
+	model = tflearn.DNN(network, tensorboard_verbose=0)
+	model.fit(X, Y, n_epoch=50, shuffle=True, validation_set=(test_images, Y_test),
+	          show_metric=True, batch_size=96, run_id='cifar10_cnn')

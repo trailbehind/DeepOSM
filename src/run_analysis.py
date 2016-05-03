@@ -8,7 +8,8 @@ from pyproj import Proj, transform
 from download_labels import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
-from label_chunks_cnn import train_neural_net
+import label_chunks_cnn
+import label_chunks_cnn_cifar
 from config_data import *
 
 def read_naip(file_path, bands_to_use):
@@ -232,7 +233,7 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway'):  
+def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway', model='mnist'):  
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
                                      RANDOMIZE_NAIPS,
                                      NAIP_STATE,
@@ -244,7 +245,7 @@ def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway
   road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, extract_type)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
-  predictions = analyze(test_labels, training_labels, test_images, training_images, waymap)
+  predictions = analyze(test_labels, training_labels, test_images, training_images, waymap, model)
   if render_results:
     render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
 
@@ -317,7 +318,7 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
       test_labels.append(equal_count_way_list[x])
   return test_labels, training_labels, test_images, training_images
 
-def analyze(test_labels, training_labels, test_images, training_images, waymap):
+def analyze(test_labels, training_labels, test_images, training_images, waymap, model):
   ''' 
       package data for tensorflow and analyze
   '''
@@ -331,15 +332,25 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap):
   npy_test_labels = numpy.asarray(onehot_test_labels)
 
   # train and test the neural net
-  predictions = train_neural_net(BANDS_TO_USE, 
-                                 TILE_SIZE,
-                                 npy_training_images, 
-                                 npy_training_labels, 
-                                 npy_test_images, 
-                                 npy_test_labels,
-                                 CONVOLUTION_PATCH_SIZE,
-                                 NUMBER_OF_BATCHES,
-                                 BATCH_SIZE)
+  predictions = None
+  if model == 'mnist':
+    predictions = label_chunks_cnn.train_neural_net(BANDS_TO_USE, 
+                                                 TILE_SIZE,
+                                                 npy_training_images, 
+                                                 npy_training_labels, 
+                                                 npy_test_images, 
+                                                 npy_test_labels,
+                                                 CONVOLUTION_PATCH_SIZE,
+                                                 NUMBER_OF_BATCHES,
+                                                 BATCH_SIZE)
+  elif model == 'cifar10':
+    predictions = label_chunks_cnn_cifar.train_neural_net( 
+                                                 npy_training_images, 
+                                                 npy_training_labels, 
+                                                 npy_test_images, 
+                                                 npy_test_labels)
+  else:
+    print "ERROR, unknown model to use for analysis"
   return predictions
 
 def print_data_dimensions(training_labels):
@@ -452,6 +463,7 @@ if __name__ == "__main__":
   parser.add_argument("--extract_type", default='highway', help="highway or tennis")
   parser.add_argument("--cache_way_bmp", default=False, help="enable this to regenerate way bitmaps each run")
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
+  parser.add_argument("--model", default='mnist', help="mnist or cifar10")
   args = parser.parse_args()
   render_results = False
   if args.render_results:
@@ -462,4 +474,7 @@ if __name__ == "__main__":
   extract_type = 'highway'
   if args.extract_type:
     extract_type = args.extract_type
-  run_analysis(cache_way_bmp=True, render_results=render_results, extract_type=extract_type)
+  model = 'mnist'
+  if args.model:
+    model = args.model
+  run_analysis(cache_way_bmp=True, render_results=render_results, extract_type=extract_type, model=model)
