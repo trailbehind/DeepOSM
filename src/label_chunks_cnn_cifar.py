@@ -19,11 +19,8 @@ def train_neural_net(train_images,
                      test_images, 
                      test_labels):  
 
-	X, Y = shuffle(train_images, train_labels)
-	Y_test = test_labels
-
 	# Convolutional network building
-	network = input_data(shape=[None, 32, 32, 3])
+	network = input_data(shape=[None, 64, 64, 4])
 	network = conv_2d(network, 32, 3, activation='relu')
 	network = max_pool_2d(network, 2)
 	network = conv_2d(network, 64, 3, activation='relu')
@@ -38,5 +35,5 @@ def train_neural_net(train_images,
 
 	# Train using classifier
 	model = tflearn.DNN(network, tensorboard_verbose=0)
-	model.fit(X, Y, n_epoch=50, shuffle=True, validation_set=(test_images, Y_test),
+	model.fit(train_images, train_labels, n_epoch=50, shuffle=True, validation_set=(test_images, test_labels),
 	          show_metric=True, batch_size=96, run_id='cifar10_cnn')

@@ -17,7 +17,7 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
 CACHE_WAY_EXTRACTS = False
 
 # tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 32
+TILE_SIZE = 64
 
 # the number of pixels to count as road, 
 # on each side of of the centerline pixels
@@ -31,7 +31,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
     constants for NAIP imagery to use   
 '''
 # the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [1,1,1,0]
+BANDS_TO_USE = [1,1,1,1]
 
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = None
