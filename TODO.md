@@ -8,8 +8,8 @@ Some notes on todos, didn't want to muck with Github issues for this.
 
 ## Later
 * ORDERED - run this on the Linux box with a GPU, see if that's tons faster
-* classify at the pixel level, by guessing at center pixel roadiness, instead of total tile roadiness
 * rotate training images (makes the training overfit less)
+* classify at the pixel level, by guessing at center pixel roadiness, instead of total tile roadiness
 * instead of roads on/off, classify pixels into types (highway, footway, cycleway, lanes-1, lanes-2, lanes-3, etc)
 * visualize training on TensorBoard (better than print statements?)
 * try recurrent neural nets

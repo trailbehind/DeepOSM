@@ -9,7 +9,7 @@
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
 # if True, cache the ways extracted from PBFs to disk as JSON
@@ -37,8 +37,8 @@ BANDS_TO_USE = [1,1,1,1]
 HARDCODED_NAIP_LIST = None
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
-                  #'m_3807708_nw_18_1_20130904.tif',
-                  #'m_3807708_se_18_1_20130924.tif',
+                  'm_3807708_nw_18_1_20130904.tif',
+                  'm_3807708_se_18_1_20130924.tif',
                   ]
 
 # values to create the S3 bucket path for some maryland NAIPs
@@ -62,7 +62,7 @@ RANDOMIZE_NAIPS = False
     constants for training neural net  
 '''
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .98
+PERCENT_FOR_TRAINING_DATA = .96
 
 # the number of batches to train the neural net
 # @lacker recommends 3-5K for statistical significance, as rule of thumb
