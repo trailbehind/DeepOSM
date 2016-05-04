@@ -44,3 +44,5 @@ def train_neural_net(train_images,
   model = tflearn.DNN(network, tensorboard_verbose=0)
   model.fit(train_images, train_labels, n_epoch=50, shuffle=True, validation_set=(test_images, test_labels),
             show_metric=True, batch_size=96, run_id='cifar10_cnn')
+
+  return model.predict(test_images)

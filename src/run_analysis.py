@@ -233,7 +233,7 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway', model='mnist'):  
+def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway', model='mnist', band_list=[0,0,0,1]):  
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
                                      RANDOMIZE_NAIPS,
                                      NAIP_STATE,
@@ -242,14 +242,14 @@ def run_analysis(cache_way_bmp=False, render_results=True, extract_type='highway
                                      NAIP_SPECTRUM,
                                      NAIP_GRID,
                                      HARDCODED_NAIP_LIST).download_naips()  
-  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, extract_type)
+  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, extract_type, band_list)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
-  predictions = analyze(test_labels, training_labels, test_images, training_images, waymap, model)
+  predictions = analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list)
   if render_results:
-    render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy)
+    render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy, band_list)
 
-def random_training_data(raster_data_paths, cache_way_bmp, extract_type):
+def random_training_data(raster_data_paths, cache_way_bmp, extract_type, band_list):
   road_labels = []
   naip_tiles = []
 
@@ -258,7 +258,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, extract_type):
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
-    raster_dataset, bands_data = read_naip(raster_data_path, BANDS_TO_USE)
+    raster_dataset, bands_data = read_naip(raster_data_path, band_list)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
   
@@ -271,7 +271,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, extract_type):
           new_tile = way_bitmap_npy[raster_data_path][row:row+TILE_SIZE, col:col+TILE_SIZE]
           road_labels.append((new_tile,(col, row),raster_data_path))
         
-    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, BANDS_TO_USE):
+    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list):
       naip_tiles.append(tile)
 
   assert len(road_labels) == len(naip_tiles)
@@ -318,11 +318,11 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
       test_labels.append(equal_count_way_list[x])
   return test_labels, training_labels, test_images, training_images
 
-def analyze(test_labels, training_labels, test_images, training_images, waymap, model):
+def analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list):
   ''' 
       package data for tensorflow and analyze
   '''
-  print_data_dimensions(training_labels)
+  print_data_dimensions(training_labels, band_list)
   onehot_training_labels, \
   onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, training_labels, test_labels)
   npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
@@ -334,7 +334,7 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap, 
   # train and test the neural net
   predictions = None
   if model == 'mnist':
-    predictions = label_chunks_cnn.train_neural_net(BANDS_TO_USE, 
+    predictions = label_chunks_cnn.train_neural_net(band_list, 
                                                  TILE_SIZE,
                                                  npy_training_images, 
                                                  npy_training_labels, 
@@ -353,14 +353,14 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap, 
     print "ERROR, unknown model to use for analysis"
   return predictions
 
-def print_data_dimensions(training_labels):
+def print_data_dimensions(training_labels,band_list):
   tiles = len(training_labels)
   h = len(training_labels[0][0])
   w = len(training_labels[0][0][0])
-  bands = sum(BANDS_TO_USE)
+  bands = sum(band_list)
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
-def render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy):
+def render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy,band_list):
   training_labels_by_naip = {}
   test_labels_by_naip = {}
   predictions_by_naip = {}
@@ -384,11 +384,12 @@ def render_results_as_images(raster_data_paths, training_labels, test_labels, pr
     render_results_as_image(raster_data_path, 
                             way_bitmap_npy[raster_data_path], 
                             training_labels_by_naip[raster_data_path], 
-                            test_labels_by_naip[raster_data_path], 
+                            test_labels_by_naip[raster_data_path],
+                            band_list, 
                             predictions=predictions_by_naip[raster_data_path])
 
 
-def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, predictions=None):
+def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, band_list, predictions=None):
   '''
       save the source TIFF as a JPEG, with labels and data overlaid
   '''
@@ -403,25 +404,25 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   r, g, b, ir = im.split()
   # visualize single band analysis tinted for R-G-B, 
   # or grayscale for infrared band  
-  if sum(BANDS_TO_USE) == 1:
-    if BANDS_TO_USE[3] == 1:
+  if sum(band_list) == 1:
+    if band_list[3] == 1:
       # visualize IR as grayscale
       im = Image.merge("RGB", (ir, ir, ir))
     else:
       # visualize single-color band analysis as a scale of that color
       zeros_band = Image.new('RGB', r.size).split()[0]
-      if BANDS_TO_USE[0] == 1:
+      if band_list[0] == 1:
         im = Image.merge("RGB", (r, zeros_band, zeros_band))
-      elif BANDS_TO_USE[1] == 1:
+      elif band_list[1] == 1:
         im = Image.merge("RGB", (zeros_band, g, zeros_band))
-      elif BANDS_TO_USE[2] == 1:
+      elif band_list[2] == 1:
         im = Image.merge("RGB", (zeros_band, zeros_band, b))
   else:
     # visualize multi-band analysis as RGB  
     im = Image.merge("RGB", (r, g, b))
 
   t1 = time.time()
-  print "{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(BANDS_TO_USE))
+  print "{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(band_list))
 
   t0 = time.time()
   shade_labels(im, test_labels, predictions)
@@ -460,6 +461,7 @@ def shade_labels(image, labels, predictions):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
+  parser.add_argument("--bands", default='0001', help="default is just IR, all bands is 1111")
   parser.add_argument("--extract_type", default='highway', help="highway or tennis")
   parser.add_argument("--cache_way_bmp", default=False, help="enable this to regenerate way bitmaps each run")
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
@@ -477,4 +479,10 @@ if __name__ == "__main__":
   model = 'mnist'
   if args.model:
     model = args.model
-  run_analysis(cache_way_bmp=True, render_results=render_results, extract_type=extract_type, model=model)
+  band_list = [0,0,0,1]
+  if args.bands:
+    bands_string = args.bands
+    band_list = []
+    for char in band_string:
+      band_list.append(int(char))
+  run_analysis(cache_way_bmp=True, render_results=render_results, extract_type=extract_type, model=model, band_list=band_list)
