@@ -345,10 +345,14 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap, 
                                                  BATCH_SIZE)
   elif model == 'cifar10':
     predictions = label_chunks_cnn_cifar.train_neural_net( 
+                                                 band_list,
+                                                 TILE_SIZE,
                                                  npy_training_images, 
                                                  npy_training_labels, 
                                                  npy_test_images, 
-                                                 npy_test_labels)
+                                                 npy_test_labels,
+                                                 NUMBER_OF_BATCHES,
+                                                 BATCH_SIZE)
   else:
     print "ERROR, unknown model to use for analysis"
   return predictions

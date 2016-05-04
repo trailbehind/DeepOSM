@@ -15,10 +15,14 @@ from tflearn.layers.estimator import regression
 
 import numpy
 
-def train_neural_net(train_images, 
+def train_neural_net(bands_to_use,
+	                   image_size,
+	                   train_images, 
                      train_labels, 
                      test_images, 
-                     test_labels):  
+                     test_labels,
+                     number_of_batches,
+                     batch_size):  
 
   train_images = train_images.astype(numpy.float32)
   train_images = (train_images - 127.5) / 127.5
@@ -40,9 +44,12 @@ def train_neural_net(train_images,
                        loss='categorical_crossentropy',
                        learning_rate=0.001)
 
+  # batch_size was originally 96
+  # n_epoch was originally 50
+  # each epoch is 170 steps I think
   # Train using classifier
   model = tflearn.DNN(network, tensorboard_verbose=0)
-  model.fit(train_images, train_labels, n_epoch=50, shuffle=True, validation_set=(test_images, test_labels),
-            show_metric=True, batch_size=96, run_id='cifar10_cnn')
+  model.fit(train_images, train_labels, n_epoch=number_of_batches/100, shuffle=True, validation_set=(test_images, test_labels),
+            show_metric=True, batch_size=batch_size, run_id='cifar10_cnn')
 
   return model.predict(test_images)

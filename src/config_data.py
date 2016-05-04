@@ -70,7 +70,7 @@ PERCENT_FOR_TRAINING_DATA = .96
 NUMBER_OF_BATCHES = 6000
 
 # the number of tiles for each training round
-BATCH_SIZE = 100
+BATCH_SIZE = 96
 
 # the patch size for both the 32 and 64 feature convolutions
 # used with an NxN tile, where N has usually been 64
