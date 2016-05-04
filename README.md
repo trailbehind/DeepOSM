@@ -66,17 +66,20 @@ If you then re-run the analysis, but set the training_batches parameter to aroun
 
     python src/run_analysis.py --training_batches=5000
 
-Full usge is as follows, or use -h on the command line:
+Full usage is as follows, or use -h on the command line:
 
- ```run_analysis.py [-h] [--tile_size TILE_SIZE]
-                         [--training_batches TRAINING_BATCHES]
-                         [--batch_size BATCH_SIZE] 
-                         [--bands BANDS]
-                         [--extract_type EXTRACT_TYPE]
-                         [--cache_way_bmp CACHE_WAY_BMP]
-                         [--clear_way_bmp_cache CLEAR_WAY_BMP_CACHE]
-                         [--render_results RENDER_RESULTS] 
-                         [--model MODEL]```
+```
+run_analysis.py [-h] 
+                [--tile_size TILE_SIZE]
+                [--training_batches TRAINING_BATCHES]
+                [--batch_size BATCH_SIZE] 
+                [--bands BANDS]
+                [--extract_type EXTRACT_TYPE]
+                [--cache_way_bmp CACHE_WAY_BMP]
+                [--clear_way_bmp_cache CLEAR_WAY_BMP_CACHE]
+                [--render_results RENDER_RESULTS] 
+                [--model MODEL]
+```
 
 ![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
 
