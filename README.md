@@ -52,13 +52,15 @@ make dev
 
 ### Download NAIP, PBF, and Analyze
 
-Inside Docker, the following Python script will work. It will download all source data, tile it into training/test data and labels, train the neural net, and generate image and text output.
+Inside Docker, the following Python script will work. It will download all source data, tile it into training/test data and labels, train the neural net, and generate image and text output. The default data is three NAIPs, which gets tiled into NxNx4 bands of data (RGB-IR bands). The training labels derive from PBF files that overlap the NAIPs.
+
+#### Dry Run, Predicts Poorly (random, about 50%)
 
     python src/run_analysis.py
 
-This will download three NAIPs, and tile it into NxNx1 bands of data (IR band). Then it will download some PBF files and extract the ways for the NAIPs.
+For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff. 
 
-It will produce PNGs of the ways, labels, and predictions overlaid on the tiff. 
+#### Full-Data Run, Predicts Well (90+%)
 
 If you then re-run the analysis, but set the training_batches parameter to around 5000, it will be more than 90% accurate on a CPU, after running all night. On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
 
