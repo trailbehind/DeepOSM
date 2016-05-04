@@ -2,7 +2,6 @@
 Some notes on todos, didn't want to muck with Github issues for this.
 
 ## What's Next
-* try balancing RGBs between -1 to 1, instead of 0 to 1
 * are major freeways not being rendered?
 * add buildings and any other labelable features too, so there is less image that's just "not road"
 * FIND - have you seen a paper from a few years ago about estimating osm completeness by comparing size of compressed satellite images vs number of osm nodes
@@ -29,3 +28,4 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * ~~make a Tennis Court list for Dan (classify non-road features like buildings, tennis courts, or baseball diamonds)~~
 * ~~use a more suitable (but still off-the-shelf) neural net model (like the cifar10 classifier)~~
 * ~~make it work with 4 bands, not just IR band~~
+* ~~try balancing RGBs between -1 to 1, instead of 0 to 1~~

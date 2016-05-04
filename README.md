@@ -60,13 +60,13 @@ Inside Docker, the following Python script will work. It will download all sourc
 
 For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff. 
 
-#### Full-Data Run, Predicts Well (90+%)
+#### Full-Data Run, Predicts Well (90+% perhaps)
 
-If you then re-run the analysis, but set the training_batches parameter to around 5000, it will be more than 90% accurate on a CPU, after running all night. On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
+If you then re-run the analysis, but set the training_batches parameter to around 5000, it will be more than 90% accurate on a CPU, after running all night, (or so it seems at this point). On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
 
     python src/run_analysis.py --training_batches=5000
 
-Full uage is as follows, or use -h on the command line:
+Full usge is as follows, or use -h on the command line:
 
  ```run_analysis.py [-h] [--tile_size TILE_SIZE]
                          [--training_batches TRAINING_BATCHES]
