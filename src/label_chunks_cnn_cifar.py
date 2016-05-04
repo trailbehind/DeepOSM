@@ -21,10 +21,10 @@ def train_neural_net(train_images,
                      test_labels):  
 
   train_images = train_images.astype(numpy.float32)
-  train_images = numpy.multiply(train_images, 1.0 / 255.0)
+  train_images = (train_images - 127.5) / 127.5
     
   test_images = test_images.astype(numpy.float32)
-  test_images = numpy.multiply(test_images, 1.0 / 255.0)
+  test_images = (test_images - 127.5) / 127.5
 
   # Convolutional network building
   network = input_data(shape=[None, 64, 64, 4])
