@@ -9,11 +9,12 @@
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
-# tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 64
+# if True, cache the ways extracted from PBFs to disk as JSON
+# faster for multiple runs, unless you want to change what's extracted
+CACHE_WAY_EXTRACTS = True
 
 # the number of pixels to count as road, 
 # on each side of of the centerline pixels
@@ -26,15 +27,13 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 '''
     constants for NAIP imagery to use   
 '''
-# the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [0,0,0,1]
 
 # set this to None to get different tifs to analyze
+HARDCODED_NAIP_LIST = None
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
-                  #'m_3807708_nw_18_1_20130904.tif',
-                  #'m_3807708_se_18_1_20130924.tif',
-                  #'m_3807708_se_18_1_20130924.tif'
+                  'm_3807708_nw_18_1_20130904.tif',
+                  'm_3807708_se_18_1_20130924.tif',
                   ]
 
 # values to create the S3 bucket path for some maryland NAIPs
@@ -58,18 +57,9 @@ RANDOMIZE_NAIPS = False
     constants for training neural net  
 '''
 # the remainder is allocated as test data
-PERCENT_FOR_TRAINING_DATA = .93
-
-# the number of batches to train the neural net
-# @lacker recommends 3-5K for statistical significance, as rule of thumb
-# can achieve 70% accuracy with 5000 so far
-NUMBER_OF_BATCHES = 100
-
-# the number of tiles for each training round
-BATCH_SIZE = 100
+PERCENT_FOR_TRAINING_DATA = .96
 
 # the patch size for both the 32 and 64 feature convolutions
 # used with an NxN tile, where N has usually been 64
+# only gets used by MNIST classifier
 CONVOLUTION_PATCH_SIZE = 5
-
-

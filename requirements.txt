@@ -17,5 +17,5 @@ https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp27-none-l
 
 shapely
 
-# trying this out
+# trying this out for the cifar10 network
 git+https://github.com/tflearn/tflearn.git
