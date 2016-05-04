@@ -56,9 +56,13 @@ Inside Docker, the following Python script will work. It will download all sourc
 
     python src/run_analysis.py
 
-This will download four NAIPs, and tile it into NxNx1 bands of data (IR band). Then it will download some PBF files and extract the ways for the NAIPs.
+This will download three NAIPs, and tile it into NxNx1 bands of data (IR band). Then it will download some PBF files and extract the ways for the NAIPs.
 
-It will produce PNGs of the ways, labels, and predictions overlaid on the tiff. It will be able to guess with 69% accuracy if a 64x64px tiles contains highways.
+It will produce PNGs of the ways, labels, and predictions overlaid on the tiff. 
+
+If you then re-run the analysis, but set the training_batches parameter to around 5000, it will be more than 90% accurate on a CPU, after running all night. On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
+
+    python src/run_analysis.py --training_batches=5000
 
 ![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
 

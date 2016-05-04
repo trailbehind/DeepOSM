@@ -16,9 +16,6 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
 # faster for multiple runs, unless you want to change what's extracted
 CACHE_WAY_EXTRACTS = False
 
-# tile the NAIP and training data into NxN tiles with this dimension
-TILE_SIZE = 64
-
 # the number of pixels to count as road, 
 # on each side of of the centerline pixels
 PIXELS_BESIDE_WAYS = 1
@@ -30,8 +27,6 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 '''
     constants for NAIP imagery to use   
 '''
-# the bands to use from the NAIP for analysis (R G B IR)
-BANDS_TO_USE = [1,1,1,1]
 
 # set this to None to get different tifs to analyze
 HARDCODED_NAIP_LIST = None
@@ -64,14 +59,7 @@ RANDOMIZE_NAIPS = False
 # the remainder is allocated as test data
 PERCENT_FOR_TRAINING_DATA = .96
 
-# the number of batches to train the neural net
-# @lacker recommends 3-5K for statistical significance, as rule of thumb
-# can achieve 70% accuracy with 5000 so far
-NUMBER_OF_BATCHES = 6000
-
-# the number of tiles for each training round
-BATCH_SIZE = 96
-
 # the patch size for both the 32 and 64 feature convolutions
 # used with an NxN tile, where N has usually been 64
+# only gets used by MNIST classifier
 CONVOLUTION_PATCH_SIZE = 5
