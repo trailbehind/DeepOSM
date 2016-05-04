@@ -5,6 +5,9 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * try balancing RGBs between -1 to 1, instead of 0 to 1
 * are major freeways not being rendered?
 * add buildings and any other labelable features too, so there is less image that's just "not road"
+* FIND - have you seen a paper from a few years ago about estimating osm completeness by comparing size of compressed satellite images vs number of osm nodes
+* READ - this presentation on using GPS traces to suggest OSM edits (Strava/Telenav): http://webcache.googleusercontent.com/search?q=cache:VoiCwRHOyLUJ:stateofthemap.us/map-tracing-for-millennials/+&cd=3&hl=en&ct=clnk&gl=us
+
 
 ## Later
 * ORDERED - run this on the Linux box with a GPU, see if that's tons faster
