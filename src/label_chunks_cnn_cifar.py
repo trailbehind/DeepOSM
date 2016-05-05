@@ -24,6 +24,11 @@ def train_neural_net(bands_to_use,
                      number_of_batches,
                      batch_size):  
 
+  on_band_count = 0
+  for b in bands_to_use:
+    if b == 1:
+      on_band_count += 1
+
   train_images = train_images.astype(numpy.float32)
   train_images = (train_images - 127.5) / 127.5
     
@@ -31,7 +36,7 @@ def train_neural_net(bands_to_use,
   test_images = (test_images - 127.5) / 127.5
 
   # Convolutional network building
-  network = input_data(shape=[None, image_size, image_size, 4])
+  network = input_data(shape=[None, image_size, image_size, on_band_count])
   network = conv_2d(network, 32, 3, activation='relu')
   #network = max_pool_2d(network, 2)
   network = conv_2d(network, 64, 3, activation='relu')
