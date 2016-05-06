@@ -60,23 +60,26 @@ Inside Docker, the following Python script will work. It will download all sourc
 
 For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff. 
 
-#### Full-Data Run, Predicts Well (90+% perhaps)
+#### Full-Data Run (as good as 75%)
 
-If you then re-run the analysis, but set the training_batches parameter to around 5000, it will be more than 90% accurate on a CPU, after running all night, (or so it seems at this point). On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
+If you then re-run the analysis, but set some parameters, it will be more accurate on a CPU (~70%), after running all night. On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
 
-    python src/run_analysis.py --training_batches=5000
+    python src/run_analysis.py --bands=0001 --model=mnist --training_batches=6000
 
-Full usge is as follows, or use -h on the command line:
+Full usage is as follows, or use -h on the command line:
 
- ```run_analysis.py [-h] [--tile_size TILE_SIZE]
-                         [--training_batches TRAINING_BATCHES]
-                         [--batch_size BATCH_SIZE] 
-                         [--bands BANDS]
-                         [--extract_type EXTRACT_TYPE]
-                         [--cache_way_bmp CACHE_WAY_BMP]
-                         [--clear_way_bmp_cache CLEAR_WAY_BMP_CACHE]
-                         [--render_results RENDER_RESULTS] 
-                         [--model MODEL]```
+```
+run_analysis.py [-h] 
+                [--tile_size TILE_SIZE]
+                [--training_batches TRAINING_BATCHES]
+                [--batch_size BATCH_SIZE] 
+                [--bands BANDS]
+                [--extract_type EXTRACT_TYPE]
+                [--cache_way_bmp CACHE_WAY_BMP]
+                [--clear_way_bmp_cache CLEAR_WAY_BMP_CACHE]
+                [--render_results RENDER_RESULTS] 
+                [--model MODEL]
+```
 
 ![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
 
@@ -119,13 +122,9 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
 
 
-### Papers that Cite Hinton/Mnih, Relevant to Project
+### Papers that Cite Hinton/Mnih, to Review
 
 I am reviewing these papers from Google Scholar that both cite the key papers and seem relevant to the topic. 
-
-* http://link.springer.com/chapter/10.1007/978-3-319-11752-2_17#page-1
-
-* http://www.sciencedirect.com/science/article/pii/S0924271614001543
 
 * http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6602035&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6602035
 
@@ -200,6 +199,13 @@ I am reviewing these papers from Google Scholar that both cite the key papers an
 * http://dl.acm.org/citation.cfm?id=2666389
 
 * http://www.ijicic.org/ijicic-15-04045.pdf
+
+### Papers - Relevant Maybe
+
+* [Uses a large window to improve predictions, trying to capture broad network topology](https://www.inf.ethz.ch/personal/ladickyl/roads_gcpr14.pdf)
+
+* [Automatically extract roads with no human labels. Not that accurate, could work for preprocessing to detect roads in unlab](https://www.researchgate.net/publication/263892800_Tensor-Cuts_A_simultaneous_multi-type_feature_extractor_and_classifier_and_its_application_to_road_extraction_from_satellite_images)
+
 
 ### Papers - Not All that Relevant
 
