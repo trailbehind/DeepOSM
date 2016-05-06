@@ -61,5 +61,4 @@ PERCENT_FOR_TRAINING_DATA = .96
 
 # the patch size for both the 32 and 64 feature convolutions
 # used with an NxN tile, where N has usually been 64
-# only gets used by MNIST classifier
 CONVOLUTION_PATCH_SIZE = 5
