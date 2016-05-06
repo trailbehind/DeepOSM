@@ -352,7 +352,7 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap, 
                                                  npy_test_labels,
                                                  CONVOLUTION_PATCH_SIZE,
                                                  training_batches,
-                                                 BATCH_SIZE)
+                                                 batch_size)
   elif model == 'cifar10':
     predictions = label_chunks_cnn_cifar.train_neural_net( 
                                                  CONVOLUTION_PATCH_SIZE,
