@@ -64,7 +64,7 @@ For output, it will produce some console logs, and then JPEGs of the ways, label
 
 If you then re-run the analysis, but set some parameters, it will be more accurate on a CPU (~70%), after running all night. On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
 
-    python src/run_analysis.py --bands =0001 --model=mnist --training_batches=6000
+    python src/run_analysis.py --bands=0001 --model=mnist --training_batches=6000
 
 Full usage is as follows, or use -h on the command line:
 
