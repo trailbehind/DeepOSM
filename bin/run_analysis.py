@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from src.run_analysis import run_analysis
 
 
 def create_parser():
@@ -26,10 +27,6 @@ def create_parser():
     parser.add_argument("--model", default='mnist', choices=['mnist', 'cifar10'],
                         help="the model to use")
     return parser
-
-
-def run_analysis(*args, **kwargs):  # TODO -- replace this with the actual run_analysis function
-    print(kwargs)
 
 
 def main():
