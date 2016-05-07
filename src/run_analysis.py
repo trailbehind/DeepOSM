@@ -50,8 +50,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(0, cols, tile_size):
-    for row in range(0, rows, tile_size):
+  for col in range(0, cols, tile_size/4):
+    for row in range(0, rows, tile_size/4):
       if row+tile_size < rows and col+tile_size < cols:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -309,8 +309,8 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))  
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
-    for row in range(top_y, bottom_y, tile_size):
-      for col in range(left_x, right_x, tile_size):
+    for row in range(top_y, bottom_y, tile_size/4):
+      for col in range(left_x, right_x, tile_size/4):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
