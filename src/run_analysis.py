@@ -476,57 +476,5 @@ def shade_labels(image, labels, predictions, tile_size):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--tile_size", default='64', help="tile the NAIP and training data into NxN tiles with this dimension")
-  parser.add_argument("--training_batches", default='100', help="set this to more like 5000 to make analysis work")
-  parser.add_argument("--batch_size", default='96', help="around 100 is a good choice, defaults to 96 because cifar10 does")
-  parser.add_argument("--bands", default='1111', help="defaults to 1111 for R+G+B+IR active")
-  parser.add_argument("--extract_type", default='highway', help="highway or tennis")
-  parser.add_argument("--cache_way_bmp", default=True, help="disable this to regenerate way bitmaps each run")
-  parser.add_argument("--clear_way_bmp_cache", default=False, help="enable this to bust the ay_bmp_cache from previous runs")
-  parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
-  parser.add_argument("--model", default='cifar10', help="mnist or cifar10")
-  args = parser.parse_args()
-  render_results = False
-  if args.render_results:
-    render_results = True
-  clear_way_bmp_cache = False
-  if args.clear_way_bmp_cache:
-    clear_way_bmp_cache = True
-  cache_way_bmp = False
-  if args.cache_way_bmp:
-    cache_way_bmp = True
-  extract_type = 'highway'
-  if args.extract_type:
-    extract_type = args.extract_type
-  model = 'mnist'
-  if args.model:
-    model = args.model
-  band_list = [1,1,1,1]
-  if args.bands:
-    bands_string = args.bands
-    band_list = []
-    for char in bands_string:
-      band_list.append(int(char))
-  # the number of batches to train the neural net
-  # @lacker recommends 3-5K for statistical significance, as rule of thumb
-  # can achieve 90+% accuracy with 5000 so far
-  # 100 is just so everything runs fast-ish and prints output, for a dry run
-  training_batches = 100
-  if args.training_batches:
-    training_batches = int(args.training_batches)
-  batch_size = 96
-  if args.batch_size:
-    batch_size = int(args.batch_size)
-  tile_size = 64
-  if args.tile_size:
-    tile_size = int(args.tile_size)
-  run_analysis(cache_way_bmp=cache_way_bmp, 
-               clear_way_bmp_cache=clear_way_bmp_cache, 
-               render_results=render_results, 
-               extract_type=extract_type, 
-               model=model, 
-               band_list=band_list,
-               training_batches=training_batches,
-               batch_size=batch_size,
-               tile_size=tile_size)
+    import sys
+    print("Instead of running this file, use bin/run_analysis.py instead.", file=sys.stderr)
