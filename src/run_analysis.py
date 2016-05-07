@@ -352,11 +352,11 @@ def equalize_data(road_labels, naip_tiles):
 def save_image_clipping(tile, status):
   # (new_tile,(col, row),raster_data_path)
   rgbir_matrix = tile[0]
-  im = Image.merge("RGB", (Image.fromarray(rgbir_matrix[0]), 
-                           Image.fromarray(rgbir_matrix[1]), 
-                           Image.fromarray(rgbir_matrix[2])
-                          )
-                   )
+  img = numpy.empty([64,64])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      img[x][y] = rgbir_matrix[x][y][0]
+  im = Image.merge('RGB',(Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
   im.save(outfile_path, "JPEG")
 
