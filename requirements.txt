@@ -9,11 +9,11 @@ boto3==1.3.0
 GDAL==2.0.1
 pyproj==1.9.5.1
 
-# the recommended Tensorflow binary for python 3 on linux, CPU only
-# https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp34-none-linux_x86_64.whl
+# the recommended Tensorflow binary on linux, CPU only
+https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
 
 # the recommended Tensorflow binary for python 2 on linux, GPU
-http://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
+# http://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
 
 shapely
 
