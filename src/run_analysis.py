@@ -206,7 +206,7 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways(label[0]):
+    if has_ways_in_center(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
     else:
@@ -216,10 +216,10 @@ def onehot_for_labels(labels):
   print "ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels)))
   return onehot_labels
 
+'''
 def has_ways(tile):
-  '''
+  
      returns true if any pixel on the NxN tile is set to 1
-  '''
   road_pixel_count = 0
   for x in range(0, len(tile)):
     for y in range(0, len(tile[x])):
@@ -229,6 +229,40 @@ def has_ways(tile):
   if road_pixel_count >= len(tile)*PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE:
     return True
   return False
+'''
+
+def has_ways_in_center(tile):
+  center_pixel_count = 0
+  center_x = len(tile)/2
+  center_y = len(tile[0])/2
+
+  for x in range(0, len(tile)):
+    for y in range(0, len(tile[x])):
+      pixel_value = tile[x][y]
+      if pixel_value != 0:
+        if x >= center_x -1 and x <= center_x + 1:
+          if y >= center_y -1 and y <= center_y + 1:
+            center_pixel_count += 1
+  if center_pixel_count >= 4:
+    return True
+  return False
+
+def has_no_ways_in_fatter_center(tile):
+  center_pixel_count = 0
+  center_x = len(tile)/2
+  center_y = len(tile[0])/2
+
+  for x in range(0, len(tile)):
+    for y in range(0, len(tile[x])):
+      pixel_value = tile[x][y]
+      if pixel_value != 0:
+        if x >= center_x -5 and x <= center_x + 5:
+          if y >= center_y -5 and y <= center_y + 5:
+            center_pixel_count += 1
+  if center_pixel_count <= 4:
+    return True
+  return False
+
 
 def shuffle_in_unison(a, b):
    '''
@@ -294,9 +328,9 @@ def equalize_data(road_labels, naip_tiles):
   way_indices = []
   for x in range(len(road_labels)):
     tile = road_labels[x][0]
-    if has_ways(tile):
+    if has_ways_in_center(tile):
       way_indices.append(x)
-    else:
+    elif has_no_ways_in_fatter_center(tile):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -310,8 +344,21 @@ def equalize_data(road_labels, naip_tiles):
     equal_count_way_list.append(road_labels[way_index])
     equal_count_way_list.append(road_labels[wayless_index])
     equal_count_tile_list.append(naip_tiles[way_index])
+    save_image_clipping(naip_tiles[way_index], 'ON')
     equal_count_tile_list.append(naip_tiles[wayless_index])
+    save_image_clipping(naip_tiles[wayless_index], 'OFF')
   return equal_count_way_list, equal_count_tile_list
+
+def save_image_clipping(tile, status):
+  # (new_tile,(col, row),raster_data_path)
+  rgbir_matrix = tile[0]
+  im = Image.merge("RGB", (Image.fromarray(rgbir_matrix[0]), 
+                           Image.fromarray(rgbir_matrix[1]), 
+                           Image.fromarray(rgbir_matrix[2])
+                          )
+                   )
+  outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
+  im.save(outfile_path, "JPEG")
 
 def split_train_test(equal_count_tile_list,equal_count_way_list):
   test_labels = []
@@ -483,7 +530,7 @@ if __name__ == "__main__":
   parser.add_argument("--batch_size", default='96', help="around 100 is a good choice, defaults to 96 because cifar10 does")
   parser.add_argument("--bands", default='1111', help="defaults to 1111 for R+G+B+IR active")
   parser.add_argument("--extract_type", default='highway', help="highway or tennis")
-  parser.add_argument("--cache_way_bmp", default=True, help="disable this to regenerate way bitmaps each run")
+  parser.add_argument("--cache_way_bmp", default=True, help="disable this to create way bitmaps each run")
   parser.add_argument("--clear_way_bmp_cache", default=False, help="enable this to bust the ay_bmp_cache from previous runs")
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
   parser.add_argument("--model", default='cifar10', help="mnist or cifar10")

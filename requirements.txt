@@ -1,6 +1,8 @@
 # process images into matrrices for Tensorflow
 numpy==1.11.0
 Pillow==3.1.1
+
+# data science interactive notebooks
 jupyter==1.0.0
 
 # download images from S3
@@ -13,7 +15,10 @@ pyproj==1.9.5.1
 # https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp34-none-linux_x86_64.whl
 
 # the recommended Tensorflow binary for python 2 on linux, GPU
-http://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
+#http://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
+
+# the recommended Tensorflow binary for python 2 on linux, CPU only
+https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp27-none-linux_x86_64.whl
 
 shapely
 
