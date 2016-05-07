@@ -2,6 +2,7 @@
 Some notes on todos, didn't want to muck with Github issues for this.
 
 ## What's Next
+
 * are major freeways not being rendered?
 * add buildings and any other labelable features too, so there is less image that's just "not road"
 * FIND - have you seen a paper from a few years ago about estimating osm completeness by comparing size of compressed satellite images vs number of osm nodes
@@ -11,7 +12,6 @@ Some notes on todos, didn't want to muck with Github issues for this.
 ## Later
 * ORDERED - run this on the Linux box with a GPU, see if that's tons faster
 * rotate training images (makes the training overfit less)
-* classify at the pixel level, by guessing at center pixel roadiness, instead of total tile roadiness
 * instead of roads on/off, classify pixels into types (highway, footway, cycleway, lanes-1, lanes-2, lanes-3, etc)
 * visualize training on TensorBoard (better than print statements?)
 * try recurrent neural nets
@@ -29,3 +29,5 @@ Some notes on todos, didn't want to muck with Github issues for this.
 * ~~use a more suitable (but still off-the-shelf) neural net model (like the cifar10 classifier)~~
 * ~~make it work with 4 bands, not just IR band~~
 * ~~try balancing RGBs between -1 to 1, instead of 0 to 1~~
+* ~~classify at the pixel level, by guessing at center pixel roadiness, instead of total tile roadiness~~
+
