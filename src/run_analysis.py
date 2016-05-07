@@ -1,4 +1,5 @@
-import argparse
+from __future__ import print_function
+
 import numpy, os, sys, time
 from random import shuffle
 from osgeo import gdal
@@ -21,7 +22,7 @@ def read_naip(file_path, bands_to_use):
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
   coord = pixelToLatLng(raster_dataset, 0, 0)
   proj = raster_dataset.GetProjectionRef()
-  
+
   bands_data = []
   # 4 bands of raster data, RGB and IR
   index = 0
@@ -31,7 +32,7 @@ def read_naip(file_path, bands_to_use):
       bands_data.append(band.ReadAsArray())
     index += 1
   bands_data = numpy.dstack(bands_data)
-  
+
   return raster_dataset, bands_data
 
 def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size):
@@ -55,7 +56,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
       if row+tile_size < rows and col+tile_size < cols:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
- 
+
   return all_tiled_data
 
 def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp=False, clear_way_bmp_cache=False):
@@ -68,16 +69,16 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   if clear_way_bmp_cache:
     try:
       os.path.remove(cache_filename)
-      print "DELETED: previously cached way bitmap"
+      print("DELETED: previously cached way bitmap")
       return arr
     except:
       pass
       # print "WARNING: no previously cached way bitmap to delete"
-  else:    
+  else:
     try:
       if cache_way_bmp:
         arr = numpy.load(cache_filename)
-        print "CACHED: read label data from disk"
+        print("CACHED: read label data from disk")
         return arr
     except:
       pass
@@ -97,7 +98,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   print(" {0:.1f}s".format(time.time()-t0))
   print("EXTRACTED {} highways in NAIP bounds, of {} ways".format(len(ways_on_naip), len(ways)))
 
-  print "MAKING BITMAP for way presence...",
+  print("MAKING BITMAP for way presence...", end="")
   t0 = time.time()
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):
@@ -112,7 +113,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   print(" {0:.1f}s".format(time.time()-t0))
 
   if cache_way_bmp and not os.path.exists(cache_filename):
-    print "CACHING {}...", cache_filename,
+    print("CACHING {}...", cache_filename,  end="")
     t0 = time.time()
     numpy.save(cache_filename, way_bitmap)
     print(" {0:.1f}s".format(time.time()-t0))
@@ -188,9 +189,9 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
   '''
   print("CREATING ONE-HOT LABELS...")
   t0 = time.time()
-  print "CREATING TEST one-hot labels"
+  print("CREATING TEST one-hot labels")
   onehot_test_labels = onehot_for_labels(test_labels)
-  print "CREATING TRAINING one-hot labels"
+  print("CREATING TRAINING one-hot labels")
   onehot_training_labels = onehot_for_labels(training_labels)
   print("one-hotting took {0:.1f}s".format(time.time()-t0))
 
@@ -213,7 +214,7 @@ def onehot_for_labels(labels):
       onehot_labels.append([1,0])
       off_count += 1
 
-  print "ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels)))
+  print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels))))
   return onehot_labels
 
 def has_ways(tile):
@@ -243,7 +244,7 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=True, extract_type='highway', model='mnist', band_list=[0,0,0,1], training_batches=1, batch_size=96, tile_size=64):  
+def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=True, extract_type='highway', model='mnist', band_list=[0,0,0,1], training_batches=1, batch_size=96, tile_size=64):
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
                                      RANDOMIZE_NAIPS,
                                      NAIP_STATE,
@@ -251,7 +252,7 @@ def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=
                                      NAIP_RESOLUTION,
                                      NAIP_SPECTRUM,
                                      NAIP_GRID,
-                                     HARDCODED_NAIP_LIST).download_naips()  
+                                     HARDCODED_NAIP_LIST).download_naips()
   road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, extract_type, band_list, tile_size)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
@@ -263,7 +264,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
   road_labels = []
   naip_tiles = []
 
-  # tile images and labels  
+  # tile images and labels
   waymap = download_and_extract(PBF_FILE_URLS, extract_type)
   way_bitmap_npy = {}
 
@@ -271,8 +272,8 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
     raster_dataset, bands_data = read_naip(raster_data_path, band_list)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
-  
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))  
+
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
     for row in range(top_y, bottom_y, tile_size):
@@ -280,7 +281,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
-        
+
     for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size):
       naip_tiles.append(tile)
 
@@ -329,14 +330,14 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
   return test_labels, training_labels, test_images, training_images
 
 def analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list, training_batches, batch_size, tile_size):
-  ''' 
+  '''
       package data for tensorflow and analyze
   '''
   print_data_dimensions(training_labels, band_list)
   onehot_training_labels, \
   onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, training_labels, test_labels)
   npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
-  
+
   npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
   npy_training_labels = numpy.asarray(onehot_training_labels)
   npy_test_labels = numpy.asarray(onehot_test_labels)
@@ -344,27 +345,27 @@ def analyze(test_labels, training_labels, test_images, training_images, waymap, 
   # train and test the neural net
   predictions = None
   if model == 'mnist':
-    predictions = label_chunks_cnn.train_neural_net(band_list, 
+    predictions = label_chunks_cnn.train_neural_net(band_list,
                                                  tile_size,
-                                                 npy_training_images, 
-                                                 npy_training_labels, 
-                                                 npy_test_images, 
+                                                 npy_training_images,
+                                                 npy_training_labels,
+                                                 npy_test_images,
                                                  npy_test_labels,
                                                  CONVOLUTION_PATCH_SIZE,
                                                  training_batches,
                                                  BATCH_SIZE)
   elif model == 'cifar10':
-    predictions = label_chunks_cnn_cifar.train_neural_net( 
+    predictions = label_chunks_cnn_cifar.train_neural_net(
                                                  band_list,
                                                  tile_size,
-                                                 npy_training_images, 
-                                                 npy_training_labels, 
-                                                 npy_test_images, 
+                                                 npy_training_images,
+                                                 npy_training_labels,
+                                                 npy_test_images,
                                                  npy_test_labels,
                                                  training_batches,
                                                  batch_size)
   else:
-    print "ERROR, unknown model to use for analysis"
+    print("ERROR, unknown model to use for analysis")
   return predictions
 
 def print_data_dimensions(training_labels,band_list):
@@ -395,11 +396,11 @@ def render_results_as_images(raster_data_paths, training_labels, test_labels, pr
     index += 1
 
   for raster_data_path in raster_data_paths:
-    render_results_as_image(raster_data_path, 
-                            way_bitmap_npy[raster_data_path], 
-                            training_labels_by_naip[raster_data_path], 
+    render_results_as_image(raster_data_path,
+                            way_bitmap_npy[raster_data_path],
+                            training_labels_by_naip[raster_data_path],
                             test_labels_by_naip[raster_data_path],
-                            band_list, 
+                            band_list,
                             tile_size,
                             predictions=predictions_by_naip[raster_data_path])
 
@@ -412,13 +413,13 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
   outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".jpeg"
   # TIF to JPEG bit from: from: http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
   im = Image.open(raster_data_path)
-  print "GENERATING JPEG for %s" % raster_data_path
+  print("GENERATING JPEG for %s" % raster_data_path)
   rows = len(way_bitmap)
   cols = len(way_bitmap[0])
   t0 = time.time()
   r, g, b, ir = im.split()
-  # visualize single band analysis tinted for R-G-B, 
-  # or grayscale for infrared band  
+  # visualize single band analysis tinted for R-G-B,
+  # or grayscale for infrared band
   if sum(band_list) == 1:
     if band_list[3] == 1:
       # visualize IR as grayscale
@@ -433,16 +434,16 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
       elif band_list[2] == 1:
         im = Image.merge("RGB", (zeros_band, zeros_band, b))
   else:
-    # visualize multi-band analysis as RGB  
+    # visualize multi-band analysis as RGB
     im = Image.merge("RGB", (r, g, b))
 
   t1 = time.time()
-  print "{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(band_list))
+  print("{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(band_list)))
 
   t0 = time.time()
   shade_labels(im, test_labels, predictions, tile_size)
   t1 = time.time()
-  print "{0:.1f}s to SHADE PREDICTIONS on JPEG".format(t1-t0)
+  print("{0:.1f}s to SHADE PREDICTIONS on JPEG".format(t1-t0))
 
   t0 = time.time()
   # show raw data that spawned the labels
@@ -451,7 +452,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
       if way_bitmap[row][col] != 0:
         im.putpixel((col, row), (255,0,0))
   t1 = time.time()
-  print "{0:.1f}s to DRAW WAYS ON JPEG".format(t1-t0)
+  print("{0:.1f}s to DRAW WAYS ON JPEG".format(t1-t0))
 
   im.save(outfile, "JPEG")
 
