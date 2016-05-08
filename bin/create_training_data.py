@@ -13,19 +13,29 @@ from src.create_training_data import (NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STA
 
 def create_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tile_size",
-                        default='64',
+    parser.add_argument("--tile-size",
+                        default=64,
+                        type=int,
                         help="tile the NAIP and training data into NxN tiles with this dimension")
-    parser.add_argument("--bands", default='0001', help="defaults to 0001 for just IR active")
-    parser.add_argument("--extract_type", default='highway', help="highway or tennis")
-    parser.add_argument("--cache_way_bmp",
-                        default=True,
-                        help="disable this to create way bitmaps each run")
-    parser.add_argument("--clear_way_bmp_cache",
-                        default=False,
+    parser.add_argument("--band-list",
+                        default=[0, 0, 0, 1],
+                        nargs=4,
+                        type=int,
+                        help="specify which bands to activate (R  G  B  IR). default is "
+                        "--bands 0 0 0 1 (which activates only the IR band)")
+    parser.add_argument("--extract-type",
+                        default='highway',
+                        choices=['highway', 'tennis'],
+                        help="the type of feature to identify")
+    parser.add_argument("--disable-way-bmp-cache",
+                        action='store_false',
+                        dest='cache_way_bmp',
+                        help="regenerate way bitmaps each run")
+    parser.add_argument("--clear-way-bmp-cache",
+                        action='store_true',
                         help="enable this to bust the ay_bmp_cache from previous runs")
     parser.add_argument("--save_clippings",
-                        default=False,
+                        action='store_true',
                         help="save the training data tiles to /data/naip")
 
 
@@ -33,19 +43,13 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    bands_string = args.bands
-    band_list = []
-    for char in bands_string:
-        band_list.append(int(char))
-
     raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_YEAR,
                                        NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID,
                                        HARDCODED_NAIP_LIST).download_naips()
 
-    tile_size = int(args.tile_size)
     road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(
         raster_data_paths, args.cache_way_bmp, args.clear_way_bmp_cache, args.extract_type,
-        band_list, tile_size)
+        args.band_list, args.tile_size)
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles,
                                                                 args.save_clippings)
     test_labels, training_labels, test_images, training_images = split_train_test(
