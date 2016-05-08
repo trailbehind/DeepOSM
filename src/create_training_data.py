@@ -18,10 +18,6 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
                  'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
-# if True, cache the ways extracted from PBFs to disk as JSON
-# faster for multiple runs, unless you want to change what's extracted
-CACHE_WAY_EXTRACTS = True
-
 # the number of pixels to count as road, 
 # on each side of of the centerline pixels
 PIXELS_BESIDE_WAYS = 1
