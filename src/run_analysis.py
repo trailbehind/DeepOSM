@@ -61,7 +61,6 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
 
   return onehot_training_labels, onehot_test_labels
 
-
 def onehot_for_labels(labels):
   '''
      returns a list of one-hot array labels, for a list of tiles
@@ -228,6 +227,7 @@ if __name__ == "__main__":
                         int(args.training_batches), 
                         int(args.batch_size), 
                         int(args.tile_size))
+  
   if render_results:
     render_results_as_images(raster_data_paths, 
                              training_labels, 

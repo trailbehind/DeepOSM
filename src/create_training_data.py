@@ -272,7 +272,6 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
 def has_ways(tile):
   '''  
      returns true if some pixels on the NxN tile are set to 1
-  
   '''
   road_pixel_count = 0
   for x in range(0, len(tile)):
@@ -367,7 +366,10 @@ if __name__ == "__main__":
                            save_clippings=args.save_clippings)  
 
   cache_path = '/data/cache/'
-  os.mkdir(cache_path);
+  try:
+    os.mkdir(cache_path);
+  except:
+    pass
   with open(cache_path + 'training_images.json', 'w') as outfile:
     json.dump(training_images, outfile)
   with open(cache_path + 'training_labels.json', 'w') as outfile:
