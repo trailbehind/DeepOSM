@@ -233,7 +233,7 @@ if __name__ == "__main__":
                         int(args.batch_size), 
                         int(args.tile_size))
   
-  if render_results:
+  if args.render_results:
     raster_data_paths = None
     way_bitmap_npy = None
     with open(cache_path + 'raster_data_paths.pickle', 'r') as infile:
