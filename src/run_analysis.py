@@ -222,13 +222,19 @@ if __name__ == "__main__":
                         test_images, 
                         training_images, 
                         label_types, 
-                        model, 
+                        args.model, 
                         band_list, 
                         int(args.training_batches), 
                         int(args.batch_size), 
                         int(args.tile_size))
   
   if render_results:
+    raster_data_paths = None
+    way_bitmap_npy = None
+    with open(cache_path + 'raster_data_paths.pickle', 'r') as infile:
+      raster_data_paths = pickle.load(infile)
+    with open(cache_path + 'way_bitmap_npy.pickle', 'r') as infile:
+      way_bitmap_npy = pickle.load(infile)
     render_results_as_images(raster_data_paths, 
                              training_labels, 
                              test_labels, 

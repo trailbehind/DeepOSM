@@ -10,25 +10,6 @@ from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
 from config_data import *
 
-def create_training_data(cache_way_bmp, 
-                         clear_way_bmp_cache, 
-                         extract_type, 
-                         band_list, 
-                         tile_size, 
-                         save_clippings):  
-  raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
-                                     RANDOMIZE_NAIPS,
-                                     NAIP_STATE,
-                                     NAIP_YEAR,
-                                     NAIP_RESOLUTION,
-                                     NAIP_SPECTRUM,
-                                     NAIP_GRID,
-                                     HARDCODED_NAIP_LIST).download_naips()  
-  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, extract_type, band_list, tile_size)
-  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, save_clippings)
-  test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
-  return training_images, training_labels, test_images, test_labels, waymap.extracter.types
-
 def read_naip(file_path, bands_to_use):
   '''
       read a NAIP from disk
@@ -357,12 +338,28 @@ if __name__ == "__main__":
   for char in bands_string:
     band_list.append(int(char))
 
+  raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
+                                     RANDOMIZE_NAIPS,
+                                     NAIP_STATE,
+                                     NAIP_YEAR,
+                                     NAIP_RESOLUTION,
+                                     NAIP_SPECTRUM,
+                                     NAIP_GRID,
+                                     HARDCODED_NAIP_LIST).download_naips()  
+
+  tile_size = int(args.tile_size)
+  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, args.cache_way_bmp, args.clear_way_bmp_cache, args.extract_type, band_list, tile_size)
+  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, args.save_clippings)
+  test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
+  label_types =  waymap.extracter.types
+
+
   training_images, training_labels, test_images, test_labels, label_types = \
       create_training_data(args.cache_way_bmp, 
                            args.clear_way_bmp_cache, 
                            extract_type=args.extract_type, 
                            band_list=band_list, 
-                           tile_size=int(args.tile_size), 
+                           tile_size=tile_size, 
                            save_clippings=args.save_clippings)  
 
   cache_path = '/data/cache/'
@@ -380,3 +377,8 @@ if __name__ == "__main__":
     pickle.dump(test_labels, outfile)
   with open(cache_path + 'label_types.pickle', 'w') as outfile:
     pickle.dump(label_types, outfile)
+  with open(cache_path + 'raster_data_paths.pickle', 'w') as outfile:
+    pickle.dump(raster_data_paths, outfile)
+  with open(cache_path + 'way_bitmap_npy.pickle', 'w') as outfile:
+    pickle.dump(way_bitmap_npy, outfile)
+
