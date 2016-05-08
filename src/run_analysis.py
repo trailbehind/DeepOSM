@@ -279,7 +279,7 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=True, extract_type='highway', model='mnist', band_list=[0,0,0,1], training_batches=1, batch_size=96, tile_size=64):  
+def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=True, extract_type='highway', model='mnist', band_list=[0,0,0,1], training_batches=1, batch_size=96, tile_size=64, save_clippings=False):  
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
                                      RANDOMIZE_NAIPS,
                                      NAIP_STATE,
@@ -289,7 +289,7 @@ def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=
                                      NAIP_GRID,
                                      HARDCODED_NAIP_LIST).download_naips()  
   road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, extract_type, band_list, tile_size)
-  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
+  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, save_clippings)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   predictions = analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list, training_batches, batch_size, tile_size)
   if render_results:
@@ -325,7 +325,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
   road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
   return road_labels, naip_tiles, waymap, way_bitmap_npy
 
-def equalize_data(road_labels, naip_tiles):
+def equalize_data(road_labels, naip_tiles, save_clippings):
   wayless_indices = []
   way_indices = []
   for x in range(len(road_labels)):
@@ -346,9 +346,11 @@ def equalize_data(road_labels, naip_tiles):
     equal_count_way_list.append(road_labels[way_index])
     equal_count_way_list.append(road_labels[wayless_index])
     equal_count_tile_list.append(naip_tiles[way_index])
-    save_image_clipping(naip_tiles[way_index], 'ON')
+    if save_clippings:
+      save_image_clipping(naip_tiles[way_index], 'ON')
     equal_count_tile_list.append(naip_tiles[wayless_index])
-    save_image_clipping(naip_tiles[wayless_index], 'OFF')
+    if save_clippings:
+      save_image_clipping(naip_tiles[wayless_index], 'OFF')
   return equal_count_way_list, equal_count_tile_list
 
 def save_image_clipping(tile, status):
@@ -527,6 +529,7 @@ def shade_labels(image, labels, predictions, tile_size):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
+  parser.add_argument("--save_clippings", default=False, help="save the training data tiles to /data/naip")
   parser.add_argument("--tile_size", default='64', help="tile the NAIP and training data into NxN tiles with this dimension")
   parser.add_argument("--training_batches", default='100', help="set this to more like 5000 to make analysis work")
   parser.add_argument("--batch_size", default='96', help="around 100 is a good choice, defaults to 96 because cifar10 does")
@@ -571,6 +574,9 @@ if __name__ == "__main__":
   tile_size = 64
   if args.tile_size:
     tile_size = int(args.tile_size)
+  save_clippings = False
+  if args.save_clippings:
+    save_clippings = True
   run_analysis(cache_way_bmp=cache_way_bmp, 
                clear_way_bmp_cache=clear_way_bmp_cache, 
                render_results=render_results, 
@@ -579,4 +585,5 @@ if __name__ == "__main__":
                band_list=band_list,
                training_batches=training_batches,
                batch_size=batch_size,
-               tile_size=tile_size)
+               tile_size=tile_size,
+               save_clippings=save_clippings)
