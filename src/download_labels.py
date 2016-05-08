@@ -5,7 +5,6 @@ Extract Ways from OSM PBF files
 import osmium as o
 import json, os, requests, sys, time
 import shapely.wkb as wkblib
-from config_data import CACHE_WAY_EXTRACTS
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html
 # A global factory that creates WKB from a osmium geometry
@@ -23,25 +22,11 @@ class WayMap():
         self.run_extraction(path)
 
     def run_extraction(self, file_path):
-      cache_path = file_path + '.json'
-      # extract ways
-      if CACHE_WAY_EXTRACTS and os.path.exists(cache_path):
-        t0 = time.time()
-        with open(cache_path, 'r') as outfile:
-          self.extracter.ways = json.load(outfile)
-        t1 = time.time()      
-        elapsed = "{0:.1f}".format(t1-t0)
-        print "USING CACHED WAYS from pbf file {}, fetched from disk in {}s".format(file_path, elapsed)
-        return
-
       t0 = time.time()
       self.extracter.apply_file(file_path, locations=True)
       t1 = time.time()      
       elapsed = "{0:.1f}".format(t1-t0)
       print "EXTRACTED WAYS with locations from pbf file {}, took {}s".format(file_path, elapsed)
-      if CACHE_WAY_EXTRACTS:
-        with open(cache_path, 'w') as outfile:
-          json.dump(self.extracter.ways, outfile)
 
 class WayExtracter(o.SimpleHandler):
     def __init__(self, extract_type='highway'):

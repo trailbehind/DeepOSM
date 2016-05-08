@@ -19,3 +19,5 @@ shapely
 
 # trying this out for the cifar10 network
 git+https://github.com/tflearn/tflearn.git
+
+h5py
