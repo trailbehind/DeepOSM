@@ -4,6 +4,7 @@ from PIL import Image
 import label_chunks_cnn
 import label_chunks_cnn_cifar
 from config_data import *
+from create_training_data import has_ways, has_ways_in_center, has_no_ways_in_fatter_center
 
 
 def analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size):
