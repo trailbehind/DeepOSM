@@ -353,15 +353,6 @@ if __name__ == "__main__":
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   label_types =  waymap.extracter.types
 
-
-  training_images, training_labels, test_images, test_labels, label_types = \
-      create_training_data(args.cache_way_bmp, 
-                           args.clear_way_bmp_cache, 
-                           extract_type=args.extract_type, 
-                           band_list=band_list, 
-                           tile_size=tile_size, 
-                           save_clippings=args.save_clippings)  
-
   cache_path = '/data/cache/'
   try:
     os.mkdir(cache_path);
