@@ -212,7 +212,7 @@ if __name__ == "__main__":
   # @lacker recommends 3-5K for statistical significance, as rule of thumb
   # can achieve 90+% accuracy with 5000 so far
   # 100 is just so everything runs fast-ish and prints output, for a dry run
-  parser.add_argument("--training_batches", default='5000', help="set this to ~5000 to make analysis work")
+  parser.add_argument("--training_batches", default='6000', help="set this to ~5000 to make analysis work")
   parser.add_argument("--tile_size", default='64', help="tile the NAIP and training data into NxN tiles with this dimension")
   parser.add_argument("--batch_size", default='100', help="around 100 is a good choice, defaults to 96 because cifar10 does")
   parser.add_argument("--bands", default='0001', help="defaults to 0001 for just IR active")
