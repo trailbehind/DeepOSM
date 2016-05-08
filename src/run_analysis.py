@@ -1,29 +1,10 @@
 import argparse
 import numpy, os, sys, time
-from random import shuffle
-from osgeo import gdal
 from PIL import Image
-from pyproj import Proj, transform
-
-from download_labels import WayMap, download_and_extract
-from download_naips import NAIPDownloader
-from geo_util import latLonToPixel, pixelToLatLng
 import label_chunks_cnn
 import label_chunks_cnn_cifar
 from config_data import *
 
-
-def run_analysis(training_images, training_labels, test_images, test_labels,  
-                 label_types,
-                 render_results, 
-                 model, 
-                 band_list, 
-                 training_batches, 
-                 batch_size, 
-                 tile_size):  
-  predictions = analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size)
-  if render_results:
-    render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy, band_list, tile_size)
 
 def analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size):
   ''' 
@@ -220,7 +201,6 @@ if __name__ == "__main__":
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
   parser.add_argument("--model", default='mnist', help="mnist or cifar10")
   args = parser.parse_args()
-
   bands_string = args.bands
   band_list = []
   for char in bands_string:
@@ -238,11 +218,21 @@ if __name__ == "__main__":
   with open(cache_path + 'label_types.json', 'r') as infile:
     label_types = json.load(infile)
 
-  run_analysis(training_images, training_labels, test_images, test_labels, 
-               label_types,
-               render_results=args.render_results, 
-               model=args.model, 
-               band_list=band_list, 
-               training_batches=args.training_batches, 
-               batch_size=int(args.batch_size), 
-               tile_size=int(args.tile_size)) 
+  predictions = analyze(test_labels, 
+                        training_labels, 
+                        test_images, 
+                        training_images, 
+                        label_types, 
+                        model, 
+                        band_list, 
+                        int(args.training_batches), 
+                        int(args.batch_size), 
+                        int(args.tile_size))
+  if render_results:
+    render_results_as_images(raster_data_paths, 
+                             training_labels, 
+                             test_labels, 
+                             predictions, 
+                             way_bitmap_npy, 
+                             band_list, 
+                             int(args.tile_size))

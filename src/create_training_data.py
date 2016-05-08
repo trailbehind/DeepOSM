@@ -8,8 +8,6 @@ from pyproj import Proj, transform
 from download_labels import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
-import label_chunks_cnn
-import label_chunks_cnn_cifar
 from config_data import *
 
 def create_training_data(cache_way_bmp, 
