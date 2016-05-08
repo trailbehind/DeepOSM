@@ -1,17 +1,16 @@
-import argparse
-import numpy, os, sys, time, pickle
+from __future__ import print_function
+
+import numpy, os, sys, time
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
-from pyproj import Proj, transform
 
-from download_labels import WayMap, download_and_extract
-from download_naips import NAIPDownloader
+from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
 from config_data import PERCENT_FOR_TRAINING_DATA
 
 '''
-    constants for how to create labels, 
+    constants for how to create labels,
     from OpenStreetMap way (road) info in PBF files
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
@@ -19,7 +18,7 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
                  'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
-# the number of pixels to count as road, 
+# the number of pixels to count as road,
 # on each side of of the centerline pixels
 PIXELS_BESIDE_WAYS = 1
 
@@ -28,7 +27,7 @@ PIXELS_BESIDE_WAYS = 1
 PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 
 '''
-    constants for NAIP imagery to use   
+    constants for NAIP imagery to use
 '''
 # values to create the S3 bucket path for some maryland NAIPs
 # you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
@@ -36,7 +35,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 NAIP_STATE = 'md'
 NAIP_YEAR = '2013'
 NAIP_RESOLUTION = '1m'
-NAIP_SPECTRUM = 'rgbir' 
+NAIP_SPECTRUM = 'rgbir'
 NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
@@ -65,9 +64,7 @@ def read_naip(file_path, bands_to_use):
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
-  coord = pixelToLatLng(raster_dataset, 0, 0)
-  proj = raster_dataset.GetProjectionRef()
-  
+
   bands_data = []
   # 4 bands of raster data, RGB and IR
   index = 0
@@ -77,7 +74,7 @@ def read_naip(file_path, bands_to_use):
       bands_data.append(band.ReadAsArray())
     index += 1
   bands_data = numpy.dstack(bands_data)
-  
+
   return raster_dataset, bands_data
 
 def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size):
@@ -101,7 +98,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
       if row+tile_size < rows and col+tile_size < cols:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
- 
+
   return all_tiled_data
 
 def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp=False, clear_way_bmp_cache=False):
@@ -114,16 +111,16 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   if clear_way_bmp_cache:
     try:
       os.path.remove(cache_filename)
-      print "DELETED: previously cached way bitmap"
-      return arr
+      print("DELETED: previously cached way bitmap")
+      return  # TODO: should this return something?
     except:
       pass
       # print "WARNING: no previously cached way bitmap to delete"
-  else:    
+  else:
     try:
       if cache_way_bmp:
         arr = numpy.load(cache_filename)
-        print "CACHED: read label data from disk"
+        print("CACHED: read label data from disk")
         return arr
     except:
       pass
@@ -143,7 +140,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   print(" {0:.1f}s".format(time.time()-t0))
   print("EXTRACTED {} highways in NAIP bounds, of {} ways".format(len(ways_on_naip), len(ways)))
 
-  print "MAKING BITMAP for way presence...",
+  print("MAKING BITMAP for way presence...", end="")
   t0 = time.time()
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):
@@ -158,7 +155,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   print(" {0:.1f}s".format(time.time()-t0))
 
   if cache_way_bmp and not os.path.exists(cache_filename):
-    print "CACHING {}...", cache_filename,
+    print("CACHING %s..." % cache_filename, end="")
     t0 = time.time()
     numpy.save(cache_filename, way_bitmap)
     print(" {0:.1f}s".format(time.time()-t0))
@@ -231,7 +228,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
   road_labels = []
   naip_tiles = []
 
-  # tile images and labels  
+  # tile images and labels
   waymap = download_and_extract(PBF_FILE_URLS, extract_type)
   way_bitmap_npy = {}
 
@@ -239,8 +236,8 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
     raster_dataset, bands_data = read_naip(raster_data_path, band_list)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
-  
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))  
+
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
     for row in range(top_y, bottom_y, tile_size):
@@ -248,7 +245,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
-        
+
     for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size):
       naip_tiles.append(tile)
 
@@ -299,7 +296,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
   return equal_count_way_list, equal_count_tile_list
 
 def has_ways(tile):
-  '''  
+  '''
      returns true if some pixels on the NxN tile are set to 1
   '''
   road_pixel_count = 0
@@ -371,55 +368,5 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--tile_size", default='64', help="tile the NAIP and training data into NxN tiles with this dimension")
-  parser.add_argument("--bands", default='0001', help="defaults to 0001 for just IR active")
-  parser.add_argument("--extract_type", default='highway', help="highway or tennis")
-  parser.add_argument("--cache_way_bmp", default=True, help="disable this to create way bitmaps each run")
-  parser.add_argument("--clear_way_bmp_cache", default=False, help="enable this to bust the ay_bmp_cache from previous runs")
-  parser.add_argument("--save_clippings", default=False, help="save the training data tiles to /data/naip")
-  args = parser.parse_args()
-
-  bands_string = args.bands
-  band_list = []
-  for char in bands_string:
-    band_list.append(int(char))
-
-  raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
-                                     RANDOMIZE_NAIPS,
-                                     NAIP_STATE,
-                                     NAIP_YEAR,
-                                     NAIP_RESOLUTION,
-                                     NAIP_SPECTRUM,
-                                     NAIP_GRID,
-                                     HARDCODED_NAIP_LIST).download_naips()  
-
-  tile_size = int(args.tile_size)
-  road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, args.cache_way_bmp, args.clear_way_bmp_cache, args.extract_type, band_list, tile_size)
-  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, args.save_clippings)
-  test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
-  label_types =  waymap.extracter.types
-
-  print("SAVING DATA: pickling and saving to disk")
-  t0 = time.time()
-  cache_path = '/data/cache/'
-  try:
-    os.mkdir(cache_path);
-  except:
-    pass
-  with open(cache_path + 'training_images.pickle', 'w') as outfile:
-    pickle.dump(training_images, outfile)
-  with open(cache_path + 'training_labels.pickle', 'w') as outfile:
-    pickle.dump(training_labels, outfile)
-  with open(cache_path + 'test_images.pickle', 'w') as outfile:
-    pickle.dump(test_images, outfile)
-  with open(cache_path + 'test_labels.pickle', 'w') as outfile:
-    pickle.dump(test_labels, outfile)
-  with open(cache_path + 'label_types.pickle', 'w') as outfile:
-    pickle.dump(label_types, outfile)
-  with open(cache_path + 'raster_data_paths.pickle', 'w') as outfile:
-    pickle.dump(raster_data_paths, outfile)
-  with open(cache_path + 'way_bitmap_npy.pickle', 'w') as outfile:
-    pickle.dump(way_bitmap_npy, outfile)
-  print("SAVE DONE: time to pickle and save test data to disk {0:.1f}s".format(time.time()-t0))
-
+    print("Instead of running this file, use bin/create_training_data.py instead.", file=sys.stderr)
+    sys.exit(1)
