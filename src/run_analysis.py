@@ -279,7 +279,13 @@ def shuffle_in_unison(a, b):
        b_shuf.append(b[i])
    return a_shuf, b_shuf
 
-def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=True, extract_type='highway', model='mnist', band_list=[0,0,0,1], training_batches=1, batch_size=96, tile_size=64):  
+def create_training_data(cache_way_bmp, 
+                         clear_way_bmp_cache, 
+                         render_results, 
+                         extract_type, 
+                         band_list, 
+                         tile_size, 
+                         save_clippings):  
   raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS,
                                      RANDOMIZE_NAIPS,
                                      NAIP_STATE,
@@ -289,8 +295,18 @@ def run_analysis(cache_way_bmp=False, clear_way_bmp_cache=False, render_results=
                                      NAIP_GRID,
                                      HARDCODED_NAIP_LIST).download_naips()  
   road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, extract_type, band_list, tile_size)
-  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles)
+  equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, save_clippings)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
+  return training_images, training_labels, test_images, test_labels, waymap
+
+def run_analysis(training_images, training_labels, test_images, test_labels,  
+                 waymap,
+                 render_results, 
+                 model, 
+                 band_list, 
+                 training_batches, 
+                 batch_size, 
+                 tile_size):  
   predictions = analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list, training_batches, batch_size, tile_size)
   if render_results:
     render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy, band_list, tile_size)
@@ -325,7 +341,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
   road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
   return road_labels, naip_tiles, waymap, way_bitmap_npy
 
-def equalize_data(road_labels, naip_tiles):
+def equalize_data(road_labels, naip_tiles, save_clippings):
   wayless_indices = []
   way_indices = []
   for x in range(len(road_labels)):
@@ -346,9 +362,11 @@ def equalize_data(road_labels, naip_tiles):
     equal_count_way_list.append(road_labels[way_index])
     equal_count_way_list.append(road_labels[wayless_index])
     equal_count_tile_list.append(naip_tiles[way_index])
-    save_image_clipping(naip_tiles[way_index], 'ON')
+    if save_clippings:
+      save_image_clipping(naip_tiles[way_index], 'ON')
     equal_count_tile_list.append(naip_tiles[wayless_index])
-    save_image_clipping(naip_tiles[wayless_index], 'OFF')
+    if save_clippings:
+      save_image_clipping(naip_tiles[wayless_index], 'OFF')
   return equal_count_way_list, equal_count_tile_list
 
 def save_image_clipping(tile, status):
@@ -527,7 +545,12 @@ def shade_labels(image, labels, predictions, tile_size):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
+  parser.add_argument("--save_clippings", default=False, help="save the training data tiles to /data/naip")
   parser.add_argument("--tile_size", default='64', help="tile the NAIP and training data into NxN tiles with this dimension")
+  # the number of batches to train the neural net
+  # @lacker recommends 3-5K for statistical significance, as rule of thumb
+  # can achieve 90+% accuracy with 5000 so far
+  # 100 is just so everything runs fast-ish and prints output, for a dry run
   parser.add_argument("--training_batches", default='1', help="set this to more like 5000 to make analysis work")
   parser.add_argument("--batch_size", default='100', help="around 100 is a good choice, defaults to 96 because cifar10 does")
   parser.add_argument("--bands", default='0001', help="defaults to 0001 for just IR active")
@@ -537,46 +560,25 @@ if __name__ == "__main__":
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
   parser.add_argument("--model", default='mnist', help="mnist or cifar10")
   args = parser.parse_args()
-  render_results = False
-  if args.render_results:
-    render_results = True
-  clear_way_bmp_cache = False
-  if args.clear_way_bmp_cache:
-    clear_way_bmp_cache = True
-  cache_way_bmp = False
-  if args.cache_way_bmp:
-    cache_way_bmp = True
-  extract_type = 'highway'
-  if args.extract_type:
-    extract_type = args.extract_type
-  model = 'mnist'
-  if args.model:
-    model = args.model
-  band_list = [1,1,1,1]
-  if args.bands:
-    bands_string = args.bands
-    band_list = []
-    for char in bands_string:
-      band_list.append(int(char))
-  # the number of batches to train the neural net
-  # @lacker recommends 3-5K for statistical significance, as rule of thumb
-  # can achieve 90+% accuracy with 5000 so far
-  # 100 is just so everything runs fast-ish and prints output, for a dry run
-  training_batches = 100
-  if args.training_batches:
-    training_batches = int(args.training_batches)
-  batch_size = 96
-  if args.batch_size:
-    batch_size = int(args.batch_size)
-  tile_size = 64
-  if args.tile_size:
-    tile_size = int(args.tile_size)
-  run_analysis(cache_way_bmp=cache_way_bmp, 
-               clear_way_bmp_cache=clear_way_bmp_cache, 
-               render_results=render_results, 
-               extract_type=extract_type, 
-               model=model, 
-               band_list=band_list,
-               training_batches=training_batches,
-               batch_size=batch_size,
-               tile_size=tile_size)
+  bands_string = args.bands
+  band_list = []
+  for char in bands_string:
+    band_list.append(int(char))
+
+  training_images, training_labels, test_images, test_labels, waymap = \
+      create_training_data(cache_way_bmp, 
+                           clear_way_bmp_cache, 
+                           extract_type=args.extract_type, 
+                           band_list=band_list, 
+                           tile_size=int(args.tile_size), 
+                           save_clippings=args.save_clippings)  
+
+  run_analysis(training_images, training_labels, test_images, test_labels, 
+               waymap,
+               render_results=args.render_results, 
+               model=args.model, 
+               band_list=band_list, 
+               training_batches=args.training_batches, 
+               batch_size=int(args.batch_size), 
+               tile_size=int(args.tile_size)  
+
