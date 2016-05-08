@@ -1,13 +1,11 @@
 from __future__ import print_function
 
-import numpy, os, sys, time, pickle
-from random import shuffle
-from osgeo import gdal
+import numpy, os, sys, time
 from PIL import Image
 import label_chunks_cnn
 import label_chunks_cnn_cifar
 from config_data import *
-from create_training_data import has_ways, has_ways_in_center, has_no_ways_in_fatter_center
+from create_training_data import has_ways
 
 
 def analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size):
@@ -57,9 +55,9 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
   '''
   print("CREATING ONE-HOT LABELS...")
   t0 = time.time()
-  print "CREATING TEST one-hot labels"
+  print("CREATING TEST one-hot labels")
   onehot_test_labels = onehot_for_labels(test_labels)
-  print "CREATING TRAINING one-hot labels"
+  print("CREATING TRAINING one-hot labels")
   onehot_training_labels = onehot_for_labels(training_labels)
   print("one-hotting took {0:.1f}s".format(time.time()-t0))
 
@@ -81,7 +79,7 @@ def onehot_for_labels(labels):
       onehot_labels.append([1,0])
       off_count += 1
 
-  print "ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels)))
+  print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels))))
   return onehot_labels
 
 def print_data_dimensions(training_labels,band_list):
@@ -192,5 +190,5 @@ def shade_labels(image, labels, predictions, tile_size):
 
 
 if __name__ == "__main__":
-    import sys
     print("Instead of running this file, use bin/run_analysis.py instead.", file=sys.stderr)
+    sys.exit(1)
