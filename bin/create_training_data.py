@@ -37,6 +37,7 @@ def create_parser():
     parser.add_argument("--save_clippings",
                         action='store_true',
                         help="save the training data tiles to /data/naip")
+    return parser
 
 
 def main():
