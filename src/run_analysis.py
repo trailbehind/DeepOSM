@@ -186,6 +186,7 @@ def shade_labels(image, labels, predictions, tile_size):
           image.putpixel((x, y), (r, 255, b))
     label_index += 1
 
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   # the number of batches to train the neural net

@@ -8,7 +8,58 @@ from pyproj import Proj, transform
 from download_labels import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
-from config_data import *
+
+'''
+    constants for how to create labels, 
+    from OpenStreetMap way (road) info in PBF files
+'''
+# enough to cover NAIPs around DC/Maryland/Virginia
+PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
+
+# if True, cache the ways extracted from PBFs to disk as JSON
+# faster for multiple runs, unless you want to change what's extracted
+CACHE_WAY_EXTRACTS = True
+
+# the number of pixels to count as road, 
+# on each side of of the centerline pixels
+PIXELS_BESIDE_WAYS = 1
+
+# to count an NxN tile as being "On" for roads,
+# N*.25 pixels on that tiles must have been classified as roads
+PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
+
+'''
+    constants for NAIP imagery to use   
+'''
+# values to create the S3 bucket path for some maryland NAIPs
+# you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
+# \todo document how to configure some of these
+NAIP_STATE = 'md'
+NAIP_YEAR = '2013'
+NAIP_RESOLUTION = '1m'
+NAIP_SPECTRUM = 'rgbir' 
+NAIP_GRID = '38077'
+
+# set this to a value between 1 and 10 or so,
+# and unset HARDCODED_NAIP_LIST, to get some different NAIPs
+NUMBER_OF_NAIPS = 8
+
+# set this to True for production data science, False for debugging infrastructure
+# speeds up downloads and matrix making when False
+RANDOMIZE_NAIPS = False
+
+'''
+HARDCODED_NAIP_LIST = [
+                  'm_3807708_ne_18_1_20130924.tif',
+                  'm_3807708_nw_18_1_20130904.tif',
+                  'm_3807708_se_18_1_20130924.tif',
+                  'm_3807708_se_18_1_20130924.tif',
+                  ]
+'''
+HARDCODED_NAIP_LIST = None
+
 
 def read_naip(file_path, bands_to_use):
   '''
@@ -264,7 +315,6 @@ def has_ways(tile):
     return True
   return False
 
-
 def has_ways_in_center(tile):
   center_pixel_count = 0
   center_x = len(tile)/2
@@ -298,7 +348,6 @@ def has_no_ways_in_fatter_center(tile):
   return False
 
 def save_image_clipping(tile, status):
-  # (new_tile,(col, row),raster_data_path)
   rgbir_matrix = tile[0]
   img = numpy.empty([64,64])
   for x in range(len(rgbir_matrix)):
@@ -322,6 +371,7 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
       test_images.append(equal_count_tile_list[x])
       test_labels.append(equal_count_way_list[x])
   return test_labels, training_labels, test_images, training_images
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
