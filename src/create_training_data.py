@@ -1,5 +1,5 @@
 import argparse
-import numpy, os, sys, time
+import numpy, os, sys, time, json
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
