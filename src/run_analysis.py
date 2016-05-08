@@ -206,7 +206,7 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways_in_center(label[0]):
+    if has_ways(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
     elif not has_ways(label[0]):
@@ -330,7 +330,7 @@ def equalize_data(road_labels, naip_tiles):
   way_indices = []
   for x in range(len(road_labels)):
     tile = road_labels[x][0]
-    if has_ways_in_center(tile):
+    if has_ways(tile):
       way_indices.append(x)
     elif not has_ways(tile):
       wayless_indices.append(x)
@@ -528,14 +528,14 @@ def shade_labels(image, labels, predictions, tile_size):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--tile_size", default='64', help="tile the NAIP and training data into NxN tiles with this dimension")
-  parser.add_argument("--training_batches", default='100', help="set this to more like 5000 to make analysis work")
-  parser.add_argument("--batch_size", default='96', help="around 100 is a good choice, defaults to 96 because cifar10 does")
-  parser.add_argument("--bands", default='1111', help="defaults to 1111 for R+G+B+IR active")
+  parser.add_argument("--training_batches", default='1', help="set this to more like 5000 to make analysis work")
+  parser.add_argument("--batch_size", default='100', help="around 100 is a good choice, defaults to 96 because cifar10 does")
+  parser.add_argument("--bands", default='0001', help="defaults to 0001 for just IR active")
   parser.add_argument("--extract_type", default='highway', help="highway or tennis")
   parser.add_argument("--cache_way_bmp", default=True, help="disable this to create way bitmaps each run")
   parser.add_argument("--clear_way_bmp_cache", default=False, help="enable this to bust the ay_bmp_cache from previous runs")
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
-  parser.add_argument("--model", default='cifar10', help="mnist or cifar10")
+  parser.add_argument("--model", default='mnist', help="mnist or cifar10")
   args = parser.parse_args()
   render_results = False
   if args.render_results:
