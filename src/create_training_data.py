@@ -1,5 +1,5 @@
 import argparse
-import numpy, os, sys, time, json
+import numpy, os, sys, time, pickle
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
@@ -370,13 +370,13 @@ if __name__ == "__main__":
     os.mkdir(cache_path);
   except:
     pass
-  with open(cache_path + 'training_images.json', 'w') as outfile:
-    json.dump(training_images, outfile)
-  with open(cache_path + 'training_labels.json', 'w') as outfile:
-    json.dump(training_labels, outfile)
-  with open(cache_path + 'test_images.json', 'w') as outfile:
-    json.dump(test_images, outfile)
-  with open(cache_path + 'test_labels.json', 'w') as outfile:
-    json.dump(test_labels, outfile)
-  with open(cache_path + 'label_types.json', 'w') as outfile:
-    json.dump(label_types, outfile)
+  with open(cache_path + 'training_images.pickle', 'w') as outfile:
+    pickle.dump(training_images, outfile)
+  with open(cache_path + 'training_labels.pickle', 'w') as outfile:
+    pickle.dump(training_labels, outfile)
+  with open(cache_path + 'test_images.pickle', 'w') as outfile:
+    pickle.dump(test_images, outfile)
+  with open(cache_path + 'test_labels.pickle', 'w') as outfile:
+    pickle.dump(test_labels, outfile)
+  with open(cache_path + 'label_types.pickle', 'w') as outfile:
+    pickle.dump(label_types, outfile)

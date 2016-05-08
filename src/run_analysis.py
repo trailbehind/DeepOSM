@@ -1,5 +1,5 @@
 import argparse
-import numpy, os, sys, time
+import numpy, os, sys, time, pickle
 from PIL import Image
 import label_chunks_cnn
 import label_chunks_cnn_cifar
@@ -206,16 +206,16 @@ if __name__ == "__main__":
     band_list.append(int(char))
 
   cache_path = '/data/cache/'
-  with open(cache_path + 'training_images.json', 'r') as infile:
-    training_images = json.load(infile)
-  with open(cache_path + 'training_labels.json', 'r') as infile:
-    training_labels = json.load(infile)
-  with open(cache_path + 'test_images.json', 'r') as infile:
-    test_images = json.load(infile)
-  with open(cache_path + 'test_labels.json', 'r') as infile:
-    test_labels = json.load(infile)
-  with open(cache_path + 'label_types.json', 'r') as infile:
-    label_types = json.load(infile)
+  with open(cache_path + 'training_images.pickle', 'r') as infile:
+    training_images = pickle.load(infile)
+  with open(cache_path + 'training_labels.pickle', 'r') as infile:
+    training_labels = pickle.load(infile)
+  with open(cache_path + 'test_images.pickle', 'r') as infile:
+    test_images = pickle.load(infile)
+  with open(cache_path + 'test_labels.pickle', 'r') as infile:
+    test_labels = pickle.load(infile)
+  with open(cache_path + 'label_types.pickle', 'r') as infile:
+    label_types = pickle.load(infile)
 
   predictions = analyze(test_labels, 
                         training_labels, 
