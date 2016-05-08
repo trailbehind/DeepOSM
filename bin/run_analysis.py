@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import pickle
 import time
 
@@ -29,6 +30,7 @@ def create_parser():
                         help="specify which bands to activate (R  G  B  IR). default is "
                         "--bands 0 0 0 1 (which activates only the IR band)")
     parser.add_argument("--render-results",
+                        default=True,
                         action='store_true',
                         help="output data/predictions to JPEG")
     parser.add_argument("--model",
@@ -50,9 +52,9 @@ def main():
         test_images = pickle.load(infile)
     with open(cache_path + 'test_labels.pickle', 'r') as infile:
         test_labels = pickle.load(infile)
-    with open(cache_path + 'label_types.pickle', 'r') as infile:
-        label_types = pickle.load(infile)
-    print("DATA LOADED: time to unpickle test data {0:.1f}s".format(time.time() - t0))
+    with open(cache_path + 'label_types.json', 'r') as infile:
+        label_types = json.load(infile)
+    print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
 
     parser = create_parser()
     args = parser.parse_args()
@@ -62,12 +64,11 @@ def main():
                           args.tile_size)
 
     if args.render_results:
-        raster_data_paths = None
-        way_bitmap_npy = None
-        with open(cache_path + 'raster_data_paths.pickle', 'r') as infile:
-            raster_data_paths = pickle.load(infile)
-        with open(cache_path + 'way_bitmap_npy.pickle', 'r') as infile:
-            way_bitmap_npy = pickle.load(infile)
+        with open(cache_path + 'raster_data_paths.json', 'r') as infile:
+            raster_data_paths = json.load(infile)
+        way_bitmap_npy = {}
+        for raster_data_path in raster_data_paths:
+            way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
 
         render_results_as_images(raster_data_paths, training_labels, test_labels, predictions,
                                  way_bitmap_npy, args.band_list, args.tile_size)

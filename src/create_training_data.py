@@ -60,13 +60,12 @@ HARDCODED_NAIP_LIST = None
 def read_naip(file_path, bands_to_use):
   '''
       read a NAIP from disk
-      bands_to_use is an array of 4 Booleans, in whether to use each band (R, G, B, and IR)
+      bands_to_use is an array like [0,0,0,1], designating whether to use each band (R, G, B, and IR)
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
 
   bands_data = []
-  # 4 bands of raster data, RGB and IR
   index = 0
   for b in range(1, raster_dataset.RasterCount+1):
     band = raster_dataset.GetRasterBand(b)
@@ -80,7 +79,7 @@ def read_naip(file_path, bands_to_use):
 def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size):
   '''
      cut a 4-band raster image into tiles,
-     tiles are cubes - up to 4 bands, and N height x N width based on tile_size settings
+     tiles are cubes - up to 4 bands, and N height x N width based on tile_size
   '''
   on_band_count = 0
   for b in bands_to_use:
@@ -101,28 +100,18 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   return all_tiled_data
 
-def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp=False, clear_way_bmp_cache=False):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
   '''
   cache_filename = raster_data_path + '-ways.bitmap.npy'
 
-  if clear_way_bmp_cache:
-    try:
-      os.path.remove(cache_filename)
-      print("DELETED: previously cached way bitmap")
-      return  # TODO: should this return something?
-    except:
-      pass
-      # print "WARNING: no previously cached way bitmap to delete"
-  else:
-    try:
-      if cache_way_bmp:
-        arr = numpy.load(cache_filename)
-        print("CACHED: read label data from disk")
-        return arr
-    except:
+  try:
+      arr = numpy.load(cache_filename)
+      print("CACHED: read label data from disk")
+      return arr
+  except:
       pass
       # print "ERROR reading bitmap cache from disk: {}".format(cache_filename)
 
@@ -154,11 +143,10 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
       add_pixels_between(current_pix, next_pix, cols, rows, way_bitmap)
   print(" {0:.1f}s".format(time.time()-t0))
 
-  if cache_way_bmp and not os.path.exists(cache_filename):
-    print("CACHING %s..." % cache_filename, end="")
-    t0 = time.time()
-    numpy.save(cache_filename, way_bitmap)
-    print(" {0:.1f}s".format(time.time()-t0))
+  print("CACHING %s..." % cache_filename, end="")
+  t0 = time.time()
+  numpy.save(cache_filename, way_bitmap)
+  print(" {0:.1f}s".format(time.time()-t0))
 
   return way_bitmap
 
@@ -224,7 +212,7 @@ def bounds_contains_point(bounds, point_tuple):
     return False
   return True
 
-def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, extract_type, band_list, tile_size):
+def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
   road_labels = []
   naip_tiles = []
 
@@ -237,7 +225,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
     for row in range(top_y, bottom_y, tile_size):

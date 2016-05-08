@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import os
 import pickle
 import time
@@ -27,13 +28,6 @@ def create_parser():
                         default='highway',
                         choices=['highway', 'tennis'],
                         help="the type of feature to identify")
-    parser.add_argument("--disable-way-bmp-cache",
-                        action='store_false',
-                        dest='cache_way_bmp',
-                        help="regenerate way bitmaps each run")
-    parser.add_argument("--clear-way-bmp-cache",
-                        action='store_true',
-                        help="enable this to bust the ay_bmp_cache from previous runs")
     parser.add_argument("--save_clippings",
                         action='store_true',
                         help="save the training data tiles to /data/naip")
@@ -49,8 +43,7 @@ def main():
                                        HARDCODED_NAIP_LIST).download_naips()
 
     road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(
-        raster_data_paths, args.cache_way_bmp, args.clear_way_bmp_cache, args.extract_type,
-        args.band_list, args.tile_size)
+        raster_data_paths, args.extract_type, args.band_list, args.tile_size)
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles,
                                                                 args.save_clippings)
     test_labels, training_labels, test_images, training_images = split_train_test(
@@ -72,13 +65,11 @@ def main():
         pickle.dump(test_images, outfile)
     with open(cache_path + 'test_labels.pickle', 'w') as outfile:
         pickle.dump(test_labels, outfile)
-    with open(cache_path + 'label_types.pickle', 'w') as outfile:
-        pickle.dump(label_types, outfile)
-    with open(cache_path + 'raster_data_paths.pickle', 'w') as outfile:
-        pickle.dump(raster_data_paths, outfile)
-    with open(cache_path + 'way_bitmap_npy.pickle', 'w') as outfile:
-        pickle.dump(way_bitmap_npy, outfile)
-    print("SAVE DONE: time to pickle and save test data to disk {0:.1f}s".format(time.time() - t0))
+    with open(cache_path + 'label_types.json', 'w') as outfile:
+        json.dump(label_types, outfile)
+    with open(cache_path + 'raster_data_paths.json', 'w') as outfile:
+        json.dump(raster_data_paths, outfile)
+    print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
 
 
 if __name__ == "__main__":
