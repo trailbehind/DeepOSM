@@ -296,17 +296,17 @@ def create_training_data(cache_way_bmp,
   road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, extract_type, band_list, tile_size)
   equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, save_clippings)
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
-  return training_images, training_labels, test_images, test_labels, waymap
+  return training_images, training_labels, test_images, test_labels, waymap.extracter.types
 
 def run_analysis(training_images, training_labels, test_images, test_labels,  
-                 waymap,
+                 label_types,
                  render_results, 
                  model, 
                  band_list, 
                  training_batches, 
                  batch_size, 
                  tile_size):  
-  predictions = analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list, training_batches, batch_size, tile_size)
+  predictions = analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size)
   if render_results:
     render_results_as_images(raster_data_paths, training_labels, test_labels, predictions, way_bitmap_npy, band_list, tile_size)
 
@@ -394,13 +394,13 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
       test_labels.append(equal_count_way_list[x])
   return test_labels, training_labels, test_images, training_images
 
-def analyze(test_labels, training_labels, test_images, training_images, waymap, model, band_list, training_batches, batch_size, tile_size):
+def analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size):
   ''' 
       package data for tensorflow and analyze
   '''
   print_data_dimensions(training_labels, band_list)
   onehot_training_labels, \
-  onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, training_labels, test_labels)
+  onehot_test_labels = format_as_onehot_arrays(label_types, training_labels, test_labels)
   npy_training_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in training_images])
   
   npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
@@ -550,30 +550,66 @@ if __name__ == "__main__":
   # @lacker recommends 3-5K for statistical significance, as rule of thumb
   # can achieve 90+% accuracy with 5000 so far
   # 100 is just so everything runs fast-ish and prints output, for a dry run
-  parser.add_argument("--training_batches", default='1', help="set this to more like 5000 to make analysis work")
+  parser.add_argument("--training_batches", default='5000', help="set this to ~5000 to make analysis work")
   parser.add_argument("--batch_size", default='100', help="around 100 is a good choice, defaults to 96 because cifar10 does")
   parser.add_argument("--bands", default='0001', help="defaults to 0001 for just IR active")
   parser.add_argument("--extract_type", default='highway', help="highway or tennis")
+  parser.add_argument("--bust_cache_training_data", default=False, help="delete the cached data from last run")
+  parser.add_argument("--cache_training_data", default=True, help="use the exact data generated last run")
   parser.add_argument("--cache_way_bmp", default=True, help="disable this to create way bitmaps each run")
   parser.add_argument("--clear_way_bmp_cache", default=False, help="enable this to bust the ay_bmp_cache from previous runs")
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
   parser.add_argument("--model", default='mnist', help="mnist or cifar10")
   args = parser.parse_args()
+
   bands_string = args.bands
   band_list = []
   for char in bands_string:
     band_list.append(int(char))
 
-  training_images, training_labels, test_images, test_labels, waymap = \
-      create_training_data(args.cache_way_bmp, 
-                           args.clear_way_bmp_cache, 
-                           extract_type=args.extract_type, 
-                           band_list=band_list, 
-                           tile_size=int(args.tile_size), 
-                           save_clippings=args.save_clippings)  
+  cache_path = '/data/cache/'
+  os.mkdir(cache_path);
+
+  if args.bust_cache_training_data:
+    os.path.remove(cache_path)
+    os.mkdir(cache_path);
+
+  training_images, training_labels, test_images, test_labels, label_types = None, None, None, None, None
+  if os.path.exists(cache_path + 'label_types.json'):
+    print "USING CACHED training/test data and labels"
+    with open(cache_path + 'training_images.json', 'r') as infile:
+      training_images = json.load(infile)
+    with open(cache_path + 'training_labels.json', 'r') as infile:
+      training_labels = json.load(infile)
+    with open(cache_path + 'test_images.json', 'r') as infile:
+      test_images = json.load(infile)
+    with open(cache_path + 'test_labels.json', 'r') as infile:
+      test_labels = json.load(infile)
+    with open(cache_path + 'label_types.json', 'r') as infile:
+      label_types = json.load(infile)
+  else:
+    training_images, training_labels, test_images, test_labels, label_types = \
+        create_training_data(args.cache_way_bmp, 
+                             args.clear_way_bmp_cache, 
+                             extract_type=args.extract_type, 
+                             band_list=band_list, 
+                             tile_size=int(args.tile_size), 
+                             save_clippings=args.save_clippings)  
+
+    if args.cache_training_data:
+      with open(cache_path + 'training_images.json', 'w') as outfile:
+        json.dump(training_images, outfile)
+      with open(cache_path + 'training_labels.json', 'w') as outfile:
+        json.dump(training_labels, outfile)
+      with open(cache_path + 'test_images.json', 'w') as outfile:
+        json.dump(test_images, outfile)
+      with open(cache_path + 'test_labels.json', 'w') as outfile:
+        json.dump(test_labels, outfile)
+      with open(cache_path + 'label_types.json', 'w') as outfile:
+        json.dump(label_types, outfile)
 
   run_analysis(training_images, training_labels, test_images, test_labels, 
-               waymap,
+               label_types,
                render_results=args.render_results, 
                model=args.model, 
                band_list=band_list, 
