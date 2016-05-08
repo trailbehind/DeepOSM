@@ -540,50 +540,21 @@ if __name__ == "__main__":
   parser.add_argument("--render_results", default=True, help="disable to not print data/predictions to JPEG")
   parser.add_argument("--model", default='cifar10', help="mnist or cifar10")
   args = parser.parse_args()
-  render_results = False
-  if args.render_results:
-    render_results = True
-  clear_way_bmp_cache = False
-  if args.clear_way_bmp_cache:
-    clear_way_bmp_cache = True
-  cache_way_bmp = False
-  if args.cache_way_bmp:
-    cache_way_bmp = True
-  extract_type = 'highway'
-  if args.extract_type:
-    extract_type = args.extract_type
-  model = 'mnist'
-  if args.model:
-    model = args.model
-  band_list = [1,1,1,1]
-  if args.bands:
-    bands_string = args.bands
-    band_list = []
-    for char in bands_string:
-      band_list.append(int(char))
+  bands_string = args.bands
+  band_list = []
+  for char in bands_string:
+    band_list.append(int(char))
   # the number of batches to train the neural net
   # @lacker recommends 3-5K for statistical significance, as rule of thumb
   # can achieve 90+% accuracy with 5000 so far
   # 100 is just so everything runs fast-ish and prints output, for a dry run
-  training_batches = 100
-  if args.training_batches:
-    training_batches = int(args.training_batches)
-  batch_size = 96
-  if args.batch_size:
-    batch_size = int(args.batch_size)
-  tile_size = 64
-  if args.tile_size:
-    tile_size = int(args.tile_size)
-  save_clippings = False
-  if args.save_clippings:
-    save_clippings = True
-  run_analysis(cache_way_bmp=cache_way_bmp, 
-               clear_way_bmp_cache=clear_way_bmp_cache, 
-               render_results=render_results, 
-               extract_type=extract_type, 
-               model=model, 
+  run_analysis(cache_way_bmp=args.cache_way_bmp, 
+               clear_way_bmp_cache=args.clear_way_bmp_cache, 
+               render_results=args.render_results, 
+               extract_type=args.extract_type, 
+               model=args.model, 
                band_list=band_list,
-               training_batches=training_batches,
-               batch_size=batch_size,
-               tile_size=tile_size,
-               save_clippings=save_clippings)
+               training_batches=int(args.training_batches),
+               batch_size=int(args.batch_size),
+               tile_size=int(args.tile_size),
+               save_clippings=args.save_clippings)
