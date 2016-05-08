@@ -61,7 +61,7 @@ def main():
                           args.model, args.band_list, args.training_batches, args.batch_size,
                           args.tile_size)
 
-    if args.render-results:
+    if args.render_results:
         raster_data_paths = None
         way_bitmap_npy = None
         with open(cache_path + 'raster_data_paths.pickle', 'r') as infile:
