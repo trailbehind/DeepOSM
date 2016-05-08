@@ -10,7 +10,7 @@ from geo_util import latLonToPixel, pixelToLatLng
 from config_data import PERCENT_FOR_TRAINING_DATA
 
 '''
-    constants for how to create labels, 
+    constants for how to create labels,
     from OpenStreetMap way (road) info in PBF files
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
@@ -18,7 +18,7 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
                  'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
-# the number of pixels to count as road, 
+# the number of pixels to count as road,
 # on each side of of the centerline pixels
 PIXELS_BESIDE_WAYS = 1
 
@@ -27,7 +27,7 @@ PIXELS_BESIDE_WAYS = 1
 PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 
 '''
-    constants for NAIP imagery to use   
+    constants for NAIP imagery to use
 '''
 # values to create the S3 bucket path for some maryland NAIPs
 # you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
@@ -35,7 +35,7 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 NAIP_STATE = 'md'
 NAIP_YEAR = '2013'
 NAIP_RESOLUTION = '1m'
-NAIP_SPECTRUM = 'rgbir' 
+NAIP_SPECTRUM = 'rgbir'
 NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
@@ -64,7 +64,7 @@ def read_naip(file_path, bands_to_use):
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
-  
+
   bands_data = []
   # 4 bands of raster data, RGB and IR
   index = 0
@@ -74,7 +74,7 @@ def read_naip(file_path, bands_to_use):
       bands_data.append(band.ReadAsArray())
     index += 1
   bands_data = numpy.dstack(bands_data)
-  
+
   return raster_dataset, bands_data
 
 def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size):
@@ -98,7 +98,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
       if row+tile_size < rows and col+tile_size < cols:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
- 
+
   return all_tiled_data
 
 def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp=False, clear_way_bmp_cache=False):
@@ -116,7 +116,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
     except:
       pass
       # print "WARNING: no previously cached way bitmap to delete"
-  else:    
+  else:
     try:
       if cache_way_bmp:
         arr = numpy.load(cache_filename)
@@ -228,7 +228,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
   road_labels = []
   naip_tiles = []
 
-  # tile images and labels  
+  # tile images and labels
   waymap = download_and_extract(PBF_FILE_URLS, extract_type)
   way_bitmap_npy = {}
 
@@ -236,8 +236,8 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
     raster_dataset, bands_data = read_naip(raster_data_path, band_list)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
-  
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))  
+
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
     for row in range(top_y, bottom_y, tile_size):
@@ -245,7 +245,7 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
-        
+
     for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size):
       naip_tiles.append(tile)
 
@@ -296,7 +296,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
   return equal_count_way_list, equal_count_tile_list
 
 def has_ways(tile):
-  '''  
+  '''
      returns true if some pixels on the NxN tile are set to 1
   '''
   road_pixel_count = 0
