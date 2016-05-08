@@ -2,9 +2,11 @@
 
 import argparse
 import json
+import numpy
 import pickle
 import time
 
+from src.create_training_data import way_bitmap_for_naip
 from src.run_analysis import analyze, render_results_as_images
 
 

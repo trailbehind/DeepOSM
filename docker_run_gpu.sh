@@ -27,7 +27,7 @@ CUDA_SO=$(\ls /usr/lib/x86_64-linux-gnu/libcuda.* | xargs -I{} echo '-v {}:{}')
 DEVICES=$(\ls /dev/nvidia* | \
                     xargs -I{} echo '--device {}:{}')
 
-if [[ "${DEVICES}" = "" ]]; then
+if "${DEVICES}" = "" ; then
   echo "Failed to locate NVidia device(s). Did you want the non-GPU container?"
   exit 1
 fi
