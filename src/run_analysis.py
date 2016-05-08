@@ -50,8 +50,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(0, cols, tile_size/4):
-    for row in range(0, rows, tile_size/4):
+  for col in range(0, cols, tile_size):
+    for row in range(0, rows, tile_size):
       if row+tile_size < rows and col+tile_size < cols:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -209,17 +209,19 @@ def onehot_for_labels(labels):
     if has_ways_in_center(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
-    else:
+    elif not has_ways(label[0]):
       onehot_labels.append([1,0])
       off_count += 1
 
   print "ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels)))
   return onehot_labels
 
-'''
+
 def has_ways(tile):
+  '''  
+     returns true if some pixels on the NxN tile are set to 1
   
-     returns true if any pixel on the NxN tile is set to 1
+  '''
   road_pixel_count = 0
   for x in range(0, len(tile)):
     for y in range(0, len(tile[x])):
@@ -229,7 +231,7 @@ def has_ways(tile):
   if road_pixel_count >= len(tile)*PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE:
     return True
   return False
-'''
+
 
 def has_ways_in_center(tile):
   center_pixel_count = 0
@@ -309,8 +311,8 @@ def random_training_data(raster_data_paths, cache_way_bmp, clear_way_bmp_cache, 
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, cache_way_bmp, clear_way_bmp_cache))  
 
     left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
-    for row in range(top_y, bottom_y, tile_size/4):
-      for col in range(left_x, right_x, tile_size/4):
+    for row in range(top_y, bottom_y, tile_size):
+      for col in range(left_x, right_x, tile_size):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
@@ -330,7 +332,7 @@ def equalize_data(road_labels, naip_tiles):
     tile = road_labels[x][0]
     if has_ways_in_center(tile):
       way_indices.append(x)
-    elif has_no_ways_in_fatter_center(tile):
+    elif not has_ways(tile):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
