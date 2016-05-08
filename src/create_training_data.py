@@ -1,12 +1,11 @@
-import argparse
-import numpy, os, sys, time, pickle
+from __future__ import print_function
+
+import numpy, os, sys, time
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
-from pyproj import Proj, transform
 
-from download_labels import WayMap, download_and_extract
-from download_naips import NAIPDownloader
+from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
 from config_data import PERCENT_FOR_TRAINING_DATA
 
@@ -65,8 +64,6 @@ def read_naip(file_path, bands_to_use):
       from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
   '''
   raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
-  coord = pixelToLatLng(raster_dataset, 0, 0)
-  proj = raster_dataset.GetProjectionRef()
   
   bands_data = []
   # 4 bands of raster data, RGB and IR
@@ -114,8 +111,8 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   if clear_way_bmp_cache:
     try:
       os.path.remove(cache_filename)
-      print "DELETED: previously cached way bitmap"
-      return arr
+      print("DELETED: previously cached way bitmap")
+      return  # TODO: should this return something?
     except:
       pass
       # print "WARNING: no previously cached way bitmap to delete"
@@ -123,7 +120,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
     try:
       if cache_way_bmp:
         arr = numpy.load(cache_filename)
-        print "CACHED: read label data from disk"
+        print("CACHED: read label data from disk")
         return arr
     except:
       pass
@@ -143,7 +140,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   print(" {0:.1f}s".format(time.time()-t0))
   print("EXTRACTED {} highways in NAIP bounds, of {} ways".format(len(ways_on_naip), len(ways)))
 
-  print "MAKING BITMAP for way presence...",
+  print("MAKING BITMAP for way presence...", end="")
   t0 = time.time()
   for w in ways_on_naip:
     for x in range(len(w['linestring'])-1):
@@ -158,7 +155,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, cach
   print(" {0:.1f}s".format(time.time()-t0))
 
   if cache_way_bmp and not os.path.exists(cache_filename):
-    print "CACHING {}...", cache_filename,
+    print("CACHING %s..." % cache_filename, end="")
     t0 = time.time()
     numpy.save(cache_filename, way_bitmap)
     print(" {0:.1f}s".format(time.time()-t0))
