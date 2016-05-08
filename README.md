@@ -52,34 +52,14 @@ make dev
 
 ### Download NAIP, PBF, and Analyze
 
-Inside Docker, the following Python script will work. It will download all source data, tile it into training/test data and labels, train the neural net, and generate image and text output. The default data is three NAIPs, which gets tiled into NxNx4 bands of data (RGB-IR bands). The training labels derive from PBF files that overlap the NAIPs.
+Inside Docker, the following Python scripts will work. This will download all source data, tile it into training/test data and labels, train the neural net, and generate image and text output. 
 
-#### Dry Run, Predicts Poorly (random, about 50%)
+The default data is eight NAIPs, which gets tiled into NxNx4 bands of data (RGB-IR bands). The training labels derive from PBF files that overlap the NAIPs.
 
-    python src/run_analysis.py
+    python bin/create_training_data.py
+    python bin/run_analysis.py
 
-For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff. 
-
-#### Full-Data Run (as good as 75%)
-
-If you then re-run the analysis, but set some parameters, it will be more accurate on a CPU (~70%), after running all night. On the second run, the data prep won't take nearly as long, but the neural net training takes much longer.
-
-    python src/run_analysis.py --bands=0001 --model=mnist --training_batches=6000
-
-Full usage is as follows, or use -h on the command line:
-
-```
-run_analysis.py [-h] 
-                [--tile_size TILE_SIZE]
-                [--training_batches TRAINING_BATCHES]
-                [--batch_size BATCH_SIZE] 
-                [--bands BANDS]
-                [--extract_type EXTRACT_TYPE]
-                [--cache_way_bmp CACHE_WAY_BMP]
-                [--clear_way_bmp_cache CLEAR_WAY_BMP_CACHE]
-                [--render_results RENDER_RESULTS] 
-                [--model MODEL]
-```
+For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff. With default settings, it will predict around 70%.
 
 ![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
 

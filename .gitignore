@@ -65,3 +65,4 @@ target/
 *.pbf
 *.tif
 *.npy
+data/
