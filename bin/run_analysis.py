@@ -23,11 +23,11 @@ def create_parser():
                         type=int,
                         help="around 100 is a good choice, defaults to 96 because cifar10 does")
     parser.add_argument("--band-list",
-                        default=[1, 1, 1, 1],
+                        default=[0, 0, 0, 1],
                         nargs=4,
                         type=int,
                         help="specify which bands to activate (R  G  B  IR). default is "
-                        "--bands 1 1 1 1 (which activates all bands)")
+                        "--bands 0 0 0 1 (which activates only the IR band)")
     parser.add_argument("--render-results",
                         action='store_true',
                         help="output data/predictions to JPEG")
