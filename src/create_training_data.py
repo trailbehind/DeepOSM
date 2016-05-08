@@ -8,6 +8,7 @@ from pyproj import Proj, transform
 from download_labels import WayMap, download_and_extract
 from download_naips import NAIPDownloader
 from geo_util import latLonToPixel, pixelToLatLng
+from config_data import PERCENT_FOR_TRAINING_DATA
 
 '''
     constants for how to create labels, 
@@ -39,7 +40,7 @@ NAIP_SPECTRUM = 'rgbir'
 NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
-# and unset HARDCODED_NAIP_LIST, to get some different NAIPs
+# and keep HARDCODED_NAIP_LIST=None
 NUMBER_OF_NAIPS = 8
 
 # set this to True for production data science, False for debugging infrastructure
@@ -399,6 +400,8 @@ if __name__ == "__main__":
   test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list,equal_count_way_list)
   label_types =  waymap.extracter.types
 
+  print("SAVING DATA: pickling and saving to disk")
+  t0 = time.time()
   cache_path = '/data/cache/'
   try:
     os.mkdir(cache_path);
@@ -418,4 +421,5 @@ if __name__ == "__main__":
     pickle.dump(raster_data_paths, outfile)
   with open(cache_path + 'way_bitmap_npy.pickle', 'w') as outfile:
     pickle.dump(way_bitmap_npy, outfile)
+  print("SAVE DONE: time to pickle and save test data to disk {0:.1f}s".format(time.time()-t0))
 

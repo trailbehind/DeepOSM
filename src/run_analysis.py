@@ -207,6 +207,8 @@ if __name__ == "__main__":
   for char in bands_string:
     band_list.append(int(char))
 
+  print("LOADING DATA: reading from disk and unpickling")
+  t0 = time.time()
   cache_path = '/data/cache/'
   with open(cache_path + 'training_images.pickle', 'r') as infile:
     training_images = pickle.load(infile)
@@ -218,6 +220,7 @@ if __name__ == "__main__":
     test_labels = pickle.load(infile)
   with open(cache_path + 'label_types.pickle', 'r') as infile:
     label_types = pickle.load(infile)
+  print("DATA LOADED: time to unpickle test data {0:.1f}s".format(time.time()-t0))
 
   predictions = analyze(test_labels, 
                         training_labels, 
