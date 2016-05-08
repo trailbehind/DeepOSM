@@ -29,13 +29,13 @@ PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 '''
 
 # set this to None to get different tifs to analyze
-HARDCODED_NAIP_LIST = None
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
                   'm_3807708_nw_18_1_20130904.tif',
                   'm_3807708_se_18_1_20130924.tif',
                   'm_3807708_se_18_1_20130924.tif',
                   ]
+HARDCODED_NAIP_LIST = None
 
 # values to create the S3 bucket path for some maryland NAIPs
 # you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
@@ -48,7 +48,7 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # and unset HARDCODED_NAIP_LIST, to get some different NAIPs
-NUMBER_OF_NAIPS = -1
+NUMBER_OF_NAIPS = 8
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False

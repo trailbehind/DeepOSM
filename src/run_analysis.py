@@ -281,7 +281,6 @@ def shuffle_in_unison(a, b):
 
 def create_training_data(cache_way_bmp, 
                          clear_way_bmp_cache, 
-                         render_results, 
                          extract_type, 
                          band_list, 
                          tile_size, 
@@ -566,8 +565,8 @@ if __name__ == "__main__":
     band_list.append(int(char))
 
   training_images, training_labels, test_images, test_labels, waymap = \
-      create_training_data(cache_way_bmp, 
-                           clear_way_bmp_cache, 
+      create_training_data(args.cache_way_bmp, 
+                           args.clear_way_bmp_cache, 
                            extract_type=args.extract_type, 
                            band_list=band_list, 
                            tile_size=int(args.tile_size), 
@@ -580,5 +579,4 @@ if __name__ == "__main__":
                band_list=band_list, 
                training_batches=args.training_batches, 
                batch_size=int(args.batch_size), 
-               tile_size=int(args.tile_size)  
-
+               tile_size=int(args.tile_size)) 
