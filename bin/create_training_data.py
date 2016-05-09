@@ -29,11 +29,10 @@ def create_parser():
                         action='store_true',
                         help="save the training data tiles to /data/naip")
     return parser
-
 def main():
     parser = create_parser()
     args = parser.parse_args()
-
+    
     raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_YEAR,
                                        NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID,
                                        HARDCODED_NAIP_LIST).download_naips()
@@ -44,12 +43,10 @@ def main():
     test_labels, training_labels, test_images, training_images = split_train_test(
         equal_count_tile_list, equal_count_way_list)
     label_types = waymap.extracter.types
-    onehot_training_labels, onehot_test_labels =  format_as_onehot_arrays(label_types, 
-                                                                          training_labels, 
-                                                                          test_labels)
+    onehot_training_labels, onehot_test_labels = format_as_onehot_arrays(label_types, training_labels, test_labels)
     dump_data_to_disk(raster_data_paths, training_images, training_labels, test_images, test_labels,
                       label_types, onehot_training_labels, onehot_test_labels)
-                      
+                        
 
 if __name__ == "__main__":
     main()
