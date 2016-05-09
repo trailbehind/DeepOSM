@@ -392,7 +392,7 @@ def onehot_for_labels(labels):
     if has_ways_in_center(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
-    elif has_no_ways_in_fatter_center(label[0]) and not has_ways_(label[0]):
+    elif has_no_ways_in_fatter_center(label[0]) and not has_ways(label[0]):
       onehot_labels.append([1,0])
       off_count += 1
 
