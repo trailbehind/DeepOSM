@@ -5,7 +5,7 @@ from PIL import Image
 import label_chunks_cnn
 import label_chunks_cnn_cifar
 from config_data import *
-from create_training_data import has_ways
+from create_training_data import has_ways, has_ways_in_center, has_no_ways_in_fatter_center
 
 
 def analyze(test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size):
@@ -72,10 +72,10 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways(label[0]):
+    if has_ways_in_center(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
-    elif not has_ways(label[0]):
+    elif not has_no_ways_in_fatter_center(label[0]) and not has_ways_(label[0]):
       onehot_labels.append([1,0])
       off_count += 1
 

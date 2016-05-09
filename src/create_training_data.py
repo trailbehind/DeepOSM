@@ -92,7 +92,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   for col in range(300, cols-300, tile_size):
     for row in range(300, rows-300, tile_size):
-      if row+tile_size < rows and col+tile_size < cols:
+      if row+tile_size < rows-300 and col+tile_size < cols -300:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
 
@@ -192,7 +192,7 @@ def safe_add_pixel(x, y, way_bitmap):
   '''
      turn on a pixel in way_bitmap if its in bounds
   '''
-  if x < 0 or y < 0 or x >= len(way_bitmap[0]) or y >= len(way_bitmap):
+  if x <300 or y < 300 or x >= len(way_bitmap[0])-300 or y >= len(way_bitmap)-300:
     return
   way_bitmap[y][x] = 1
 
@@ -258,9 +258,9 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
   way_indices = []
   for x in range(len(road_labels)):
     tile = road_labels[x][0]
-    if has_ways(tile):
+    if has_ways_in_center(tile):
       way_indices.append(x)
-    elif not has_ways(tile):
+    elif not has_no_ways_in_fatter_center(tile) and not has_ways_(tile):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)

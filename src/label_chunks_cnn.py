@@ -77,13 +77,13 @@ def train_neural_net(bands_to_use,
   h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64 * on_band_count])
   h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
-  #keep_prob = tf.placeholder("float")
-  #h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+  keep_prob = tf.placeholder(tf.float32)
+  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
   W_fc2 = weight_variable([1024, 2])
   b_fc2 = bias_variable([2])
 
-  y_conv=tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2)
+  y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
   cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
   loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
@@ -98,11 +98,12 @@ def train_neural_net(bands_to_use,
   t0 = time.time()
   for i in range(number_of_batches):
     batch = data_sets.train.next_batch(batch_size)
-    # train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1]})
-    # print("step %d, training accuracy %g"%(i, train_accuracy))
+    if i % 500 == True:
+      train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1], keep_prob: 1.0})
+      print("step %d, training accuracy %g"%(i, train_accuracy))
 
     _, loss_val = sess.run([train_step, cross_entropy],
-                           feed_dict={x: batch[0], y_: batch[1]})
+                           feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
     loss_total += loss_val
     print('step {}, loss = {}, loss rolling avg = {} '.format(i, loss_val, loss_total/(i+1)))
 
@@ -111,7 +112,7 @@ def train_neural_net(bands_to_use,
 
   print("training time {0:.1f}s".format(time.time()-t0))
   print("test accuracy %g"%accuracy.eval(feed_dict={
-      x: data_sets.test.images, y_: data_sets.test.labels,}))
+      x: data_sets.test.images, y_: data_sets.test.labels, keep_prob: 1.0}))
 
   prediction=tf.argmax(y_conv,1)
   index = 0
@@ -124,4 +125,4 @@ def train_neural_net(bands_to_use,
   
     index += 1
   '''
-  return prediction.eval(feed_dict={x: data_sets.test.images}, session=sess)
+  return prediction.eval(feed_dict={x: data_sets.test.images, keep_prob: 1.0}, session=sess)
