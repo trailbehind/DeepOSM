@@ -40,22 +40,20 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # and keep HARDCODED_NAIP_LIST=None
-NUMBER_OF_NAIPS = 8
+NUMBER_OF_NAIPS = 10
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
 RANDOMIZE_NAIPS = False
 
+HARDCODED_NAIP_LIST = None
 '''
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
                   'm_3807708_nw_18_1_20130904.tif',
                   'm_3807708_se_18_1_20130924.tif',
-                  'm_3807708_se_18_1_20130924.tif',
                   ]
 '''
-HARDCODED_NAIP_LIST = None
-
 
 def read_naip(file_path, bands_to_use):
   '''
@@ -92,8 +90,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(0, cols, tile_size):
-    for row in range(0, rows, tile_size):
+  for col in range(300, cols-300, tile_size):
+    for row in range(300, rows-300, tile_size):
       if row+tile_size < rows and col+tile_size < cols:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -154,7 +152,7 @@ def bounds_for_naip(raster_dataset, rows, cols):
   '''
       clip the NAIP to 0 to cols, 0 to rows
   '''
-  left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
+  left_x, right_x, top_y, bottom_y = 300, cols-300, 300, rows-300
   sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
   ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
@@ -227,7 +225,7 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
 
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
-    left_x, right_x, top_y, bottom_y = 0, cols, 0, rows
+    left_x, right_x, top_y, bottom_y = 300, cols-300, 300, rows-300
     for row in range(top_y, bottom_y, tile_size):
       for col in range(left_x, right_x, tile_size):
         if row+tile_size < bottom_y and col+tile_size < right_x:
