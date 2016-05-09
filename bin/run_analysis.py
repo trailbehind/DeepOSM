@@ -55,12 +55,17 @@ def main():
         test_labels = pickle.load(infile)
     with open(CACHE_PATH + 'label_types.json', 'r') as infile:
         label_types = json.load(infile)
+    with open(cache_path + 'onehot_training_labels.json', 'r') as infile:
+        onehot_training_labels = json.load(infile)
+    with open(cache_path + 'onehot_test_labels.json', 'r') as infile:
+        onehot_test_labels = json.load(infile)
+
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
 
     parser = create_parser()
     args = parser.parse_args()
 
-    predictions = analyze(test_labels, training_labels, test_images, training_images, label_types,
+    predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types,
                           args.model, args.band_list, args.training_batches, args.batch_size,
                           args.tile_size)
 

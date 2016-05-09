@@ -354,6 +354,40 @@ def split_train_test(equal_count_tile_list,equal_count_way_list):
       test_labels.append(equal_count_way_list[x])
   return test_labels, training_labels, test_images, training_images
 
+def format_as_onehot_arrays(types, training_labels, test_labels):
+  '''
+     each label gets converted from an NxN tile with way bits flipped,
+     into a one hot array of whether the tile contains ways (i.e. [0,1] or [1,0] for each)
+  '''
+  print("CREATING ONE-HOT LABELS...")
+  t0 = time.time()
+  print("CREATING TEST one-hot labels")
+  onehot_test_labels = onehot_for_labels(test_labels)
+  print("CREATING TRAINING one-hot labels")
+  onehot_training_labels = onehot_for_labels(training_labels)
+  print("one-hotting took {0:.1f}s".format(time.time()-t0))
+
+  return onehot_training_labels, onehot_test_labels
+
+def onehot_for_labels(labels):
+  '''
+     returns a list of one-hot array labels, for a list of tiles
+  '''
+  on_count = 0
+  off_count = 0
+
+  onehot_labels = []
+  for label in labels:
+    if has_ways(label[0]):
+      onehot_labels.append([0,1])
+      on_count += 1
+    elif not has_ways(label[0]):
+      onehot_labels.append([1,0])
+      off_count += 1
+
+  print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels))))
+  return onehot_labels
+
 
 if __name__ == "__main__":
     print("Instead of running this file, use bin/create_training_data.py instead.", file=sys.stderr)
