@@ -53,6 +53,7 @@ def print_data_dimensions(training_labels,band_list):
   bands = sum(band_list)
   print("TRAINING/TEST DATA: shaped the tiff data to {} tiles sized {} x {} with {} bands".format(tiles*2, h, w, bands))
 
+
 if __name__ == "__main__":
     print("Instead of running this file, use bin/run_analysis.py instead.", file=sys.stderr)
     sys.exit(1)
