@@ -265,7 +265,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
     tile = road_labels[x][0]
     if has_ways_in_center(tile):
       way_indices.append(x)
-    elif not has_no_ways_in_fatter_center(tile) and not has_ways_(tile):
+    elif has_no_ways_in_fatter_center(tile) and not has_ways_(tile):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -312,7 +312,7 @@ def has_ways_in_center(tile):
         if x >= center_x -1 and x <= center_x + 1:
           if y >= center_y -1 and y <= center_y + 1:
             center_pixel_count += 1
-  if center_pixel_count >= 4:
+  if center_pixel_count >= 5:
     return True
   return False
 
@@ -381,10 +381,10 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways(label[0]):
+    if has_ways_in_center(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
-    elif not has_ways(label[0]):
+    elif has_no_ways_in_fatter_center(label[0]) and not has_ways_(label[0]):
       onehot_labels.append([1,0])
       off_count += 1
 
