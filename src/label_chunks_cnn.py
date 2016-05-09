@@ -1,7 +1,7 @@
 '''
     train a deep convolutional neural network (CNN) with the OSM ways as labeled data for the imagery
-    based on the 2nd tensroflow tutorial:
-     https://github.com/trailbehind/DeepOSM/blob/246a2312828ccc0e5b395f8033825a46025232cc/mnist_tutorials/tutorial-mnist-expert.py
+    based on the 2nd tensorflow tutorial:
+      https://github.com/trailbehind/DeepOSM/blob/246a2312828ccc0e5b395f8033825a46025232cc/mnist_tutorials/tutorial-mnist-expert.py
 '''
 
 import sys, time

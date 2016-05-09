@@ -6,9 +6,9 @@ import numpy
 import pickle
 import time
 
-from src.create_training_data import way_bitmap_for_naip
-from src.run_analysis import analyze, render_results_as_images
-
+from src.run_analysis import analyze
+from src.render_results import render_results_for_analysis
+from config_data import CACHE_PATH
 
 def create_parser():
     parser = argparse.ArgumentParser()
@@ -45,36 +45,37 @@ def create_parser():
 def main():
     print("LOADING DATA: reading from disk and unpickling")
     t0 = time.time()
-    cache_path = '/data/cache/'
-    with open(cache_path + 'training_images.pickle', 'r') as infile:
+    with open(CACHE_PATH + 'training_images.pickle', 'r') as infile:
         training_images = pickle.load(infile)
-    with open(cache_path + 'training_labels.pickle', 'r') as infile:
+    with open(CACHE_PATH + 'training_labels.pickle', 'r') as infile:
         training_labels = pickle.load(infile)
-    with open(cache_path + 'test_images.pickle', 'r') as infile:
+    with open(CACHE_PATH + 'test_images.pickle', 'r') as infile:
         test_images = pickle.load(infile)
-    with open(cache_path + 'test_labels.pickle', 'r') as infile:
+    with open(CACHE_PATH + 'test_labels.pickle', 'r') as infile:
         test_labels = pickle.load(infile)
-    with open(cache_path + 'label_types.json', 'r') as infile:
+    with open(CACHE_PATH + 'label_types.json', 'r') as infile:
         label_types = json.load(infile)
+    with open(cache_path + 'onehot_training_labels.json', 'r') as infile:
+        onehot_training_labels = json.load(infile)
+    with open(cache_path + 'onehot_test_labels.json', 'r') as infile:
+        onehot_test_labels = json.load(infile)
+
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
 
     parser = create_parser()
     args = parser.parse_args()
 
-    predictions = analyze(test_labels, training_labels, test_images, training_images, label_types,
+    predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types,
                           args.model, args.band_list, args.training_batches, args.batch_size,
                           args.tile_size)
 
     if args.render_results:
-        with open(cache_path + 'raster_data_paths.json', 'r') as infile:
-            raster_data_paths = json.load(infile)
-        way_bitmap_npy = {}
-        for raster_data_path in raster_data_paths:
-            way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
-
-        render_results_as_images(raster_data_paths, training_labels, test_labels, predictions,
-                                 way_bitmap_npy, args.band_list, args.tile_size)
-
+        render_results_for_analysis(raster_data_paths, 
+                                    training_labels, 
+                                    test_labels, 
+                                    predictions, 
+                                    args.band_list, 
+                                    args.tile_size)
 
 if __name__ == "__main__":
     main()

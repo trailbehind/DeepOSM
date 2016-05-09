@@ -9,7 +9,7 @@ import time
 from src.download_naips import NAIPDownloader
 from src.create_training_data import (NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_RESOLUTION,
                                       NAIP_YEAR, NAIP_SPECTRUM, NAIP_GRID, HARDCODED_NAIP_LIST,
-                                      random_training_data, equalize_data, split_train_test)
+                                      random_training_data, equalize_data, split_train_test, format_as_onehot_arrays)
 
 
 def create_parser():
@@ -50,6 +50,9 @@ def main():
         equal_count_tile_list, equal_count_way_list)
     label_types = waymap.extracter.types
 
+    onehot_training_labels, onehot_test_labels =  \
+      format_as_onehot_arrays(label_types, training_labels, test_labels)
+
     print("SAVING DATA: pickling and saving to disk")
     t0 = time.time()
     cache_path = '/data/cache/'
@@ -69,6 +72,10 @@ def main():
         json.dump(label_types, outfile)
     with open(cache_path + 'raster_data_paths.json', 'w') as outfile:
         json.dump(raster_data_paths, outfile)
+    with open(cache_path + 'onehot_training_labels.json', 'w') as outfile:
+        json.dump(onehot_training_labels, outfile)
+    with open(cache_path + 'onehot_test_labels.json', 'w') as outfile:
+        json.dump(onehot_test_labels, outfile)
     print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
 
 
