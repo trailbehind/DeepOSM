@@ -23,7 +23,7 @@ PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.
 PIXELS_BESIDE_WAYS = 1
 
 # to count an NxN tile as being "On" for roads,
-# N*.25 pixels on that tiles must have been classified as roads
+# N*.5 pixels on that tiles must have been classified as roads
 PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
 
 '''
