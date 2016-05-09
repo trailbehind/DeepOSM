@@ -60,6 +60,10 @@ HARDCODED_NAIP_LIST = [
                   ]
 '''
 
+# there is a 300 pixel buffer around NAIPs that should be trimmed off,
+# where NAIPs overlap... using overlapping images makes wonky train/test splits
+NAIP_PIXEL_BUFFER = 300
+
 def read_naip(file_path, bands_to_use):
   '''
       read a NAIP from disk
@@ -95,9 +99,9 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(300, cols-300, tile_size):
-    for row in range(300, rows-300, tile_size):
-      if row+tile_size < rows-300 and col+tile_size < cols -300:
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size):
+      if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
 
@@ -157,7 +161,7 @@ def bounds_for_naip(raster_dataset, rows, cols):
   '''
       clip the NAIP to 0 to cols, 0 to rows
   '''
-  left_x, right_x, top_y, bottom_y = 300, cols-300, 300, rows-300
+  left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
   sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
   ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
@@ -197,7 +201,7 @@ def safe_add_pixel(x, y, way_bitmap):
   '''
      turn on a pixel in way_bitmap if its in bounds
   '''
-  if x <300 or y < 300 or x >= len(way_bitmap[0])-300 or y >= len(way_bitmap)-300:
+  if x <NAIP_PIXEL_BUFFER or y < NAIP_PIXEL_BUFFER or x >= len(way_bitmap[0])-NAIP_PIXEL_BUFFER or y >= len(way_bitmap)-NAIP_PIXEL_BUFFER:
     return
   way_bitmap[y][x] = 1
 
@@ -230,7 +234,7 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
 
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
-    left_x, right_x, top_y, bottom_y = 300, cols-300, 300, rows-300
+    left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
     for row in range(top_y, bottom_y, tile_size):
       for col in range(left_x, right_x, tile_size):
         if row+tile_size < bottom_y and col+tile_size < right_x:
