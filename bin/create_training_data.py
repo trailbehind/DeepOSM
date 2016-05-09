@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
-import json
-import os
-import pickle
-import time
 
 from src.download_naips import NAIPDownloader
 from src.create_training_data import (NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_RESOLUTION,
                                       NAIP_YEAR, NAIP_SPECTRUM, NAIP_GRID, HARDCODED_NAIP_LIST,
-                                      random_training_data, equalize_data, split_train_test)
+                                      random_training_data, equalize_data, split_train_test, 
+                                      format_as_onehot_arrays, dump_data_to_disk)
 
 
 def create_parser():
@@ -32,16 +29,13 @@ def create_parser():
                         action='store_true',
                         help="save the training data tiles to /data/naip")
     return parser
-
-
 def main():
     parser = create_parser()
     args = parser.parse_args()
-
+    
     raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_YEAR,
                                        NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID,
                                        HARDCODED_NAIP_LIST).download_naips()
-
     road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(
         raster_data_paths, args.extract_type, args.band_list, args.tile_size)
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles,
@@ -49,28 +43,10 @@ def main():
     test_labels, training_labels, test_images, training_images = split_train_test(
         equal_count_tile_list, equal_count_way_list)
     label_types = waymap.extracter.types
-
-    print("SAVING DATA: pickling and saving to disk")
-    t0 = time.time()
-    cache_path = '/data/cache/'
-    try:
-        os.mkdir(cache_path)
-    except:
-        pass
-    with open(cache_path + 'training_images.pickle', 'w') as outfile:
-        pickle.dump(training_images, outfile)
-    with open(cache_path + 'training_labels.pickle', 'w') as outfile:
-        pickle.dump(training_labels, outfile)
-    with open(cache_path + 'test_images.pickle', 'w') as outfile:
-        pickle.dump(test_images, outfile)
-    with open(cache_path + 'test_labels.pickle', 'w') as outfile:
-        pickle.dump(test_labels, outfile)
-    with open(cache_path + 'label_types.json', 'w') as outfile:
-        json.dump(label_types, outfile)
-    with open(cache_path + 'raster_data_paths.json', 'w') as outfile:
-        json.dump(raster_data_paths, outfile)
-    print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
-
+    onehot_training_labels, onehot_test_labels = format_as_onehot_arrays(label_types, training_labels, test_labels)
+    dump_data_to_disk(raster_data_paths, training_images, training_labels, test_images, test_labels,
+                      label_types, onehot_training_labels, onehot_test_labels)
+                        
 
 if __name__ == "__main__":
     main()
