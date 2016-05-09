@@ -1,6 +1,11 @@
 from __future__ import print_function
 
-import numpy, os, sys, time
+import json
+import numpy
+import os
+import pickle
+import sys
+import time
 from random import shuffle
 from osgeo import gdal
 from PIL import Image
@@ -387,6 +392,69 @@ def onehot_for_labels(labels):
   return onehot_labels
 
 
+def dump_data_to_disk(raster_data_paths,
+                      training_images, 
+                      training_labels, 
+                      test_images, 
+                      test_labels,
+                      label_types,
+                      onehot_training_labels,
+                      onehot_test_labels):
+    '''
+        pickle/json everything, so the analysis app can use the data
+    '''
+    print("SAVING DATA: pickling and saving to disk")
+    t0 = time.time()
+    cache_path = '/data/cache/'
+    try:
+        os.mkdir(cache_path)
+    except:
+        pass
+    with open(cache_path + 'training_images.pickle', 'w') as outfile:
+        pickle.dump(training_images, outfile)
+    with open(cache_path + 'training_labels.pickle', 'w') as outfile:
+        pickle.dump(training_labels, outfile)
+    with open(cache_path + 'test_images.pickle', 'w') as outfile:
+        pickle.dump(test_images, outfile)
+    with open(cache_path + 'test_labels.pickle', 'w') as outfile:
+        pickle.dump(test_labels, outfile)
+    with open(cache_path + 'label_types.json', 'w') as outfile:
+        json.dump(label_types, outfile)
+    with open(cache_path + 'raster_data_paths.json', 'w') as outfile:
+        json.dump(raster_data_paths, outfile)
+    with open(cache_path + 'onehot_training_labels.json', 'w') as outfile:
+        json.dump(onehot_training_labels, outfile)
+    with open(cache_path + 'onehot_test_labels.json', 'w') as outfile:
+        json.dump(onehot_test_labels, outfile)
+    print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
+
+def load_data_from_disk():
+    '''
+        read training data into memory
+    '''
+    print("LOADING DATA: reading from disk and unpickling")
+    t0 = time.time()
+    with open(CACHE_PATH + 'training_images.pickle', 'r') as infile:
+        training_images = pickle.load(infile)
+    with open(CACHE_PATH + 'training_labels.pickle', 'r') as infile:
+        training_labels = pickle.load(infile)
+    with open(CACHE_PATH + 'test_images.pickle', 'r') as infile:
+        test_images = pickle.load(infile)
+    with open(CACHE_PATH + 'test_labels.pickle', 'r') as infile:
+        test_labels = pickle.load(infile)
+    with open(CACHE_PATH + 'label_types.json', 'r') as infile:
+        label_types = json.load(infile)
+    with open(cache_path + 'onehot_training_labels.json', 'r') as infile:
+        onehot_training_labels = json.load(infile)
+    with open(cache_path + 'onehot_test_labels.json', 'r') as infile:
+        onehot_test_labels = json.load(infile)
+
+    print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
+    return training_images, training_labels, test_images, test_labels, label_types, 
+           onehot_training_labels, onehot_test_labels
+
+
 if __name__ == "__main__":
     print("Instead of running this file, use bin/create_training_data.py instead.", file=sys.stderr)
     sys.exit(1)
+
