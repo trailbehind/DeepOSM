@@ -44,13 +44,14 @@ NAIP_SPECTRUM = 'rgbir'
 NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
-# and keep HARDCODED_NAIP_LIST=None
-NUMBER_OF_NAIPS = 10
+# 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
+NUMBER_OF_NAIPS = 8
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
 RANDOMIZE_NAIPS = False
 
+# and keep HARDCODED_NAIP_LIST=None, unless you set NUMBER_OF_NAIPS to -1
 HARDCODED_NAIP_LIST = None
 '''
 HARDCODED_NAIP_LIST = [
@@ -59,6 +60,9 @@ HARDCODED_NAIP_LIST = [
                   'm_3807708_se_18_1_20130924.tif',
                   ]
 '''
+
+# where training data gets cached from bin/create_training_data.py
+CACHE_PATH = '/data/cache/'
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
 # where NAIPs overlap... using overlapping images makes wonky train/test splits
@@ -409,9 +413,8 @@ def dump_data_to_disk(raster_data_paths,
     '''
     print("SAVING DATA: pickling and saving to disk")
     t0 = time.time()
-    cache_path = '/data/cache/'
     try:
-        os.mkdir(cache_path)
+        os.mkdir(CACHE_PATH)
     except:
         pass
     with open(cache_path + 'training_images.pickle', 'w') as outfile:
