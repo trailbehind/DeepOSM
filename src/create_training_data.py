@@ -260,7 +260,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
     tile = road_labels[x][0]
     if has_ways_in_center(tile):
       way_indices.append(x)
-    elif not has_no_ways_in_fatter_center(tile) and not has_ways_(tile):
+    elif has_no_ways_in_fatter_center(tile) and not has_ways(tile):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -307,7 +307,7 @@ def has_ways_in_center(tile):
         if x >= center_x -1 and x <= center_x + 1:
           if y >= center_y -1 and y <= center_y + 1:
             center_pixel_count += 1
-  if center_pixel_count >= 4:
+  if center_pixel_count >= 5:
     return True
   return False
 
