@@ -45,7 +45,7 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = 1
+NUMBER_OF_NAIPS = 10
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
@@ -333,7 +333,7 @@ def has_no_ways_in_fatter_center(tile):
         if x >= center_x -5 and x <= center_x + 5:
           if y >= center_y -5 and y <= center_y + 5:
             center_pixel_count += 1
-  if center_pixel_count <= 4:
+  if center_pixel_count <= 3:
     return True
   return False
 
@@ -448,13 +448,15 @@ def load_data_from_disk():
         test_labels = pickle.load(infile)
     with open(CACHE_PATH + 'label_types.json', 'r') as infile:
         label_types = json.load(infile)
+    with open(CACHE_PATH + 'raster_data_paths.json', 'r') as infile:
+        raster_data_paths = json.load(infile)
     with open(CACHE_PATH + 'onehot_training_labels.json', 'r') as infile:
         onehot_training_labels = json.load(infile)
     with open(CACHE_PATH + 'onehot_test_labels.json', 'r') as infile:
         onehot_test_labels = json.load(infile)
 
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
-    return training_images, training_labels, test_images, test_labels, label_types, \
+    return raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
            onehot_training_labels, onehot_test_labels
 
 

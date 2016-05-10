@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os, time
+import json, numpy, os, time
 from PIL import Image
 from config_data import CACHE_PATH
 from src.create_training_data import way_bitmap_for_naip

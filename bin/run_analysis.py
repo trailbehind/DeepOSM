@@ -47,7 +47,7 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
     
-    training_images, training_labels, test_images, test_labels, label_types, onehot_training_labels, onehot_test_labels = load_data_from_disk()
+    raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, onehot_training_labels, onehot_test_labels = load_data_from_disk()
     predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types,
                           args.model, args.band_list, args.training_batches, args.batch_size,
                           args.tile_size)
