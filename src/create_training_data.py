@@ -417,21 +417,21 @@ def dump_data_to_disk(raster_data_paths,
         os.mkdir(CACHE_PATH)
     except:
         pass
-    with open(cache_path + 'training_images.pickle', 'w') as outfile:
+    with open(CACHE_PATH + 'training_images.pickle', 'w') as outfile:
         pickle.dump(training_images, outfile)
-    with open(cache_path + 'training_labels.pickle', 'w') as outfile:
+    with open(CACHE_PATH + 'training_labels.pickle', 'w') as outfile:
         pickle.dump(training_labels, outfile)
-    with open(cache_path + 'test_images.pickle', 'w') as outfile:
+    with open(CACHE_PATH + 'test_images.pickle', 'w') as outfile:
         pickle.dump(test_images, outfile)
-    with open(cache_path + 'test_labels.pickle', 'w') as outfile:
+    with open(CACHE_PATH + 'test_labels.pickle', 'w') as outfile:
         pickle.dump(test_labels, outfile)
-    with open(cache_path + 'label_types.json', 'w') as outfile:
+    with open(CACHE_PATH + 'label_types.json', 'w') as outfile:
         json.dump(label_types, outfile)
-    with open(cache_path + 'raster_data_paths.json', 'w') as outfile:
+    with open(CACHE_PATH + 'raster_data_paths.json', 'w') as outfile:
         json.dump(raster_data_paths, outfile)
-    with open(cache_path + 'onehot_training_labels.json', 'w') as outfile:
+    with open(CACHE_PATH + 'onehot_training_labels.json', 'w') as outfile:
         json.dump(onehot_training_labels, outfile)
-    with open(cache_path + 'onehot_test_labels.json', 'w') as outfile:
+    with open(CACHE_PATH + 'onehot_test_labels.json', 'w') as outfile:
         json.dump(onehot_test_labels, outfile)
     print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
 
