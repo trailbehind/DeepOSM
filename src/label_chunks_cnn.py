@@ -71,8 +71,8 @@ def train_neural_net(bands_to_use,
   h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
   h_pool2 = max_pool_2x2(h_conv2)
 
-  W_fc1 = weight_variable([image_size/4 * image_size/4 * 64 * on_band_count, 256])
-  b_fc1 = bias_variable([256])
+  W_fc1 = weight_variable([image_size/4 * image_size/4 * 64 * on_band_count, 1024])
+  b_fc1 = bias_variable([1024])
 
   h_pool2_flat = tf.reshape(h_pool2, [-1, image_size/4*image_size/4*64 * on_band_count])
   h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
@@ -80,7 +80,7 @@ def train_neural_net(bands_to_use,
   keep_prob = tf.placeholder(tf.float32)
   h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-  W_fc2 = weight_variable([256, 2])
+  W_fc2 = weight_variable([1024, 2])
   b_fc2 = bias_variable([2])
 
   y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
