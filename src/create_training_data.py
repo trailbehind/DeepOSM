@@ -451,9 +451,9 @@ def load_data_from_disk():
         test_labels = pickle.load(infile)
     with open(CACHE_PATH + 'label_types.json', 'r') as infile:
         label_types = json.load(infile)
-    with open(cache_path + 'onehot_training_labels.json', 'r') as infile:
+    with open(CACHE_PATH + 'onehot_training_labels.json', 'r') as infile:
         onehot_training_labels = json.load(infile)
-    with open(cache_path + 'onehot_test_labels.json', 'r') as infile:
+    with open(CACHE_PATH + 'onehot_test_labels.json', 'r') as infile:
         onehot_test_labels = json.load(infile)
 
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
