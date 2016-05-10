@@ -2,7 +2,7 @@
 Some notes on todos, didn't want to muck with Github issues for this.
 
 ## What's Next
-* are major freeways not being rendered?
+* are some major freeways not being rendered?
 * add buildings and any other labelable features too, so there is less image that's just "not road"
 * FIND - have you seen a paper from a few years ago about estimating osm completeness by comparing size of compressed satellite images vs number of osm nodes
 * READ - this presentation on using GPS traces to suggest OSM edits (Strava/Telenav): http://webcache.googleusercontent.com/search?q=cache:VoiCwRHOyLUJ:stateofthemap.us/map-tracing-for-millennials/+&cd=3&hl=en&ct=clnk&gl=us

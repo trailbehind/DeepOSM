@@ -73,7 +73,7 @@ class NAIPDownloader:
     ''' 
         configure s3cmd with AWS credentials
     '''
-    file_path = '/' + os.environ.get("HOME")+'/.s3cfg'
+    file_path = os.environ.get("HOME")+'/.s3cfg'
     f = open(file_path,'r')
     filedata = f.read()
     f.close()
