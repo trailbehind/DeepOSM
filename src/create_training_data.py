@@ -12,7 +12,7 @@ from PIL import Image
 
 from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
-from config_data import PERCENT_FOR_TRAINING_DATA
+from config_data import PERCENT_FOR_TRAINING_DATA, CACHE_PATH
 
 '''
     constants for how to create labels,
@@ -60,9 +60,6 @@ HARDCODED_NAIP_LIST = [
                   'm_3807708_se_18_1_20130924.tif',
                   ]
 '''
-
-# where training data gets cached from bin/create_training_data.py
-CACHE_PATH = '/data/cache/'
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
 # where NAIPs overlap... using overlapping images makes wonky train/test splits
