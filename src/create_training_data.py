@@ -317,7 +317,7 @@ def has_ways_in_center(tile):
         if x >= center_x -1 and x <= center_x + 1:
           if y >= center_y -1 and y <= center_y + 1:
             center_pixel_count += 1
-  if center_pixel_count >= 5:
+  if center_pixel_count >= 3:
     return True
   return False
 
