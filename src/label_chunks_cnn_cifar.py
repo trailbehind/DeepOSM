@@ -27,10 +27,10 @@ def train_neural_net(convolution_patch_size,
       on_band_count += 1
 
   train_images = train_images.astype(numpy.float32)
-  train_images = (train_images - 127.5) / 127.5
+  train_images = numpy.multiply(train_images, 1.0 / 255.0)
     
   test_images = test_images.astype(numpy.float32)
-  test_images = (test_images - 127.5) / 127.5
+  test_images = numpy.multiply(test_images, 1.0 / 255.0)
 
   # Convolutional network building
   network = input_data(shape=[None, image_size, image_size, on_band_count])
