@@ -28,18 +28,23 @@ def train_neural_net(bands_to_use,
   test_images = test_images.astype(numpy.float32)
   test_images = numpy.multiply(test_images, 1.0 / 255.0)
 
-  # Convolutional network building
-  network = input_data(shape=[None, image_size, image_size, on_band_count])
-  convolution_patch_size = 5
-  network = conv_2d(network, 32, convolution_patch_size, activation='relu')
-  network = fully_connected(network, 2, activation='softmax')
-  network = regression(network, optimizer='adam',
-                       loss='categorical_crossentropy',
-                       learning_rate=0.00001)
+  input_layer = tflearn.input_data(shape=[None, image_size, image_size, on_band_count])
+  dense1 = tflearn.fully_connected(input_layer, 64, activation='tanh',
+                                   regularizer='L2', weight_decay=0.001)
+  dropout1 = tflearn.dropout(dense1, 0.5)
+  dense2 = tflearn.fully_connected(dropout1, 64, activation='tanh',
+                                   regularizer='L2', weight_decay=0.001)
+  dropout2 = tflearn.dropout(dense2, 0.5)
+  softmax = tflearn.fully_connected(dropout2, 2, activation='softmax')
+
+  # Regression using SGD with learning rate decay and Top-3 accuracy
+  sgd = tflearn.SGD(learning_rate=0.1, lr_decay=0.96, decay_step=1000)
+  net = tflearn.regression(softmax, optimizer=sgd,
+                           loss='categorical_crossentropy')
 
   # each epoch is 170 steps I think
-  model = tflearn.DNN(network, tensorboard_verbose=0)
-  model.fit(train_images, train_labels, n_epoch=30, shuffle=False, validation_set=(test_images, test_labels),
-            show_metric=True, batch_size=50, run_id='cifar10_cnn')
+  model = tflearn.DNN(net, tensorboard_verbose=0)
+  model.fit(train_images, train_labels, n_epoch=60, shuffle=False, validation_set=(test_images, test_labels),
+            show_metric=True, run_id='mlp')
 
   return model.predict(test_images)

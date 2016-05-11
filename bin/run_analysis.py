@@ -24,7 +24,7 @@ def create_parser():
                         help="specify which bands to activate (R  G  B  IR). default is "
                         "--bands 0 0 0 1 (which activates only the IR band)")
     parser.add_argument("--render-results",
-                        default=True,
+                        default=False,
                         action='store_true',
                         help="output data/predictions to JPEG")
     parser.add_argument("--model",
