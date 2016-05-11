@@ -21,18 +21,8 @@ def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_la
 
   # train and test the neural net
   predictions = None
-  if model == 'mnist':
-    predictions = label_chunks_cnn.train_neural_net(band_list,
-                                                 tile_size,
-                                                 npy_training_images,
-                                                 npy_training_labels,
-                                                 npy_test_images,
-                                                 npy_test_labels,
-                                                 CONVOLUTION_PATCH_SIZE,
-                                                 training_batches,
-                                                 batch_size)
-  elif model == 'cifar10':
-    predictions = label_chunks_cnn_cifar.train_neural_net(
+  if model == '1conv':
+      predictions = label_chunks_cnn_cifar.train_neural_net(
                                                  CONVOLUTION_PATCH_SIZE,
                                                  band_list,
                                                  tile_size,

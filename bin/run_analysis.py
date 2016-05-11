@@ -37,8 +37,8 @@ def create_parser():
                         action='store_true',
                         help="output data/predictions to JPEG")
     parser.add_argument("--model",
-                        default='mnist',
-                        choices=['mnist', 'cifar10'],
+                        default='1conv',
+                        choices=['1conv'],
                         help="the model to use")
     return parser
 
