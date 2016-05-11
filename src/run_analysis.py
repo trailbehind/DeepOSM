@@ -8,7 +8,7 @@ from config_data import *
 from create_training_data import has_ways, has_ways_in_center, has_no_ways_in_fatter_center
 
 
-def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types, model, band_list, training_batches, batch_size, tile_size):
+def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types, model, band_list, tile_size):
   '''
       package data for tensorflow and analyze
   '''
@@ -23,15 +23,12 @@ def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_la
   predictions = None
   if model == '1conv':
       predictions = label_chunks_cnn_cifar.train_neural_net(
-                                                 CONVOLUTION_PATCH_SIZE,
                                                  band_list,
                                                  tile_size,
                                                  npy_training_images,
                                                  npy_training_labels,
                                                  npy_test_images,
-                                                 npy_test_labels,
-                                                 training_batches,
-                                                 batch_size)
+                                                 npy_test_labels)
   else:
     print("ERROR, unknown model to use for analysis")
   return predictions
