@@ -20,7 +20,7 @@ def train_neural_net(convolution_patch_size,
                      test_labels,
                      number_of_batches,
                      batch_size):  
-
+  #convolution_patch_size = 3
   on_band_count = 0
   for b in bands_to_use:
     if b == 1:
@@ -34,11 +34,11 @@ def train_neural_net(convolution_patch_size,
 
   # Convolutional network building
   network = input_data(shape=[None, image_size, image_size, on_band_count])
-  network = conv_2d(network, 32, convolution_patch_size, activation='relu')
+  network = conv_2d(network, 64, convolution_patch_size, activation='relu')
   network = fully_connected(network, 2, activation='softmax')
   network = regression(network, optimizer='adam',
                        loss='categorical_crossentropy',
-                       learning_rate=0.001)
+                       learning_rate=0.00001)
 
   # each epoch is 170 steps I think
   model = tflearn.DNN(network, tensorboard_verbose=0)
