@@ -55,11 +55,11 @@ def create_parser():
                         help="save the training data tiles to /data/naip")
     return parser
 
-NAIP_STATE, NAIP_YEAR, NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID = args.naip_path
 
 def main():
     parser = create_parser()
     args = parser.parse_args()
+    NAIP_STATE, NAIP_YEAR, NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID = args.naip_path
     
     raster_data_paths = NAIPDownloader(args.number_of_naips, 
                                        args.randomize_naips, 
