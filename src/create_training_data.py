@@ -36,7 +36,7 @@ def read_naip(file_path, bands_to_use):
 
   return raster_dataset, bands_data
 
-def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size):
+def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size, tile_overlap):
   '''
      cut a 4-band raster image into tiles,
      tiles are cubes - up to 4 bands, and N height x N width based on tile_size
@@ -52,8 +52,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/4):
-    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/4):
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
       if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -177,7 +177,8 @@ def random_training_data(raster_data_paths,
                          band_list, 
                          tile_size, 
                          pixels_to_fatten_roads, 
-                         label_data_files):
+                         label_data_files,
+                         tile_overlap):
   road_labels = []
   naip_tiles = []
 
@@ -186,20 +187,20 @@ def random_training_data(raster_data_paths,
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
-    raster_dataset, bands_data = read_naip(raster_data_path, band_list)
+    raster_dataset, bands_data = read_naip(raster_data_path, band_list, tile_overlap)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
-    for col in range(left_x, right_x, tile_size/4):
-      for row in range(top_y, bottom_y, tile_size/4):
+    for col in range(left_x, right_x, tile_size/tile_overlap):
+      for row in range(top_y, bottom_y, tile_size/tile_overlap):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
 
-    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size):
+    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size, tile_overlap):
       naip_tiles.append(tile)
 
   assert len(road_labels) == len(naip_tiles)

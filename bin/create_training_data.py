@@ -12,6 +12,12 @@ def create_parser():
                         default=64,
                         type=int,
                         help="tile the NAIP and training data into NxN tiles with this dimension")
+    parser.add_argument("--tile-overlap",
+                        default=1,
+                        type=int,
+                        help="divide the tile-size by this number for how many pixels to move over when tiling data"
+                        "this is set to 1 by default, so tiles don't overlap"
+                        "setting it to 2 would make tiles overlap by half, and setting it to 3 would make the tiles overlap by 2/3rds")
     parser.add_argument("--pixels-to-fatten-roads",
                         default=3,
                         type=int,
@@ -70,7 +76,7 @@ def main():
                                        NAIP_GRID,
                                        ).download_naips()
     road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(
-        raster_data_paths, args.extract_type, args.band_list, args.tile_size, args.pixels_to_fatten_roads, args.label_data_files)
+        raster_data_paths, args.extract_type, args.band_list, args.tile_size, args.pixels_to_fatten_roads, args.label_data_files, args.tile_overlap)
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles,
                                                                 args.save_clippings)
     test_labels, training_labels, test_images, training_images = split_train_test(
