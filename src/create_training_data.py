@@ -20,7 +20,7 @@ from config_data import PERCENT_FOR_TRAINING_DATA, CACHE_PATH
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
 # the number of pixels to count as road,
@@ -41,20 +41,20 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = -1
+NUMBER_OF_NAIPS = 5
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
-RANDOMIZE_NAIPS = False
+RANDOMIZE_NAIPS = True
 
 # and keep HARDCODED_NAIP_LIST=None, unless you set NUMBER_OF_NAIPS to -1
 HARDCODED_NAIP_LIST = None
+'''
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
                   #'m_3807708_nw_18_1_20130904.tif',
                   #'m_3807708_se_18_1_20130924.tif',
                   ]
-'''
 '''
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
@@ -96,8 +96,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size):
-    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size):
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/4):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/4):
       if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -232,8 +232,8 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
-    for col in range(left_x, right_x, tile_size):
-      for row in range(top_y, bottom_y, tile_size):
+    for col in range(left_x, right_x, tile_size/4):
+      for row in range(top_y, bottom_y, tile_size/4):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
