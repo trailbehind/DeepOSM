@@ -20,16 +20,12 @@ from config_data import PERCENT_FOR_TRAINING_DATA, CACHE_PATH
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
 # the number of pixels to count as road,
 # on each side of of the centerline pixels
-PIXELS_BESIDE_WAYS = 1
-
-# to count an NxN tile as being "On" for roads,
-# N*.5 pixels on that tiles must have been classified as roads
-PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
+PIXELS_BESIDE_WAYS = 3
 
 '''
     constants for NAIP imagery to use
@@ -55,8 +51,8 @@ RANDOMIZE_NAIPS = False
 HARDCODED_NAIP_LIST = None
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
-                  'm_3807708_nw_18_1_20130904.tif',
-                  'm_3807708_se_18_1_20130924.tif',
+                  #'m_3807708_nw_18_1_20130904.tif',
+                  #'m_3807708_se_18_1_20130924.tif',
                   ]
 '''
 '''
@@ -100,8 +96,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/4):
-    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/4):
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size):
       if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -236,8 +232,8 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
-    for row in range(top_y, bottom_y, tile_size/4):
-      for col in range(left_x, right_x, tile_size/4):
+    for col in range(left_x, right_x, tile_size):
+      for row in range(top_y, bottom_y, tile_size):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
@@ -268,9 +264,9 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
   way_indices = []
   for x in range(len(road_labels)):
     tile = road_labels[x][0]
-    if has_ways_in_center(tile):
+    if has_ways_in_center(tile,1):
       way_indices.append(x)
-    elif has_no_ways_in_fatter_center(tile):
+    elif not has_ways_in_center(tile,8):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -305,34 +301,14 @@ def has_ways(tile):
     return True
   return False
 
-def has_ways_in_center(tile):
-  center_pixel_count = 0
+def has_ways_in_center(tile, tolerance):
   center_x = len(tile)/2
   center_y = len(tile[0])/2
-
-  for x in range(0, len(tile)):
-    for y in range(0, len(tile[x])):
+  for x in range(center_x - tolerance, center_x + tolerance):
+    for y in range(center_y - tolerance, center_y + tolerance):
       pixel_value = tile[x][y]
       if pixel_value != 0:
-        if x >= center_x -1 and x <= center_x + 1:
-          if y >= center_y -1 and y <= center_y + 1:
-            center_pixel_count += 1
-  if center_pixel_count >= 1:
-    return True
-  return False
-
-def has_no_ways_in_fatter_center(tile):
-  center_pixel_count = 0
-  center_x = len(tile)/2
-  center_y = len(tile[0])/2
-
-  for x in range(0, len(tile)):
-    for y in range(0, len(tile[x])):
-      pixel_value = tile[x][y]
-      if pixel_value != 0:
-        if x >= center_x -8 and x <= center_x + 8:
-          if y >= center_y -8 and y <= center_y + 8:
-            return True
+        return True    
   return False
 
 def save_image_clipping(tile, status):
@@ -376,27 +352,6 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
 
   return onehot_training_labels, onehot_test_labels
 
-def sixteen_patch_labels(labels):
-  '''
-      like Mnih
-  '''
-
-  patch_labels = []
-  for label in labels:
-    patch_labels.append(patch_label_for_label(label[0]))
-  return patch_labels
-
-def patch_label_for_label(label):
-  # turn 256 tiles in 16x16 predictions
-  label = numpy.zeros([16, 16], dtype=numpy.int)
-  for x in range(0, len(label), 4):
-    for y in range(0, len(label[0]), 4):
-      label[x][y] = label[x:x+16][y:y+16].sum()
-      if label[x][y] > 1:
-        label[x][y]= 1
-  print(label)
-  return label
-
 
 def onehot_for_labels(labels):
   '''
@@ -407,10 +362,10 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways_in_center(label[0]):
+    if has_ways_in_center(label[0],1):
       onehot_labels.append([0,1])
       on_count += 1
-    elif  has_no_ways_in_fatter_center(label[0]):
+    elif not has_ways_in_center(label[0],8):
       onehot_labels.append([1,0])
       off_count += 1
 

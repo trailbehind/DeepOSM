@@ -25,7 +25,7 @@ def create_parser():
                         default='highway',
                         choices=['highway', 'tennis'],
                         help="the type of feature to identify")
-    parser.add_argument("--save_clippings",
+    parser.add_argument("--save-clippings",
                         action='store_true',
                         help="save the training data tiles to /data/naip")
     return parser
