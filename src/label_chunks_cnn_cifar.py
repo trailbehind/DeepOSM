@@ -1,6 +1,5 @@
 """ 
-    simple 1 convolution network
-    inspired by CIFAR 10 classifier kind of: (https://www.cs.toronto.edu/~kriz/cifar.html)
+    simple 1 layer network
 """
 from __future__ import division, print_function, absolute_import
 
@@ -29,9 +28,9 @@ def train_neural_net(bands_to_use,
   test_images = numpy.multiply(test_images, 1.0 / 255.0)
 
   network = tflearn.input_data(shape=[None, image_size, image_size, on_band_count])
-  #network = conv_2d(network, 1024, 16, activation='relu')
-  #network = max_pool_2d(network, 2)  
-  network = tflearn.fully_connected(network, 4096, activation='relu')
+  network = conv_2d(network, 256, 16, activation='relu')
+  network = max_pool_2d(network, 3)  
+  #network = tflearn.fully_connected(network, 1024, activation='relu')
   softmax = tflearn.fully_connected(network, 2, activation='softmax')
 
   momentum = tflearn.optimizers.Momentum (learning_rate=.005,
@@ -44,7 +43,7 @@ def train_neural_net(bands_to_use,
 
   # each epoch is 170 steps I think
   model = tflearn.DNN(net, tensorboard_verbose=0)
-  model.fit(train_images, train_labels, n_epoch=5000, shuffle=False, validation_set=(test_images, test_labels),
+  model.fit(train_images, train_labels, n_epoch=50, shuffle=False, validation_set=(test_images, test_labels),
             show_metric=True, run_id='mlp')
 
   return model.predict(test_images)

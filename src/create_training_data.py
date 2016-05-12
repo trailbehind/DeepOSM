@@ -227,7 +227,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
     tile = road_labels[x][0]
     if has_ways_in_center(tile,1):
       way_indices.append(x)
-    elif not has_ways_in_center(tile,8):
+    elif not has_ways_in_center(tile,16):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -275,11 +275,30 @@ def has_ways_in_center(tile, tolerance):
 def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
   tile_height = len(rgbir_matrix)
-  img = numpy.empty([tile_height,tile_height])
+  
+  r_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
-      img[x][y] = rgbir_matrix[x][y][0]
-  im = Image.merge('RGB',(Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L')))
+      r_img[x][y] = rgbir_matrix[x][y][0]
+  
+  g_img = numpy.empty([tile_height,tile_height])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      if len(rgbir_matrix[x][y]) > 1:
+        g_img[x][y] = rgbir_matrix[x][y][1]
+      else:
+        g_img[x][y] = rgbir_matrix[x][y][0]
+  
+  b_img = numpy.empty([tile_height,tile_height])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      if len(rgbir_matrix[x][y]) > 2:
+        b_img[x][y] = rgbir_matrix[x][y][2]
+      else:
+        b_img[x][y] = rgbir_matrix[x][y][0]
+
+
+  im = Image.merge('RGB',(Image.fromarray(r_img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
   im.save(outfile_path, "JPEG")
 
@@ -326,7 +345,7 @@ def onehot_for_labels(labels):
     if has_ways_in_center(label[0],1):
       onehot_labels.append([0,1])
       on_count += 1
-    elif not has_ways_in_center(label[0],8):
+    elif not has_ways_in_center(label[0],16):
       onehot_labels.append([1,0])
       off_count += 1
 
