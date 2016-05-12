@@ -31,7 +31,7 @@ def train_neural_net(bands_to_use,
   network = tflearn.input_data(shape=[None, image_size, image_size, on_band_count])
   #network = conv_2d(network, 1024, 16, activation='relu')
   #network = max_pool_2d(network, 2)  
-  network = tflearn.fully_connected(network, 512, activation='relu')
+  network = tflearn.fully_connected(network, 4096, activation='relu')
   softmax = tflearn.fully_connected(network, 2, activation='softmax')
 
   momentum = tflearn.optimizers.Momentum (learning_rate=.005,
