@@ -337,7 +337,7 @@ def save_image_clipping(tile, status):
         b_img[x][y] = rgbir_matrix[x][y][0]
 
 
-  im = Image.merge('RGB',(Image.fromarray(img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
+  im = Image.merge('RGB',(Image.fromarray(r_img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
   im.save(outfile_path, "JPEG")
 
