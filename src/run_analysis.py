@@ -2,12 +2,11 @@ from __future__ import print_function
 
 import numpy, os, sys, time
 from PIL import Image
-import label_chunks_cnn
-import label_chunks_cnn_cifar
+import single_layer_network
 from create_training_data import has_ways, has_ways_in_center
 
 
-def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types, model, band_list, tile_size):
+def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types, neural_net_type, band_list, tile_size):
   '''
       package data for tensorflow and analyze
   '''
@@ -19,17 +18,14 @@ def analyze(onehot_training_labels, onehot_test_labels, test_labels, training_la
   npy_test_labels = numpy.asarray(onehot_test_labels)
 
   # train and test the neural net
-  predictions = None
-  if model == '1conv':
-      predictions = label_chunks_cnn_cifar.train_neural_net(
-                                                 band_list,
-                                                 tile_size,
-                                                 npy_training_images,
-                                                 npy_training_labels,
-                                                 npy_test_images,
-                                                 npy_test_labels)
-  else:
-    print("ERROR, unknown model to use for analysis")
+  predictions = single_layer_network.train(band_list,
+                                           tile_size,
+                                           npy_training_images,
+                                           npy_training_labels,
+                                           npy_test_images,
+                                           npy_test_labels,
+                                           neural_net_type
+                                          )
   return predictions
 
 def print_data_dimensions(training_labels,band_list):
