@@ -20,7 +20,7 @@ from config_data import PERCENT_FOR_TRAINING_DATA, CACHE_PATH
 '''
 # enough to cover NAIPs around DC/Maryland/Virginia
 PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 #'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
+                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
                  'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
 
 # the number of pixels to count as road,
@@ -41,20 +41,20 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = -1
+NUMBER_OF_NAIPS = 10
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
-RANDOMIZE_NAIPS = False
+RANDOMIZE_NAIPS = True
 
 # and keep HARDCODED_NAIP_LIST=None, unless you set NUMBER_OF_NAIPS to -1
 HARDCODED_NAIP_LIST = None
+'''
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
                   #'m_3807708_nw_18_1_20130904.tif',
                   #'m_3807708_se_18_1_20130924.tif',
                   ]
-'''
 '''
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
@@ -266,7 +266,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
     tile = road_labels[x][0]
     if has_ways_in_center(tile,1):
       way_indices.append(x)
-    elif not has_ways_in_center(tile,8):
+    elif not has_ways_in_center(tile,16):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -365,7 +365,7 @@ def onehot_for_labels(labels):
     if has_ways_in_center(label[0],1):
       onehot_labels.append([0,1])
       on_count += 1
-    elif not has_ways_in_center(label[0],8):
+    elif not has_ways_in_center(label[0],16):
       onehot_labels.append([1,0])
       off_count += 1
 
