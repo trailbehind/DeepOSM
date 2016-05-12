@@ -41,7 +41,7 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = 10
+NUMBER_OF_NAIPS = 12
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
