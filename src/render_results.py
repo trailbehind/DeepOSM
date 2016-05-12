@@ -1,8 +1,7 @@
 from __future__ import print_function
 import json, numpy, os, time
 from PIL import Image
-from config_data import CACHE_PATH
-from src.create_training_data import way_bitmap_for_naip
+from src.create_training_data import way_bitmap_for_naip, CACHE_PATH
 
 def render_results_for_analysis(raster_data_paths, 
                                 training_labels, 

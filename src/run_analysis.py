@@ -4,7 +4,6 @@ import numpy, os, sys, time
 from PIL import Image
 import label_chunks_cnn
 import label_chunks_cnn_cifar
-from config_data import *
 from create_training_data import has_ways, has_ways_in_center
 
 

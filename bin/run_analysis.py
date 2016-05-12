@@ -7,9 +7,8 @@ import pickle
 import time
 
 from src.run_analysis import analyze
-from src.create_training_data import load_data_from_disk
+from src.create_training_data import load_data_from_disk, CACHE_PATH
 from src.render_results import render_results_for_analysis
-from config_data import CACHE_PATH
 
 def create_parser():
     parser = argparse.ArgumentParser()
