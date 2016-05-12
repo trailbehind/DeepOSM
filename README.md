@@ -102,7 +102,31 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
 
 
-### Papers that Cite Hinton/Mnih, to Review
+### Papers - Relevant Maybe
+
+* [Uses a large window to improve predictions, trying to capture broad network topology](https://www.inf.ethz.ch/personal/ladickyl/roads_gcpr14.pdf)
+
+* [Automatically extract roads with no human labels. Not that accurate, could work for preprocessing to detect roads in unlab](https://www.researchgate.net/publication/263892800_Tensor-Cuts_A_simultaneous_multi-type_feature_extractor_and_classifier_and_its_application_to_road_extraction_from_satellite_images)
+
+### Papers - Not All that Relevant
+
+* [Uses map data and shapes of overpasses to then detect pictures of the objects? Seems like a cool paper to read if it was free.](http://dl.acm.org/citation.cfm?id=2424336)
+
+* [New technique for classification of sub-half-meter data into different zones](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6827949&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6827949)
+
+* [Couldn't access text, focused on usig lidar data](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6238909&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6238909)
+
+* [Proposes a way to extract network topology, and maybe this can be used as a post processor?](http://www.cv-foundation.org/openaccess/content_cvpr_2013/html/Wegner_A_Higher-Order_CRF_2013_CVPR_paper.html)
+
+### Papers  to Review
+
+Recent Recommendations
+
+* FIND - have you seen a paper from a few years ago about estimating osm completeness by comparing size of compressed satellite images vs number of osm nodes
+
+* READ - this presentation on using GPS traces to suggest OSM edits (Strava/Telenav): http://webcache.googleusercontent.com/search?q=cache:VoiCwRHOyLUJ:stateofthemap.us/map-tracing-for-millennials/+&cd=3&hl=en&ct=clnk&gl=us
+
+#### Citing Mnih and Hinton
 
 I am reviewing these papers from Google Scholar that both cite the key papers and seem relevant to the topic. 
 
@@ -179,25 +203,6 @@ I am reviewing these papers from Google Scholar that both cite the key papers an
 * http://dl.acm.org/citation.cfm?id=2666389
 
 * http://www.ijicic.org/ijicic-15-04045.pdf
-
-### Papers - Relevant Maybe
-
-* [Uses a large window to improve predictions, trying to capture broad network topology](https://www.inf.ethz.ch/personal/ladickyl/roads_gcpr14.pdf)
-
-* [Automatically extract roads with no human labels. Not that accurate, could work for preprocessing to detect roads in unlab](https://www.researchgate.net/publication/263892800_Tensor-Cuts_A_simultaneous_multi-type_feature_extractor_and_classifier_and_its_application_to_road_extraction_from_satellite_images)
-
-
-### Papers - Not All that Relevant
-
-* [Uses map data and shapes of overpasses to then detect pictures of the objects? Seems like a cool paper to read if it was free.](http://dl.acm.org/citation.cfm?id=2424336)
-
-* [New technique for classification of sub-half-meter data into different zones](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6827949&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6827949)
-
-* [Couldn't access text, focused on usig lidar data](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6238909&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6238909)
-
-* [Proposes a way to extract network topology, and maybe this can be used as a post processor?](http://www.cv-foundation.org/openaccess/content_cvpr_2013/html/Wegner_A_Higher-Order_CRF_2013_CVPR_paper.html)
-
-
 
 ### Original Idea
 
