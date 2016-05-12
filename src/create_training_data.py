@@ -332,14 +332,13 @@ def has_no_ways_in_fatter_center(tile):
       if pixel_value != 0:
         if x >= center_x -8 and x <= center_x + 8:
           if y >= center_y -8 and y <= center_y + 8:
-            center_pixel_count += 1
-  if center_pixel_count == 0:
-    return True
+            return True
   return False
 
 def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
-  img = numpy.empty([tile_size,tile_size])
+  tile_height = len(rgbir_matrix)
+  img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
       img[x][y] = rgbir_matrix[x][y][0]
