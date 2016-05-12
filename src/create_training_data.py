@@ -45,7 +45,7 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = 1
+NUMBER_OF_NAIPS = -1
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
@@ -53,12 +53,12 @@ RANDOMIZE_NAIPS = False
 
 # and keep HARDCODED_NAIP_LIST=None, unless you set NUMBER_OF_NAIPS to -1
 HARDCODED_NAIP_LIST = None
-'''
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
                   'm_3807708_nw_18_1_20130904.tif',
                   'm_3807708_se_18_1_20130924.tif',
                   ]
+'''
 '''
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
@@ -100,8 +100,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size):
-    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size):
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/4):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/4):
       if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -236,8 +236,8 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
     way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
-    for row in range(top_y, bottom_y, tile_size):
-      for col in range(left_x, right_x, tile_size):
+    for row in range(top_y, bottom_y, tile_size/4):
+      for col in range(left_x, right_x, tile_size/4):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
@@ -270,7 +270,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
     tile = road_labels[x][0]
     if has_ways_in_center(tile):
       way_indices.append(x)
-    elif has_no_ways_in_fatter_center(tile) and not has_ways(tile):
+    elif has_no_ways_in_fatter_center(tile):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -317,7 +317,7 @@ def has_ways_in_center(tile):
         if x >= center_x -1 and x <= center_x + 1:
           if y >= center_y -1 and y <= center_y + 1:
             center_pixel_count += 1
-  if center_pixel_count >= 3:
+  if center_pixel_count >= 4:
     return True
   return False
 
@@ -330,10 +330,10 @@ def has_no_ways_in_fatter_center(tile):
     for y in range(0, len(tile[x])):
       pixel_value = tile[x][y]
       if pixel_value != 0:
-        if x >= center_x -5 and x <= center_x + 5:
-          if y >= center_y -5 and y <= center_y + 5:
+        if x >= center_x -8 and x <= center_x + 8:
+          if y >= center_y -8 and y <= center_y + 8:
             center_pixel_count += 1
-  if center_pixel_count <= 3:
+  if center_pixel_count <= 1:
     return True
   return False
 
@@ -377,6 +377,28 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
 
   return onehot_training_labels, onehot_test_labels
 
+def sixteen_patch_labels(labels):
+  '''
+      like Mnih
+  '''
+
+  patch_labels = []
+  for label in labels:
+    patch_labels.append(patch_label_for_label(label[0]))
+  return patch_labels
+
+def patch_label_for_label(label):
+  # turn 256 tiles in 16x16 predictions
+  label = numpy.zeros([16, 16], dtype=numpy.int)
+  for x in range(0, len(label), 4):
+    for y in range(0, len(label[0]), 4):
+      label[x][y] = label[x:x+16][y:y+16].sum()
+      if label[x][y] > 1:
+        label[x][y]= 1
+  print(label)
+  return label
+
+
 def onehot_for_labels(labels):
   '''
      returns a list of one-hot array labels, for a list of tiles
@@ -389,7 +411,7 @@ def onehot_for_labels(labels):
     if has_ways_in_center(label[0]):
       onehot_labels.append([0,1])
       on_count += 1
-    elif has_no_ways_in_fatter_center(label[0]) and not has_ways(label[0]):
+    elif  has_no_ways_in_fatter_center(label[0]):
       onehot_labels.append([1,0])
       off_count += 1
 
@@ -422,14 +444,14 @@ def dump_data_to_disk(raster_data_paths,
         pickle.dump(test_images, outfile)
     with open(CACHE_PATH + 'test_labels.pickle', 'w') as outfile:
         pickle.dump(test_labels, outfile)
-    with open(CACHE_PATH + 'label_types.json', 'w') as outfile:
-        json.dump(label_types, outfile)
-    with open(CACHE_PATH + 'raster_data_paths.json', 'w') as outfile:
-        json.dump(raster_data_paths, outfile)
-    with open(CACHE_PATH + 'onehot_training_labels.json', 'w') as outfile:
-        json.dump(onehot_training_labels, outfile)
-    with open(CACHE_PATH + 'onehot_test_labels.json', 'w') as outfile:
-        json.dump(onehot_test_labels, outfile)
+    with open(CACHE_PATH + 'label_types.pickle', 'w') as outfile:
+        pickle.dump(label_types, outfile)
+    with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:
+        pickle.dump(raster_data_paths, outfile)
+    with open(CACHE_PATH + 'onehot_training_labels.pickle', 'w') as outfile:
+        pickle.dump(onehot_training_labels, outfile)
+    with open(CACHE_PATH + 'onehot_test_labels.pickle', 'w') as outfile:
+        pickle.dump(onehot_test_labels, outfile)
     print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
 
 def load_data_from_disk():
@@ -446,14 +468,14 @@ def load_data_from_disk():
         test_images = pickle.load(infile)
     with open(CACHE_PATH + 'test_labels.pickle', 'r') as infile:
         test_labels = pickle.load(infile)
-    with open(CACHE_PATH + 'label_types.json', 'r') as infile:
-        label_types = json.load(infile)
-    with open(CACHE_PATH + 'raster_data_paths.json', 'r') as infile:
-        raster_data_paths = json.load(infile)
-    with open(CACHE_PATH + 'onehot_training_labels.json', 'r') as infile:
-        onehot_training_labels = json.load(infile)
-    with open(CACHE_PATH + 'onehot_test_labels.json', 'r') as infile:
-        onehot_test_labels = json.load(infile)
+    with open(CACHE_PATH + 'label_types.pickle', 'r') as infile:
+        label_types = pickle.load(infile)
+    with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as infile:
+        raster_data_paths = pickle.load(infile)
+    with open(CACHE_PATH + 'onehot_training_labels.pickle', 'r') as infile:
+        onehot_training_labels = pickle.load(infile)
+    with open(CACHE_PATH + 'onehot_test_labels.pickle', 'r') as infile:
+        onehot_test_labels = pickle.load(infile)
 
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
     return raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
