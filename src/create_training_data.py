@@ -314,10 +314,12 @@ def has_ways_in_center(tile, tolerance):
 def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
   tile_height = len(rgbir_matrix)
+  
   r_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
-      img[x][y] = rgbir_matrix[x][y][0]
+      r_img[x][y] = rgbir_matrix[x][y][0]
+  
   g_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
@@ -325,6 +327,7 @@ def save_image_clipping(tile, status):
         g_img[x][y] = rgbir_matrix[x][y][1]
       else:
         g_img[x][y] = rgbir_matrix[x][y][0]
+  
   b_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
