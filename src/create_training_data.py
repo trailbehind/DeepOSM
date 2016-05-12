@@ -51,8 +51,8 @@ RANDOMIZE_NAIPS = False
 HARDCODED_NAIP_LIST = None
 HARDCODED_NAIP_LIST = [
                   'm_3807708_ne_18_1_20130924.tif',
-                  #'m_3807708_nw_18_1_20130904.tif',
-                  #'m_3807708_se_18_1_20130924.tif',
+                  'm_3807708_nw_18_1_20130904.tif',
+                  'm_3807708_se_18_1_20130924.tif',
                   ]
 '''
 '''
@@ -314,11 +314,27 @@ def has_ways_in_center(tile, tolerance):
 def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
   tile_height = len(rgbir_matrix)
-  img = numpy.empty([tile_height,tile_height])
+  r_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
       img[x][y] = rgbir_matrix[x][y][0]
-  im = Image.merge('RGB',(Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L')))
+  g_img = numpy.empty([tile_height,tile_height])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      if len(rgbir_matrix[x][y]) > 1:
+        g_img[x][y] = rgbir_matrix[x][y][1]
+      else:
+        g_img[x][y] = rgbir_matrix[x][y][0]
+  b_img = numpy.empty([tile_height,tile_height])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      if len(rgbir_matrix[x][y]) > 2:
+        b_img[x][y] = rgbir_matrix[x][y][2]
+      else:
+        b_img[x][y] = rgbir_matrix[x][y][0]
+
+
+  im = Image.merge('RGB',(Image.fromarray(img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
   im.save(outfile_path, "JPEG")
 
