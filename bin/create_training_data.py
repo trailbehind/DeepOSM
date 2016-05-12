@@ -3,9 +3,7 @@
 import argparse
 
 from src.download_naips import NAIPDownloader
-from src.create_training_data import (NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_RESOLUTION,
-                                      NAIP_YEAR, NAIP_SPECTRUM, NAIP_GRID,random_training_data, 
-                                      equalize_data, split_train_test, 
+from src.create_training_data import (random_training_data, equalize_data, split_train_test, 
                                       format_as_onehot_arrays, dump_data_to_disk)
 
 def create_parser():
