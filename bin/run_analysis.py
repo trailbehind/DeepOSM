@@ -26,6 +26,10 @@ def create_parser():
                         default=False,
                         action='store_true',
                         help="output data/predictions to JPEG")
+    parser.add_argument("--number-of-epochs",
+                        default=100,
+                        type=int,
+                        help="the number of epochs to batch the training data into")
     parser.add_argument("--neural-net",
                         default='one_layer_relu',
                         choices=['one_layer_relu', 'one_layer_relu_conv'],
@@ -39,7 +43,7 @@ def main():
     
     raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, onehot_training_labels, onehot_test_labels = load_data_from_disk()
     predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types,
-                          args.neural_net, args.band_list, args.tile_size)
+                          args.neural_net, args.band_list, args.tile_size, args.number_of_epochs)
     if args.render_results:
         render_results_for_analysis(raster_data_paths, 
                                     training_labels, 

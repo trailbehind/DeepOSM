@@ -16,6 +16,7 @@ def train(bands_to_use,
           train_labels, 
           test_images, 
           test_labels,
+          number_of_epochs,
           layer_type='one_layer_relu'):  
   '''
       trains a single layer neural network
@@ -53,7 +54,7 @@ def train(bands_to_use,
   net = tflearn.regression(softmax, optimizer=momentum, loss='categorical_crossentropy')
 
   model = tflearn.DNN(net, tensorboard_verbose=0)
-  model.fit(train_images, train_labels, n_epoch=100, shuffle=False, validation_set=(test_images, test_labels),
+  model.fit(train_images, train_labels, n_epoch=number_of_epochs, shuffle=False, validation_set=(test_images, test_labels),
             show_metric=True, run_id='mlp')
   
   # \TODO predict on batches of test_images, to avoid memory spike
