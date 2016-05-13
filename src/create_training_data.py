@@ -13,8 +13,8 @@ from PIL import Image
 from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
 
-# there is a 300 pixel buffer around NAIPs that should be trimmed off,
-# where NAIPs overlap... using overlapping images makes wonky train/test splits
+# there is a 300 pixel buffer around NAIPs that should be trimmed off where NAIPs overlap... 
+# using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
 
 def read_naip(file_path, bands_to_use):
@@ -54,7 +54,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
     for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
-      if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
+      if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols-NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
 
@@ -152,9 +152,9 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap, pixels_to
 
 def safe_add_pixel(x, y, way_bitmap):
   '''
-     turn on a pixel in way_bitmap if its in bounds
+      turn on a pixel in way_bitmap if its in bounds
   '''
-  if x <NAIP_PIXEL_BUFFER or y < NAIP_PIXEL_BUFFER or x >= len(way_bitmap[0])-NAIP_PIXEL_BUFFER or y >= len(way_bitmap)-NAIP_PIXEL_BUFFER:
+  if x < NAIP_PIXEL_BUFFER or y < NAIP_PIXEL_BUFFER or x >= len(way_bitmap[0])-NAIP_PIXEL_BUFFER or y >= len(way_bitmap)-NAIP_PIXEL_BUFFER:
     return
   way_bitmap[y][x] = 1
 
