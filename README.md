@@ -15,8 +15,8 @@ Contributions are welcome. Open an issue if you want to discuss something to do,
 By default, DeepOSM will download the minimum necessary training data, and use the simplest possible network.
 
 * It will predict if the center 9px of a 64px tile contains road.
-* It will be about 70% accurate, based on how the training/test data is constructed.
 * It will only use the infrared (IR) band, not the RGB bands.
+* It will be about 65% accurate, based on how the training/test data is constructed.
 * It will use a single fully connected relu layer in [TensorFlow](https://www.tensorflow.org/).
 
 ![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
