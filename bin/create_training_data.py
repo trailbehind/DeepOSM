@@ -37,7 +37,7 @@ def create_parser():
                         nargs=5,
                         type=str,
                         help="values to create the S3 bucket path for some NAIPs"
-                        "--bands md 2013 1m rgbir 38077 (defaults to some Maryland data)")
+                        "--naip-path md 2013 1m rgbir 38077 (defaults to some Maryland data)")
     parser.add_argument("--randomize-naips",
                         default=False,
                         type=bool,

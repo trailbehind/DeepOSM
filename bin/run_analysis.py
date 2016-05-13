@@ -27,7 +27,7 @@ def create_parser():
                         action='store_true',
                         help="output data/predictions to JPEG")
     parser.add_argument("--neural-net",
-                        default='relu',
+                        default='one_layer_relu',
                         choices=['one_layer_relu', 'one_layer_relu_conv'],
                         help="the neural network architecture to use")
     return parser
