@@ -70,7 +70,8 @@ Inside Docker, the following Python scripts will work. This will download all so
 
 The default data is eight NAIPs, which gets tiled into NxNx4 bands of data (RGB-IR bands). The training labels derive from PBF files that overlap the NAIPs.
 
-```python bin/create_training_data.py
+```
+python bin/create_training_data.py
 python bin/run_analysis.py
 ```
 
