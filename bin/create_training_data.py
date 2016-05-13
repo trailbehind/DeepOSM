@@ -40,7 +40,7 @@ def create_parser():
                         "--naip-path md 2013 1m rgbir 38077 (defaults to some Maryland data)")
     parser.add_argument("--randomize-naips",
                         default=False,
-                        action='store_false'
+                        action='store_false',
                         help="turn on this option if you don't want to get NAIPs in order from the bucket path")
     parser.add_argument("--number-of-naips",
                         default=5,
