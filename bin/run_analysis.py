@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
-import json
-import numpy
-import pickle
-import time
 
 from src.run_analysis import analyze
-from src.create_training_data import load_data_from_disk, CACHE_PATH
+from src.create_training_data import load_data_from_disk
 from src.render_results import render_results_for_analysis
 
 def create_parser():
