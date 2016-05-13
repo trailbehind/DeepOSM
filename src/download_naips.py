@@ -15,15 +15,13 @@ class NAIPDownloader:
 
   def __init__(self, number_of_naips, 
                should_randomize,
-               state, year, resolution, spectrum, grid, 
-               hardcoded_naip_list=None):
+               state, year, resolution, spectrum, grid):
     '''
         download some arbitrary NAIP images from the aws-naip S3 bucket
     '''
 
     self.number_of_naips = number_of_naips
     self.should_randomize = should_randomize
-    self.hardcoded_naip_list = hardcoded_naip_list
 
     self.state = state
     self.year = year
@@ -61,9 +59,7 @@ class NAIPDownloader:
     '''
 
     self.configure_s3cmd()
-    naip_filenames = self.hardcoded_naip_list 
-    if not naip_filenames:
-     naip_filenames = self.list_naips()
+    naip_filenames = self.list_naips()
     if self.should_randomize:
       shuffle(naip_filenames)
     naip_local_paths = self.download_from_s3(naip_filenames)

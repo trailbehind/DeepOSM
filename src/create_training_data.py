@@ -12,57 +12,9 @@ from PIL import Image
 
 from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
-from config_data import PERCENT_FOR_TRAINING_DATA, CACHE_PATH
 
-'''
-    constants for how to create labels,
-    from OpenStreetMap way (road) info in PBF files
-'''
-# enough to cover NAIPs around DC/Maryland/Virginia
-PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
-                 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
-
-# the number of pixels to count as road,
-# on each side of of the centerline pixels
-PIXELS_BESIDE_WAYS = 1
-
-# to count an NxN tile as being "On" for roads,
-# N*.5 pixels on that tiles must have been classified as roads
-PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE = .50
-
-'''
-    constants for NAIP imagery to use
-'''
-# values to create the S3 bucket path for some maryland NAIPs
-# you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
-# \todo document how to configure some of these
-NAIP_STATE = 'md'
-NAIP_YEAR = '2013'
-NAIP_RESOLUTION = '1m'
-NAIP_SPECTRUM = 'rgbir'
-NAIP_GRID = '38077'
-
-# set this to a value between 1 and 10 or so,
-# 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = 10
-
-# set this to True for production data science, False for debugging infrastructure
-# speeds up downloads and matrix making when False
-RANDOMIZE_NAIPS = False
-
-# and keep HARDCODED_NAIP_LIST=None, unless you set NUMBER_OF_NAIPS to -1
-HARDCODED_NAIP_LIST = None
-'''
-HARDCODED_NAIP_LIST = [
-                  'm_3807708_ne_18_1_20130924.tif',
-                  'm_3807708_nw_18_1_20130904.tif',
-                  'm_3807708_se_18_1_20130924.tif',
-                  ]
-'''
-
-# there is a 300 pixel buffer around NAIPs that should be trimmed off,
-# where NAIPs overlap... using overlapping images makes wonky train/test splits
+# there is a 300 pixel buffer around NAIPs that should be trimmed off where NAIPs overlap... 
+# using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
 
 def read_naip(file_path, bands_to_use):
@@ -84,7 +36,7 @@ def read_naip(file_path, bands_to_use):
 
   return raster_dataset, bands_data
 
-def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size):
+def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size, tile_overlap):
   '''
      cut a 4-band raster image into tiles,
      tiles are cubes - up to 4 bands, and N height x N width based on tile_size
@@ -100,15 +52,15 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size):
-    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size):
-      if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
+      if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols-NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
 
   return all_tiled_data
 
-def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
@@ -148,7 +100,7 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols):
         continue
       current_pix = latLonToPixel(raster_dataset, current_point)
       next_pix = latLonToPixel(raster_dataset, next_point)
-      add_pixels_between(current_pix, next_pix, cols, rows, way_bitmap)
+      add_pixels_between(current_pix, next_pix, cols, rows, way_bitmap, pixels_to_fatten_roads)
   print(" {0:.1f}s".format(time.time()-t0))
 
   print("CACHING %s..." % cache_filename, end="")
@@ -167,7 +119,7 @@ def bounds_for_naip(raster_dataset, rows, cols):
   ne = pixelToLatLng(raster_dataset, right_x, top_y)
   return {'sw': sw, 'ne': ne}
 
-def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
+def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap, pixels_to_fatten_roads):
   '''
       add the pixels between the start and end to way_bitmap,
       maybe thickened based on config
@@ -177,7 +129,7 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
                    max(end_pixel[1], start_pixel[1])):
       safe_add_pixel(end_pixel[0], y, way_bitmap)
       # if configged, fatten lines
-      for x in range(1,PIXELS_BESIDE_WAYS+1):
+      for x in range(1,pixels_to_fatten_roads+1):
         safe_add_pixel(end_pixel[0]-x, y, way_bitmap)
         safe_add_pixel(end_pixel[0]+x, y, way_bitmap)
     return
@@ -192,7 +144,7 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
     safe_add_pixel(p[0],p[1], way_bitmap)
     i += 1
     # if configged, fatten lines
-    for x in range(1, PIXELS_BESIDE_WAYS+1):
+    for x in range(1, pixels_to_fatten_roads+1):
       safe_add_pixel(p[0], p[1]-x, way_bitmap)
       safe_add_pixel(p[0], p[1]+x, way_bitmap)
       safe_add_pixel(p[0]-x, p[1], way_bitmap)
@@ -200,9 +152,9 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap):
 
 def safe_add_pixel(x, y, way_bitmap):
   '''
-     turn on a pixel in way_bitmap if its in bounds
+      turn on a pixel in way_bitmap if its in bounds
   '''
-  if x <NAIP_PIXEL_BUFFER or y < NAIP_PIXEL_BUFFER or x >= len(way_bitmap[0])-NAIP_PIXEL_BUFFER or y >= len(way_bitmap)-NAIP_PIXEL_BUFFER:
+  if x < NAIP_PIXEL_BUFFER or y < NAIP_PIXEL_BUFFER or x >= len(way_bitmap[0])-NAIP_PIXEL_BUFFER or y >= len(way_bitmap)-NAIP_PIXEL_BUFFER:
     return
   way_bitmap[y][x] = 1
 
@@ -220,12 +172,18 @@ def bounds_contains_point(bounds, point_tuple):
     return False
   return True
 
-def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
+def random_training_data(raster_data_paths, 
+                         extract_type, 
+                         band_list, 
+                         tile_size, 
+                         pixels_to_fatten_roads, 
+                         label_data_files,
+                         tile_overlap):
   road_labels = []
   naip_tiles = []
 
   # tile images and labels
-  waymap = download_and_extract(PBF_FILE_URLS, extract_type)
+  waymap = download_and_extract(label_data_files, extract_type)
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
@@ -233,16 +191,16 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
+    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
-    for row in range(top_y, bottom_y, tile_size):
-      for col in range(left_x, right_x, tile_size):
+    for col in range(left_x, right_x, tile_size/tile_overlap):
+      for row in range(top_y, bottom_y, tile_size/tile_overlap):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
 
-    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size):
+    for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size, tile_overlap):
       naip_tiles.append(tile)
 
   assert len(road_labels) == len(naip_tiles)
@@ -268,9 +226,9 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
   way_indices = []
   for x in range(len(road_labels)):
     tile = road_labels[x][0]
-    if has_ways_in_center(tile):
+    if has_ways_in_center(tile,1):
       way_indices.append(x)
-    elif has_no_ways_in_fatter_center(tile) and not has_ways(tile):
+    elif not has_ways_in_center(tile,16):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -305,56 +263,54 @@ def has_ways(tile):
     return True
   return False
 
-def has_ways_in_center(tile):
-  center_pixel_count = 0
+def has_ways_in_center(tile, tolerance):
   center_x = len(tile)/2
   center_y = len(tile[0])/2
-
-  for x in range(0, len(tile)):
-    for y in range(0, len(tile[x])):
+  for x in range(center_x - tolerance, center_x + tolerance):
+    for y in range(center_y - tolerance, center_y + tolerance):
       pixel_value = tile[x][y]
       if pixel_value != 0:
-        if x >= center_x -1 and x <= center_x + 1:
-          if y >= center_y -1 and y <= center_y + 1:
-            center_pixel_count += 1
-  if center_pixel_count >= 3:
-    return True
-  return False
-
-def has_no_ways_in_fatter_center(tile):
-  center_pixel_count = 0
-  center_x = len(tile)/2
-  center_y = len(tile[0])/2
-
-  for x in range(0, len(tile)):
-    for y in range(0, len(tile[x])):
-      pixel_value = tile[x][y]
-      if pixel_value != 0:
-        if x >= center_x -5 and x <= center_x + 5:
-          if y >= center_y -5 and y <= center_y + 5:
-            center_pixel_count += 1
-  if center_pixel_count <= 3:
-    return True
+        return True    
   return False
 
 def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
-  img = numpy.empty([64,64])
+  tile_height = len(rgbir_matrix)
+  
+  r_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
-      img[x][y] = rgbir_matrix[x][y][0]
-  im = Image.merge('RGB',(Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L'),Image.fromarray(img).convert('L')))
+      r_img[x][y] = rgbir_matrix[x][y][0]
+  
+  g_img = numpy.empty([tile_height,tile_height])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      if len(rgbir_matrix[x][y]) > 1:
+        g_img[x][y] = rgbir_matrix[x][y][1]
+      else:
+        g_img[x][y] = rgbir_matrix[x][y][0]
+  
+  b_img = numpy.empty([tile_height,tile_height])
+  for x in range(len(rgbir_matrix)):
+    for y in range(len(rgbir_matrix[x])):
+      if len(rgbir_matrix[x][y]) > 2:
+        b_img[x][y] = rgbir_matrix[x][y][2]
+      else:
+        b_img[x][y] = rgbir_matrix[x][y][0]
+
+
+  im = Image.merge('RGB',(Image.fromarray(r_img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
   im.save(outfile_path, "JPEG")
 
-def split_train_test(equal_count_tile_list,equal_count_way_list):
+def split_train_test(equal_count_tile_list,equal_count_way_list, percent_for_training_data):
   test_labels = []
   training_labels = []
   test_images = []
   training_images = []
 
   for x in range(0, len(equal_count_way_list)):
-    if PERCENT_FOR_TRAINING_DATA > float(x)/len(equal_count_tile_list):
+    if percent_for_training_data > float(x)/len(equal_count_tile_list):
       training_images.append(equal_count_tile_list[x])
       training_labels.append(equal_count_way_list[x])
     else:
@@ -377,6 +333,7 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
 
   return onehot_training_labels, onehot_test_labels
 
+
 def onehot_for_labels(labels):
   '''
      returns a list of one-hot array labels, for a list of tiles
@@ -386,16 +343,18 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways_in_center(label[0]):
+    if has_ways_in_center(label[0],1):
       onehot_labels.append([0,1])
       on_count += 1
-    elif has_no_ways_in_fatter_center(label[0]) and not has_ways(label[0]):
+    elif not has_ways_in_center(label[0],16):
       onehot_labels.append([1,0])
       off_count += 1
 
   print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels))))
   return onehot_labels
 
+# where training data gets cached/retrieved
+CACHE_PATH = './data/cache/'
 
 def dump_data_to_disk(raster_data_paths,
                       training_images, 
@@ -422,14 +381,14 @@ def dump_data_to_disk(raster_data_paths,
         pickle.dump(test_images, outfile)
     with open(CACHE_PATH + 'test_labels.pickle', 'w') as outfile:
         pickle.dump(test_labels, outfile)
-    with open(CACHE_PATH + 'label_types.json', 'w') as outfile:
-        json.dump(label_types, outfile)
-    with open(CACHE_PATH + 'raster_data_paths.json', 'w') as outfile:
-        json.dump(raster_data_paths, outfile)
-    with open(CACHE_PATH + 'onehot_training_labels.json', 'w') as outfile:
-        json.dump(onehot_training_labels, outfile)
-    with open(CACHE_PATH + 'onehot_test_labels.json', 'w') as outfile:
-        json.dump(onehot_test_labels, outfile)
+    with open(CACHE_PATH + 'label_types.pickle', 'w') as outfile:
+        pickle.dump(label_types, outfile)
+    with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:
+        pickle.dump(raster_data_paths, outfile)
+    with open(CACHE_PATH + 'onehot_training_labels.pickle', 'w') as outfile:
+        pickle.dump(onehot_training_labels, outfile)
+    with open(CACHE_PATH + 'onehot_test_labels.pickle', 'w') as outfile:
+        pickle.dump(onehot_test_labels, outfile)
     print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() - t0))
 
 def load_data_from_disk():
@@ -446,14 +405,14 @@ def load_data_from_disk():
         test_images = pickle.load(infile)
     with open(CACHE_PATH + 'test_labels.pickle', 'r') as infile:
         test_labels = pickle.load(infile)
-    with open(CACHE_PATH + 'label_types.json', 'r') as infile:
-        label_types = json.load(infile)
-    with open(CACHE_PATH + 'raster_data_paths.json', 'r') as infile:
-        raster_data_paths = json.load(infile)
-    with open(CACHE_PATH + 'onehot_training_labels.json', 'r') as infile:
-        onehot_training_labels = json.load(infile)
-    with open(CACHE_PATH + 'onehot_test_labels.json', 'r') as infile:
-        onehot_test_labels = json.load(infile)
+    with open(CACHE_PATH + 'label_types.pickle', 'r') as infile:
+        label_types = pickle.load(infile)
+    with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as infile:
+        raster_data_paths = pickle.load(infile)
+    with open(CACHE_PATH + 'onehot_training_labels.pickle', 'r') as infile:
+        onehot_training_labels = pickle.load(infile)
+    with open(CACHE_PATH + 'onehot_test_labels.pickle', 'r') as infile:
+        onehot_test_labels = pickle.load(infile)
 
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
     return raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \

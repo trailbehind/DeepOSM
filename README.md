@@ -1,14 +1,25 @@
 # DeepOSM
 
-Detect roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. The gist:
+Detect roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. This code lets you:
 
 * Download a chunk of satellite imagery
 * Download OSM data that shows roads/features for that area
 * Generate training and evaluation data
 
-Read below to run the code. [I am blogging my work journal too](http://trailbehind.github.io/DeepOSM/). 
+Running the code is as easy as install Docker, make dev, and run a script. 
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
+
+## Default Data/Accuracy
+
+By default, DeepOSM will download the minimum necessary training data, and use the simplest possible network.
+
+* It will predict if the center 9px of a 64px tile contains road.
+* It will be about 70% accurate, based on how the training/test data is constructed.
+* It will only use the infrared (IR) band, not the RGB bands.
+* It will use a single fully connected relu layer in [TensorFlow](https://www.tensorflow.org/).
+
+![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
 
 ## Background on Data - NAIPs and OSM PBF
 
@@ -20,6 +31,8 @@ The [NAIPs come from a requester pays bucket on S3 set up by Mapbox](http://www.
 
 ## Install Requirements
 
+DeepOSM has been run successfully on both Mac and Linux (14.04 and 16.04). You need at least 4GB of memory.
+
 ### AWS Credentials
 
 You need AWS credentials to download NAIPs from an S3 requester-pays bucket. This only costs a few cents for a bunch of images, but you need a credit card on file.
@@ -28,15 +41,16 @@ You need AWS credentials to download NAIPs from an S3 requester-pays bucket. Thi
 
  * export them as environment variables (and maybe add to your bash or zprofile)
 
-    export AWS_ACCESS_KEY_ID='FOO'
-
-    export AWS_SECRET_ACCESS_KEY='BAR'
+```
+export AWS_ACCESS_KEY_ID='FOO'
+export AWS_SECRET_ACCESS_KEY='BAR'
+```
 
 ### Install Docker
 
 First, [install a Docker Binary](https://docs.docker.com/engine/installation/).
 
-I also needed to set my VirtualBox default memory to 12GB. libosmium needed 4GB, and the neural net needed even more. This is easy:
+I also needed to set my VirtualBox default memory to 4GB, when running on a Mac. This is easy:
 
  * start Docker, per the install instructions
  * stop Docker
@@ -56,12 +70,12 @@ Inside Docker, the following Python scripts will work. This will download all so
 
 The default data is eight NAIPs, which gets tiled into NxNx4 bands of data (RGB-IR bands). The training labels derive from PBF files that overlap the NAIPs.
 
-    python bin/create_training_data.py
-    python bin/run_analysis.py
+```
+python bin/create_training_data.py
+python bin/run_analysis.py
+```
 
 For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff.
-
-![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
 
 ### Jupyter Notebook
 
@@ -85,7 +99,6 @@ http://192.168.99.100:8888
 
 ### Readings
 
-* [TensorFlow](https://www.tensorflow.org/) - using this for the deep learning, do multilayer, deep CNN
 * [Learning to Detect Roads in High-Resolution Aerial
 Images](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.232.1679&rep=rep1&type=pdf) (Hinton) 
 * [Machine Learning for Aerial Image Labeling](https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf)- Minh's 2013 thesis, student of Hinton's
@@ -101,6 +114,7 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
 * Deep Background
     * [original Information Theory paper by Shannon](http://worrydream.com/refs/Shannon%20-%20A%20Mathematical%20Theory%20of%20Communication.pdf)
 
+[Also see a work journal here](http://trailbehind.github.io/DeepOSM/).
 
 ### Papers - Relevant Maybe
 
@@ -209,3 +223,4 @@ I am reviewing these papers from Google Scholar that both cite the key papers an
 This was the general idea to start, and working with TMS tiles sort of worked (see first 50 or so commits), so DeepOSM got switched to better data:
 
 ![Deep OSM Project](https://gaiagps.mybalsamiq.com/mockups/4278030.png?key=1e42f249214928d1fa7b17cf866401de0c2af867)
+
