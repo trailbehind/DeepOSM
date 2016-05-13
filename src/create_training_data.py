@@ -187,7 +187,7 @@ def random_training_data(raster_data_paths,
   way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
-    raster_dataset, bands_data = read_naip(raster_data_path, band_list, tile_overlap)
+    raster_dataset, bands_data = read_naip(raster_data_path, band_list)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
