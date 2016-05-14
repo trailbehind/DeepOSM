@@ -24,8 +24,10 @@ RUN apt-get -q update && \
  apt-get clean
 
 # copy requirements.txt and run pip to install all dependencies into the virtualenv.
-ADD requirements.txt /DeepOSM/requirements.txt
-RUN pip install -r /DeepOSM/requirements.txt
+ADD requirements_base.txt /DeepOSM/requirements_base.txt
+RUN pip install -r /DeepOSM/requirements_base.txt
+ADD requirements_cpu.txt /DeepOSM/requirements_cpu.txt
+RUN pip install -r /DeepOSM/requirements_cpu.txt
 RUN ln -s /home/vmagent/src /DeepOSM
 
 # install libosmium and pyosmium bindings
