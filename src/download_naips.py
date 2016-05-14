@@ -42,13 +42,13 @@ class NAIPDownloader:
       for token in new_dir.split('/'):
         path += token + '/'
         try:
-          os.mkdir(path);
+          os.mkdir(path)
         except:
           pass
       return path
 
     try:
-      os.mkdir(new_dir);
+      os.mkdir(new_dir)
     except:
       pass
     return new_dir

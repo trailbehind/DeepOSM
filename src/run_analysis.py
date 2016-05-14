@@ -34,7 +34,7 @@ def analyze(onehot_training_labels,
                                            npy_test_labels,
                                            number_of_epochs,
                                            neural_net_type
-                                          )
+                                           )
   return predictions
 
 def print_data_dimensions(training_labels,band_list):

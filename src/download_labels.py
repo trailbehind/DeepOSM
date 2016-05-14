@@ -1,9 +1,11 @@
 '''
 Extract Ways from OSM PBF files
 '''
+import os
+import time
 
 import osmium as o
-import os, requests, time
+import requests
 import shapely.wkb as wkblib
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html
@@ -46,22 +48,16 @@ class WayExtracter(o.SimpleHandler):
         self.extract_way_type(w)
 
     def extract_if_tennis_court(self, w):
-      name = ''
       is_tennis = False
       for tag in w.tags:
         if tag.k == 'sport' and 'tennis' == tag.v:
           is_tennis = True
-        if tag.k == 'name':
-          name = tag.v
 
       if not is_tennis:
         return
 
-      way_dict = {
-            'uid': w.uid,
-            'ends_have_same_id': w.ends_have_same_id(),
-            'id': w.id,
-            'tags':[]}
+      way_dict = {'uid': w.uid, 'ends_have_same_id': w.ends_have_same_id(), 'id': w.id, 'tags': []}
+
       for tag in w.tags:
         way_dict['tags'].append((tag.k, tag.v))
 
@@ -69,11 +65,8 @@ class WayExtracter(o.SimpleHandler):
 
     def extract_way_type(self, w):
       should_extract = False
-      name = ''
       way_type = None
       for tag in w.tags:
-        if tag.k == 'name':
-          name = tag.v
         if tag.k == self.extract_type:
           way_type = tag.v
           should_extract = True
@@ -81,7 +74,7 @@ class WayExtracter(o.SimpleHandler):
       if not should_extract:
         return
 
-      if not way_type in self.types:
+      if way_type not in self.types:
         self.types.append(way_type)
 
       way_dict = {'visible': w.visible,
@@ -121,7 +114,7 @@ def download_file(url):
     r = requests.get(url, stream=True)
     with open(full_local_filename, 'wb') as f:
       for chunk in r.iter_content(chunk_size=1024):
-        if chunk: # filter out keep-alive new chunks
+        if chunk:  # filter out keep-alive new chunks
           f.write(chunk)
     return full_local_filename
 

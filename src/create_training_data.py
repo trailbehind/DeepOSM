@@ -245,20 +245,6 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
       save_image_clipping(naip_tiles[wayless_index], 'OFF')
   return equal_count_way_list, equal_count_tile_list
 
-def has_ways(tile):
-  '''
-     returns true if some pixels on the NxN tile are set to 1
-  '''
-  road_pixel_count = 0
-  for x in range(0, len(tile)):
-    for y in range(0, len(tile[x])):
-      pixel_value = tile[x][y]
-      if pixel_value != 0:
-        road_pixel_count += 1
-  if road_pixel_count >= len(tile)*PERCENT_OF_TILE_HEIGHT_TO_ACTIVATE:
-    return True
-  return False
-
 def has_ways_in_center(tile, tolerance):
   center_x = len(tile)/2
   center_y = len(tile[0])/2
@@ -293,7 +279,6 @@ def save_image_clipping(tile, status):
         b_img[x][y] = rgbir_matrix[x][y][2]
       else:
         b_img[x][y] = rgbir_matrix[x][y][0]
-
 
   im = Image.merge('RGB',(Image.fromarray(r_img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
@@ -410,8 +395,8 @@ def load_data_from_disk():
     with open(CACHE_PATH + 'onehot_test_labels.pickle', 'r') as infile:
         onehot_test_labels = pickle.load(infile)
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
-    return raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
-           onehot_training_labels, onehot_test_labels
+    return (raster_data_paths, training_images, training_labels, test_images, test_labels,
+            label_types, onehot_training_labels, onehot_test_labels)
 
 
 if __name__ == "__main__":
