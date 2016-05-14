@@ -6,6 +6,7 @@ from src.run_analysis import analyze
 from src.create_training_data import load_data_from_disk
 from src.render_results import render_results_for_analysis
 
+
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tile-size",
@@ -36,16 +37,15 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, onehot_training_labels, onehot_test_labels = load_data_from_disk()
-    predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels, test_images, training_images, label_types,
-                          args.neural_net, args.band_list, args.tile_size, args.number_of_epochs)
+    raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
+        onehot_training_labels, onehot_test_labels = load_data_from_disk()
+    predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels,
+                          test_images, training_images, label_types, args.neural_net,
+                          args.band_list, args.tile_size, args.number_of_epochs)
     if args.render_results:
-        render_results_for_analysis(raster_data_paths,
-                                    training_labels,
-                                    test_labels,
-                                    predictions,
-                                    args.band_list,
-                                    args.tile_size)
+        render_results_for_analysis(raster_data_paths, training_labels, test_labels, predictions,
+                                    args.band_list, args.tile_size)
+
 
 if __name__ == "__main__":
     main()
