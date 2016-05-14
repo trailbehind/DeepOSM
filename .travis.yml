@@ -1,0 +1,20 @@
+sudo: required
+dist: trusty
+
+language: "python"
+
+services:
+  - docker
+
+python:
+   - "2.7"
+
+before_install:
+  - "pip install flake8"
+  - "flake8 ."
+
+install:
+   - "make build"
+
+script:
+   - echo "TODO - add tests"
