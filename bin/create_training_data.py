@@ -54,7 +54,7 @@ def create_parser():
                         )
     parser.add_argument("--extract-type",
                         default='highway',
-                        choices=['highway', 'tennis', 'footway'],
+                        choices=['highway', 'tennis', 'footway', 'cycleway'],
                         help="the type of feature to identify")
     parser.add_argument("--save-clippings",
                         action='store_true',
@@ -75,15 +75,35 @@ def main():
                                        NAIP_SPECTRUM, 
                                        NAIP_GRID,
                                        ).download_naips()
-    road_labels, naip_tiles, waymap = random_training_data(
-        raster_data_paths, args.extract_type, args.band_list, args.tile_size, args.pixels_to_fatten_roads, args.label_data_files, args.tile_overlap)
-    equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, args.save_clippings)
-    test_labels, training_labels, test_images, training_images = split_train_test(
-        equal_count_tile_list, equal_count_way_list, args.percent_for_training_data)
-    label_types = waymap.extracter.types
-    onehot_training_labels, onehot_test_labels = format_as_onehot_arrays(label_types, training_labels, test_labels)
-    dump_data_to_disk(raster_data_paths, training_images, training_labels, test_images, test_labels,
-                      label_types, onehot_training_labels, onehot_test_labels)
+    
+    road_labels, naip_tiles, waymap = random_training_data(raster_data_paths, 
+                                                           args.extract_type, 
+                                                           args.band_list, 
+                                                           args.tile_size, 
+                                                           args.pixels_to_fatten_roads, 
+                                                           args.label_data_files, 
+                                                           args.tile_overlap)
+    
+    equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, 
+                                                                naip_tiles, 
+                                                                args.save_clippings)
+    
+    test_labels, training_labels, test_images, training_images = split_train_test(equal_count_tile_list, 
+                                                                                  equal_count_way_list, 
+                                                                                  args.percent_for_training_data)    
+
+    onehot_training_labels, onehot_test_labels = format_as_onehot_arrays(waymap.extracter.types, 
+                                                                         training_labels, 
+                                                                         test_labels)
+    
+    dump_data_to_disk(raster_data_paths, 
+                      training_images, 
+                      training_labels, 
+                      test_images, 
+                      test_labels,
+                      waymap.extracter.types, 
+                      onehot_training_labels, 
+                      onehot_test_labels)
                         
 
 if __name__ == "__main__":
