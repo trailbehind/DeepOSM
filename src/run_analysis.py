@@ -1,9 +1,7 @@
 from __future__ import print_function
 
-import numpy, os, sys, time
-from PIL import Image
+import numpy, sys
 import single_layer_network
-from create_training_data import has_ways, has_ways_in_center
 
 
 def analyze(onehot_training_labels,

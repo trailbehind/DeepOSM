@@ -3,7 +3,7 @@ Extract Ways from OSM PBF files
 '''
 
 import osmium as o
-import json, os, requests, sys, time
+import os, requests, time
 import shapely.wkb as wkblib
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html

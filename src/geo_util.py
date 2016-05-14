@@ -2,7 +2,7 @@
    methods for working with geo/raster data
 '''
 
-from osgeo import gdal, osr
+from osgeo import osr
 
 def latLonToPixel(raster_dataset, location):
   '''
