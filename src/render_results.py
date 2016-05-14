@@ -8,11 +8,10 @@ def render_results_for_analysis(raster_data_paths,
                                 test_labels, 
                                 predictions, 
                                 band_list, 
-                                tile_size,
-                                pixels_to_fatten_roads):
+                                tile_size):
     way_bitmap_npy = {}
     for raster_data_path in raster_data_paths:
-        way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None,  pixels_to_fatten_roads))
+        way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
 
     render_results_as_images(raster_data_paths, 
                              training_labels, 

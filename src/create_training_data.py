@@ -60,7 +60,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   return all_tiled_data
 
-def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads=None):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
