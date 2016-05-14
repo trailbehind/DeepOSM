@@ -12,59 +12,9 @@ from PIL import Image
 
 from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
-<<<<<<< HEAD
-
-# there is a 300 pixel buffer around NAIPs that should be trimmed off where NAIPs overlap... 
-# using overlapping images makes wonky train/test splits
-=======
-from config_data import PERCENT_FOR_TRAINING_DATA, CACHE_PATH
-
-'''
-    constants for how to create labels,
-    from OpenStreetMap way (road) info in PBF files
-'''
-# enough to cover NAIPs around DC/Maryland/Virginia
-PBF_FILE_URLS = ['http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-                 'http://download.geofabrik.de/north-america/us/virginia-latest.osm.pbf',
-                 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf']
-
-# the number of pixels to count as road,
-# on each side of of the centerline pixels
-PIXELS_BESIDE_WAYS = 3
-
-'''
-    constants for NAIP imagery to use
-'''
-# values to create the S3 bucket path for some maryland NAIPs
-# you can get random NAIPS from here, or the exact HARDCODED_NAIP_LIST above
-# \todo document how to configure some of these
-NAIP_STATE = 'md'
-NAIP_YEAR = '2013'
-NAIP_RESOLUTION = '1m'
-NAIP_SPECTRUM = 'rgbir'
-NAIP_GRID = '38077'
-
-# set this to a value between 1 and 10 or so,
-# 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = 8
-
-# set this to True for production data science, False for debugging infrastructure
-# speeds up downloads and matrix making when False
-RANDOMIZE_NAIPS = True
-
-# and keep HARDCODED_NAIP_LIST=None, unless you set NUMBER_OF_NAIPS to -1
-HARDCODED_NAIP_LIST = None
-'''
-HARDCODED_NAIP_LIST = [
-                  'm_3807708_ne_18_1_20130924.tif',
-                  'm_3807708_nw_18_1_20130904.tif',
-                  'm_3807708_se_18_1_20130924.tif',
-                  ]
-'''
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
 # where NAIPs overlap... using overlapping images makes wonky train/test splits
->>>>>>> f2291e301d92cc277996c09027781389cccfd39b
 NAIP_PIXEL_BUFFER = 300
 
 def read_naip(file_path, bands_to_use):
