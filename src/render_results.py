@@ -9,54 +9,47 @@ def render_results_for_analysis(raster_data_paths,
                                 predictions, 
                                 band_list, 
                                 tile_size):
-    with open(CACHE_PATH + 'raster_data_paths.json', 'r') as infile:
-        raster_data_paths = json.load(infile)
-    way_bitmap_npy = {}
+
     for raster_data_path in raster_data_paths:
-        way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
+        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
+        render_predictions(raster_data_path, 
+                           training_labels, 
+                           test_labels, 
+                           predictions,
+                           way_bitmap_npy, 
+                           band_list, 
+                           tile_size)
 
-    render_results_as_images(raster_data_paths, 
-                             training_labels, 
-                             test_labels, 
-                             predictions,
-                             way_bitmap_npy, 
-                             band_list, 
-                             tile_size)
-
-def render_results_as_images(raster_data_paths,  
-                             training_labels, 
-                             test_labels, 
-                             predictions, 
-                             way_bitmap_npy, 
-                             band_list, 
-                             tile_size):
-    training_labels_by_naip = {}
-    test_labels_by_naip = {}
-    predictions_by_naip = {}
-    for raster_data_path in raster_data_paths:
-      predictions_by_naip[raster_data_path] = []
-      test_labels_by_naip[raster_data_path] = []
-      training_labels_by_naip[raster_data_path] = []
-
+def render_predictions(raster_data_path,  
+                       training_labels, 
+                       test_labels, 
+                       predictions, 
+                       way_bitmap_npy, 
+                       band_list, 
+                       tile_size):
+    training_labels_by_naip = []
+    test_labels_by_naip = []
+    predictions_by_naip = []
+    
     index = 0
     for label in test_labels:
-      predictions_by_naip[label[2]].append(predictions[index])
-      test_labels_by_naip[label[2]].append(test_labels[index])
+      if label[2] == raster_data_path:
+        predictions_by_naip.append(predictions[index])
+        test_labels_by_naip.append(test_labels[index])
       index += 1
 
     index = 0
     for label in training_labels:
-      training_labels_by_naip[label[2]].append(training_labels[index])
+      training_labels_by_naip.append(training_labels[index])
       index += 1
 
-    for raster_data_path in raster_data_paths:
-      render_results_as_image(raster_data_path,
-                              way_bitmap_npy[raster_data_path],
-                              training_labels_by_naip[raster_data_path],
-                              test_labels_by_naip[raster_data_path],
-                              band_list,
-                              tile_size,
-                              predictions=predictions_by_naip[raster_data_path])
+    render_results_as_image(raster_data_path,
+                            way_bitmap_npy,
+                            training_labels_by_naip,
+                            test_labels_by_naip,
+                            band_list,
+                            tile_size,
+                            predictions=predictions_by_naip)
 
 def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, band_list, tile_size, predictions=None):
     '''
@@ -120,7 +113,7 @@ def shade_labels(image, labels, predictions, tile_size):
       for x in range(start_x, start_x+tile_size):
         for y in range(start_y, start_y+tile_size):
           r, g, b = image.getpixel((x, y))
-          if predictions[label_index] == 1:
+          if predictions[label_index][0] < predictions[label_index][1]:
             # shade ON predictions blue
             image.putpixel((x, y), (r, g, 255))
           else:

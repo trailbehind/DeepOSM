@@ -57,5 +57,14 @@ def train(bands_to_use,
   model.fit(train_images, train_labels, n_epoch=number_of_epochs, shuffle=False, validation_set=(test_images, test_labels),
             show_metric=True, run_id='mlp')
   
-  # \TODO predict on batches of test_images, to avoid memory spike
-  return model.predict(test_images)
+  # batch predictions on the test image set, to avoid a memory spike
+  all_predictions = []
+  for x in range(0, len(test_images)-100, 100):
+    for p in model.predict(test_images[x:x+100]):
+      all_predictions.append(p)
+  remainder = len(test_images)-len(all_predictions)
+  for p in model.predict(test_images[len(all_predictions):]):
+      all_predictions.append(p)
+  assert len(all_predictions) == len(test_images)
+
+  return all_predictions

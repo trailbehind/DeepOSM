@@ -4,7 +4,6 @@ h5py==2.6.0
 jupyter==1.0.0
 numpy==1.11.0
 Pillow==3.2.0
-pyosmium==2.6.0
 pyproj==1.9.5.1
 requests==2.10.0
 s3cmd==1.6.1

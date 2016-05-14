@@ -19,7 +19,7 @@ By default, DeepOSM will download the minimum necessary training data, and use t
 * It will be about 65% accurate, based on how the training/test data is constructed.
 * It will use a single fully connected relu layer in [TensorFlow](https://www.tensorflow.org/).
 
-![NAIP with Ways and Predictions](https://pbs.twimg.com/media/Cg2F_tBUcAA-wHs.png)
+![NAIP with Ways and Predictions](https://pbs.twimg.com/media/CiZVcu8UgAIYA-c.jpg)
 
 ## Background on Data - NAIPs and OSM PBF
 

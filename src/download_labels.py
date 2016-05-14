@@ -42,10 +42,8 @@ class WayExtracter(o.SimpleHandler):
     def way(self, w):
       if self.extract_type == 'tennis':
         self.extract_if_tennis_court(w)
-      elif self.extract_type == 'highway':
-        self.extract_if_highway(w)
       else:
-        print "ERROR unknown type to extract from PBF file"
+        self.extract_way_type(w)
 
     def extract_if_tennis_court(self, w):
       name = ''
@@ -69,43 +67,32 @@ class WayExtracter(o.SimpleHandler):
 
       self.add_linestring(w, way_dict)
 
-    def extract_if_highway(self, w):
-      is_highway = False
-      is_big = False
+    def extract_way_type(self, w):
+      should_extract = False
       name = ''
-      highway_type = None
+      way_type = None
       for tag in w.tags:
         if tag.k == 'name':
           name = tag.v
-        #  and tag.v in ['primary', 'secondary', 'tertiary', 'trunk']
-        if tag.k == 'highway':
-          highway_type = tag.v
-          is_highway = True
-        #try:
-        #  if tag.k == 'lanes' and int(tag.v[len(tag.v)-1]) >= 2:
-        #    is_big = True
-        #  #    #for t in w.tags:
-        #  #    #  print "tag {} {}".format(t.k, t.v)
-        #except:
-        #  print("exception, weird lanes designation {}".format(tag.v))
+        if tag.k == self.extract_type:
+          way_type = tag.v
+          should_extract = True
 
-      #  or not is_big
-      if not is_highway:
+      if not should_extract:
         return
       
-      if not highway_type in self.types:
-        self.types.append(highway_type)
+      if not way_type in self.types:
+        self.types.append(way_type)
 
       way_dict = {'visible': w.visible,
                   'deleted': w.deleted,
                   'uid': w.uid,
-                  'highway_type': highway_type,
+                  'way_type': way_type,
                   'ends_have_same_id': w.ends_have_same_id(),
                   'id': w.id,
                   'tags':[]}
       for tag in w.tags:
         way_dict['tags'].append((tag.k, tag.v))
-
       self.add_linestring(w, way_dict)
 
     def add_linestring(self, w, way_dict):

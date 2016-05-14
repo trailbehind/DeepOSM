@@ -13,8 +13,8 @@ from PIL import Image
 from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
 
-# there is a 300 pixel buffer around NAIPs that should be trimmed off where NAIPs overlap... 
-# using overlapping images makes wonky train/test splits
+# there is a 300 pixel buffer around NAIPs that should be trimmed off,
+# where NAIPs overlap... using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
 
 def read_naip(file_path, bands_to_use):
@@ -60,7 +60,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   return all_tiled_data
 
-def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads):
+def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads=None):
   '''
     generate a matrix of size rows x cols, initialized to all zeroes,
     but set to 1 for any pixel where an OSM way runs over
@@ -79,14 +79,11 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixe
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
 
-  t0 = time.time()
-  print("FINDING WAYS on NAIP..."),
   for way in ways:
     for point_tuple in way['linestring']:
       if bounds_contains_point(bounds, point_tuple):
         ways_on_naip.append(way)
         break
-  print(" {0:.1f}s".format(time.time()-t0))
   print("EXTRACTED {} highways in NAIP bounds, of {} ways".format(len(ways_on_naip), len(ways)))
 
   print("MAKING BITMAP for way presence...", end="")
@@ -191,13 +188,13 @@ def random_training_data(raster_data_paths,
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads))
+    way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
     for col in range(left_x, right_x, tile_size/tile_overlap):
       for row in range(top_y, bottom_y, tile_size/tile_overlap):
         if row+tile_size < bottom_y and col+tile_size < right_x:
-          new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
+          new_tile = way_bitmap_npy[row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
 
     for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size, tile_overlap):
@@ -206,7 +203,7 @@ def random_training_data(raster_data_paths,
   assert len(road_labels) == len(naip_tiles)
 
   road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
-  return road_labels, naip_tiles, waymap, way_bitmap_npy
+  return road_labels, naip_tiles, waymap
 
 def shuffle_in_unison(a, b):
    '''
@@ -413,7 +410,6 @@ def load_data_from_disk():
         onehot_training_labels = pickle.load(infile)
     with open(CACHE_PATH + 'onehot_test_labels.pickle', 'r') as infile:
         onehot_test_labels = pickle.load(infile)
-
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
     return raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
            onehot_training_labels, onehot_test_labels
