@@ -14,6 +14,7 @@ import boto3
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 
+
 class NAIPDownloader:
 
   def __init__(self, number_of_naips,

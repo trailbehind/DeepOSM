@@ -15,6 +15,7 @@ wkbfab = o.geom.WKBFactory()
 # set in Dockerfile as env variable
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 
+
 class WayMap():
     def __init__(self, extract_type='highway'):
       self.extracter = WayExtracter(extract_type)
@@ -29,6 +30,7 @@ class WayMap():
       t1 = time.time()
       elapsed = "{0:.1f}".format(t1-t0)
       print "EXTRACTED WAYS with locations from pbf file {}, took {}s".format(file_path, elapsed)
+
 
 class WayExtracter(o.SimpleHandler):
     def __init__(self, extract_type='highway'):
@@ -101,12 +103,14 @@ class WayExtracter(o.SimpleHandler):
       way_dict['linestring'] = reverse_points
       self.ways.append(way_dict)
 
+
 def download_and_extract(file_urls_to_download, extract_type='highway'):
     file_urls = file_urls_to_download
     file_paths = download_files(file_urls)
     w = WayMap(extract_type=extract_type)
     w.extract_files(file_paths)
     return w
+
 
 def download_file(url):
     local_filename = url.split('/')[-1]
@@ -117,6 +121,7 @@ def download_file(url):
         if chunk:  # filter out keep-alive new chunks
           f.write(chunk)
     return full_local_filename
+
 
 def download_files(url_list):
   paths = []

@@ -4,6 +4,7 @@
 
 from osgeo import osr
 
+
 def latLonToPixel(raster_dataset, location):
   '''
       from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
@@ -21,6 +22,7 @@ def latLonToPixel(raster_dataset, location):
   x = (new_location[1]-gt[0])/gt[1]
   y = (new_location[0]-gt[3])/gt[5]
   return(int(x), int(y))
+
 
 def pixelToLatLng(raster_dataset, col, row):
   '''

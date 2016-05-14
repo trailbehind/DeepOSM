@@ -7,6 +7,7 @@ import numpy
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
 
+
 def train(bands_to_use,
           image_size,
           train_images,

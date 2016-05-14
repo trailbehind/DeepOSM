@@ -7,6 +7,7 @@ from PIL import Image
 
 from src.create_training_data import way_bitmap_for_naip
 
+
 def render_results_for_analysis(raster_data_paths,
                                 training_labels,
                                 test_labels,
@@ -23,6 +24,7 @@ def render_results_for_analysis(raster_data_paths,
                            way_bitmap_npy,
                            band_list,
                            tile_size)
+
 
 def render_predictions(raster_data_path,
                        training_labels,
@@ -54,6 +56,7 @@ def render_predictions(raster_data_path,
                             band_list,
                             tile_size,
                             predictions=predictions_by_naip)
+
 
 def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, band_list, tile_size, predictions=None):
     '''
@@ -105,6 +108,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
     print("{0:.1f}s to DRAW WAYS ON JPEG".format(t1-t0))
 
     im.save(outfile, "JPEG")
+
 
 def shade_labels(image, labels, predictions, tile_size):
     '''

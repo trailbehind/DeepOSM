@@ -6,6 +6,7 @@ from src.download_naips import NAIPDownloader
 from src.create_training_data import (random_training_data, equalize_data, split_train_test,
                                       format_as_onehot_arrays, dump_data_to_disk)
 
+
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tile-size",
