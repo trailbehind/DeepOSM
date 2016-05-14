@@ -6,16 +6,16 @@ import single_layer_network
 from create_training_data import has_ways, has_ways_in_center
 
 
-def analyze(onehot_training_labels, 
-            onehot_test_labels, 
-            test_labels, 
-            training_labels, 
-            test_images, 
-            training_images, 
-            label_types, 
-            neural_net_type, 
-            band_list, 
-            tile_size, 
+def analyze(onehot_training_labels,
+            onehot_test_labels,
+            test_labels,
+            training_labels,
+            test_images,
+            training_images,
+            label_types,
+            neural_net_type,
+            band_list,
+            tile_size,
             number_of_epochs):
   '''
       package data for tensorflow and analyze

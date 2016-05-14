@@ -1,5 +1,5 @@
 '''
-    a class to download NAIP imagery from 
+    a class to download NAIP imagery from
     the s3://aws-naip RequesterPays bucket
 '''
 
@@ -8,12 +8,12 @@ from random import shuffle
 import sys, os, subprocess, time
 
 # set in Dockerfile as env variable
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") 
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 
 class NAIPDownloader:
 
-  def __init__(self, number_of_naips, 
+  def __init__(self, number_of_naips,
                should_randomize,
                state, year, resolution, spectrum, grid):
     '''
@@ -66,7 +66,7 @@ class NAIPDownloader:
     return naip_local_paths
 
   def configure_s3cmd(self):
-    ''' 
+    '''
         configure s3cmd with AWS credentials
     '''
     file_path = os.environ.get("HOME")+'/.s3cfg'
@@ -117,7 +117,7 @@ class NAIPDownloader:
         print("NAIP {} already downloaded".format(full_path))
       else:
         if not has_printed:
-          print("DOWNLOADING {} NAIPs...".format(max_range)) 
+          print("DOWNLOADING {} NAIPs...".format(max_range))
           has_printed = True
         url_without_prefix = self.url_base.split(self.bucket_url)[1]
         s3_url = '{}{}'.format(url_without_prefix, filename)

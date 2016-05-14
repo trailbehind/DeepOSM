@@ -12,12 +12,12 @@ import numpy
 
 def train(bands_to_use,
           image_size,
-          train_images, 
-          train_labels, 
-          test_images, 
+          train_images,
+          train_labels,
+          test_images,
           test_labels,
           number_of_epochs,
-          layer_type='one_layer_relu'):  
+          layer_type='one_layer_relu'):
   '''
       trains a single layer neural network
       returns predicted values for the test_images
@@ -38,7 +38,7 @@ def train(bands_to_use,
     network = tflearn.fully_connected(network, 2048, activation='relu')
   elif layer_type == 'one_layer_relu_conv':
     network = conv_2d(network, 256, 16, activation='relu')
-    network = max_pool_2d(network, 3)  
+    network = max_pool_2d(network, 3)
   else:
     print("ERROR: exiting, unknown layer type for neural net")
 
@@ -47,8 +47,8 @@ def train(bands_to_use,
 
   # based on parameters from https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf
   momentum = tflearn.optimizers.Momentum (learning_rate=.005,
-                                          momentum=0.9, 
-                                          lr_decay=0.0002, 
+                                          momentum=0.9,
+                                          lr_decay=0.0002,
                                           name='Momentum')
 
   net = tflearn.regression(softmax, optimizer=momentum, loss='categorical_crossentropy')
@@ -56,7 +56,7 @@ def train(bands_to_use,
   model = tflearn.DNN(net, tensorboard_verbose=0)
   model.fit(train_images, train_labels, n_epoch=number_of_epochs, shuffle=False, validation_set=(test_images, test_labels),
             show_metric=True, run_id='mlp')
-  
+
   # batch predictions on the test image set, to avoid a memory spike
   all_predictions = []
   for x in range(0, len(test_images)-100, 100):

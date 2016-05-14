@@ -169,11 +169,11 @@ def bounds_contains_point(bounds, point_tuple):
     return False
   return True
 
-def random_training_data(raster_data_paths, 
-                         extract_type, 
-                         band_list, 
-                         tile_size, 
-                         pixels_to_fatten_roads, 
+def random_training_data(raster_data_paths,
+                         extract_type,
+                         band_list,
+                         tile_size,
+                         pixels_to_fatten_roads,
                          label_data_files,
                          tile_overlap):
   road_labels = []
@@ -267,18 +267,18 @@ def has_ways_in_center(tile, tolerance):
     for y in range(center_y - tolerance, center_y + tolerance):
       pixel_value = tile[x][y]
       if pixel_value != 0:
-        return True    
+        return True
   return False
 
 def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
   tile_height = len(rgbir_matrix)
-  
+
   r_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
       r_img[x][y] = rgbir_matrix[x][y][0]
-  
+
   g_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
@@ -286,7 +286,7 @@ def save_image_clipping(tile, status):
         g_img[x][y] = rgbir_matrix[x][y][1]
       else:
         g_img[x][y] = rgbir_matrix[x][y][0]
-  
+
   b_img = numpy.empty([tile_height,tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
@@ -354,9 +354,9 @@ def onehot_for_labels(labels):
 CACHE_PATH = './data/cache/'
 
 def dump_data_to_disk(raster_data_paths,
-                      training_images, 
-                      training_labels, 
-                      test_images, 
+                      training_images,
+                      training_labels,
+                      test_images,
                       test_labels,
                       label_types,
                       onehot_training_labels,
@@ -418,4 +418,3 @@ def load_data_from_disk():
 if __name__ == "__main__":
     print("Instead of running this file, use bin/create_training_data.py instead.", file=sys.stderr)
     sys.exit(1)
-

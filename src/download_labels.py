@@ -11,7 +11,7 @@ import shapely.wkb as wkblib
 wkbfab = o.geom.WKBFactory()
 
 # set in Dockerfile as env variable
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR") 
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 
 class WayMap():
     def __init__(self, extract_type='highway'):
@@ -24,7 +24,7 @@ class WayMap():
     def run_extraction(self, file_path):
       t0 = time.time()
       self.extracter.apply_file(file_path, locations=True)
-      t1 = time.time()      
+      t1 = time.time()
       elapsed = "{0:.1f}".format(t1-t0)
       print "EXTRACTED WAYS with locations from pbf file {}, took {}s".format(file_path, elapsed)
 
@@ -80,7 +80,7 @@ class WayExtracter(o.SimpleHandler):
 
       if not should_extract:
         return
-      
+
       if not way_type in self.types:
         self.types.append(way_type)
 
@@ -110,7 +110,7 @@ class WayExtracter(o.SimpleHandler):
 
 def download_and_extract(file_urls_to_download, extract_type='highway'):
     file_urls = file_urls_to_download
-    file_paths = download_files(file_urls)               
+    file_paths = download_files(file_urls)
     w = WayMap(extract_type=extract_type)
     w.extract_files(file_paths)
     return w
@@ -140,4 +140,3 @@ def download_files(url_list):
   if time.time()-t0 > 0.01:
     print("downloads took {0:.1f}s".format(time.time()-t0))
   return paths
-

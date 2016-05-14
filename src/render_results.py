@@ -3,34 +3,34 @@ import json, numpy, os, time
 from PIL import Image
 from src.create_training_data import way_bitmap_for_naip, CACHE_PATH
 
-def render_results_for_analysis(raster_data_paths, 
-                                training_labels, 
-                                test_labels, 
-                                predictions, 
-                                band_list, 
+def render_results_for_analysis(raster_data_paths,
+                                training_labels,
+                                test_labels,
+                                predictions,
+                                band_list,
                                 tile_size):
 
     for raster_data_path in raster_data_paths:
         way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
-        render_predictions(raster_data_path, 
-                           training_labels, 
-                           test_labels, 
+        render_predictions(raster_data_path,
+                           training_labels,
+                           test_labels,
                            predictions,
-                           way_bitmap_npy, 
-                           band_list, 
+                           way_bitmap_npy,
+                           band_list,
                            tile_size)
 
-def render_predictions(raster_data_path,  
-                       training_labels, 
-                       test_labels, 
-                       predictions, 
-                       way_bitmap_npy, 
-                       band_list, 
+def render_predictions(raster_data_path,
+                       training_labels,
+                       test_labels,
+                       predictions,
+                       way_bitmap_npy,
+                       band_list,
                        tile_size):
     training_labels_by_naip = []
     test_labels_by_naip = []
     predictions_by_naip = []
-    
+
     index = 0
     for label in test_labels:
       if label[2] == raster_data_path:
