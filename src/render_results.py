@@ -8,46 +8,33 @@ from PIL import Image
 from src.create_training_data import way_bitmap_for_naip
 
 
-def render_results_for_analysis(raster_data_paths,
-                                training_labels,
-                                test_labels,
-                                predictions,
-                                band_list,
-                                tile_size):
+def render_results_for_analysis(raster_data_paths, training_labels, test_labels, predictions,
+                                band_list, tile_size):
 
     for raster_data_path in raster_data_paths:
-        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, None))
-        render_predictions(raster_data_path,
-                           training_labels,
-                           test_labels,
-                           predictions,
-                           way_bitmap_npy,
-                           band_list,
-                           tile_size)
+        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None,
+                                                           None))
+        render_predictions(raster_data_path, training_labels, test_labels, predictions,
+                           way_bitmap_npy, band_list, tile_size)
 
 
-def render_predictions(raster_data_path,
-                       training_labels,
-                       test_labels,
-                       predictions,
-                       way_bitmap_npy,
-                       band_list,
-                       tile_size):
+def render_predictions(raster_data_path, training_labels, test_labels, predictions, way_bitmap_npy,
+                       band_list, tile_size):
     training_labels_by_naip = []
     test_labels_by_naip = []
     predictions_by_naip = []
 
     index = 0
     for label in test_labels:
-      if label[2] == raster_data_path:
-        predictions_by_naip.append(predictions[index])
-        test_labels_by_naip.append(test_labels[index])
-      index += 1
+        if label[2] == raster_data_path:
+            predictions_by_naip.append(predictions[index])
+            test_labels_by_naip.append(test_labels[index])
+        index += 1
 
     index = 0
     for label in training_labels:
-      training_labels_by_naip.append(training_labels[index])
-      index += 1
+        training_labels_by_naip.append(training_labels[index])
+        index += 1
 
     render_results_as_image(raster_data_path,
                             way_bitmap_npy,
@@ -58,7 +45,13 @@ def render_predictions(raster_data_path,
                             predictions=predictions_by_naip)
 
 
-def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_labels, band_list, tile_size, predictions=None):
+def render_results_as_image(raster_data_path,
+                            way_bitmap,
+                            training_labels,
+                            test_labels,
+                            band_list,
+                            tile_size,
+                            predictions=None):
     '''
         save the source TIFF as a JPEG, with labels and data overlaid
     '''
@@ -74,38 +67,39 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
     # visualize single band analysis tinted for R-G-B,
     # or grayscale for infrared band
     if sum(band_list) == 1:
-      if band_list[3] == 1:
-        # visualize IR as grayscale
-        im = Image.merge("RGB", (ir, ir, ir))
-      else:
-        # visualize single-color band analysis as a scale of that color
-        zeros_band = Image.new('RGB', r.size).split()[0]
-        if band_list[0] == 1:
-          im = Image.merge("RGB", (r, zeros_band, zeros_band))
-        elif band_list[1] == 1:
-          im = Image.merge("RGB", (zeros_band, g, zeros_band))
-        elif band_list[2] == 1:
-          im = Image.merge("RGB", (zeros_band, zeros_band, b))
+        if band_list[3] == 1:
+            # visualize IR as grayscale
+            im = Image.merge("RGB", (ir, ir, ir))
+        else:
+            # visualize single-color band analysis as a scale of that color
+            zeros_band = Image.new('RGB', r.size).split()[0]
+            if band_list[0] == 1:
+                im = Image.merge("RGB", (r, zeros_band, zeros_band))
+            elif band_list[1] == 1:
+                im = Image.merge("RGB", (zeros_band, g, zeros_band))
+            elif band_list[2] == 1:
+                im = Image.merge("RGB", (zeros_band, zeros_band, b))
     else:
-      # visualize multi-band analysis as RGB
-      im = Image.merge("RGB", (r, g, b))
+        # visualize multi-band analysis as RGB
+        im = Image.merge("RGB", (r, g, b))
 
     t1 = time.time()
-    print("{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1-t0, sum(band_list)))
+    print("{0:.1f}s to FLATTEN the {1} analyzed bands of TIF to JPEG".format(t1 - t0, sum(
+        band_list)))
 
     t0 = time.time()
     shade_labels(im, test_labels, predictions, tile_size)
     t1 = time.time()
-    print("{0:.1f}s to SHADE PREDICTIONS on JPEG".format(t1-t0))
+    print("{0:.1f}s to SHADE PREDICTIONS on JPEG".format(t1 - t0))
 
     t0 = time.time()
     # show raw data that spawned the labels
     for row in range(0, rows):
-      for col in range(0, cols):
-        if way_bitmap[row][col] != 0:
-          im.putpixel((col, row), (255, 0, 0))
+        for col in range(0, cols):
+            if way_bitmap[row][col] != 0:
+                im.putpixel((col, row), (255, 0, 0))
     t1 = time.time()
-    print("{0:.1f}s to DRAW WAYS ON JPEG".format(t1-t0))
+    print("{0:.1f}s to DRAW WAYS ON JPEG".format(t1 - t0))
 
     im.save(outfile, "JPEG")
 
@@ -116,15 +110,15 @@ def shade_labels(image, labels, predictions, tile_size):
     '''
     label_index = 0
     for label in labels:
-      start_x = label[1][0]
-      start_y = label[1][1]
-      for x in range(start_x, start_x+tile_size):
-        for y in range(start_y, start_y+tile_size):
-          r, g, b = image.getpixel((x, y))
-          if predictions[label_index][0] < predictions[label_index][1]:
-            # shade ON predictions blue
-            image.putpixel((x, y), (r, g, 255))
-          else:
-            # shade OFF predictions green
-            image.putpixel((x, y), (r, 255, b))
-      label_index += 1
+        start_x = label[1][0]
+        start_y = label[1][1]
+        for x in range(start_x, start_x + tile_size):
+            for y in range(start_y, start_y + tile_size):
+                r, g, b = image.getpixel((x, y))
+                if predictions[label_index][0] < predictions[label_index][1]:
+                    # shade ON predictions blue
+                    image.putpixel((x, y), (r, g, 255))
+                else:
+                    # shade OFF predictions green
+                    image.putpixel((x, y), (r, 255, b))
+        label_index += 1
