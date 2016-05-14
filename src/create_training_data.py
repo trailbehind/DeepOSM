@@ -41,7 +41,7 @@ NAIP_GRID = '38077'
 
 # set this to a value between 1 and 10 or so,
 # 10 segfaults on a VirtualBox with 12GB, but runs on a Linux machine with 32GB
-NUMBER_OF_NAIPS = 5
+NUMBER_OF_NAIPS = 8
 
 # set this to True for production data science, False for debugging infrastructure
 # speeds up downloads and matrix making when False
@@ -96,8 +96,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
   all_tiled_data = []
 
-  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/4):
-    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/4):
+  for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size):
+    for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size):
       if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols -NAIP_PIXEL_BUFFER:
         new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
         all_tiled_data.append((new_tile,(col, row),raster_data_path))
@@ -222,20 +222,19 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
 
   # tile images and labels
   waymap = download_and_extract(PBF_FILE_URLS, extract_type)
-  way_bitmap_npy = {}
 
   for raster_data_path in raster_data_paths:
     raster_dataset, bands_data = read_naip(raster_data_path, band_list)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
-    way_bitmap_npy[raster_data_path] = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
+    way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
-    for col in range(left_x, right_x, tile_size/4):
-      for row in range(top_y, bottom_y, tile_size/4):
+    for col in range(left_x, right_x, tile_size):
+      for row in range(top_y, bottom_y, tile_size):
         if row+tile_size < bottom_y and col+tile_size < right_x:
-          new_tile = way_bitmap_npy[raster_data_path][row:row+tile_size, col:col+tile_size]
+          new_tile = way_bitmap_npy[row:row+tile_size, col:col+tile_size]
           road_labels.append((new_tile,(col, row),raster_data_path))
 
     for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size):
@@ -244,7 +243,7 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size):
   assert len(road_labels) == len(naip_tiles)
 
   road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
-  return road_labels, naip_tiles, waymap, way_bitmap_npy
+  return road_labels, naip_tiles, waymap
 
 def shuffle_in_unison(a, b):
    '''

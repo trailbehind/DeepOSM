@@ -36,7 +36,7 @@ def main():
     raster_data_paths = NAIPDownloader(NUMBER_OF_NAIPS, RANDOMIZE_NAIPS, NAIP_STATE, NAIP_YEAR,
                                        NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID,
                                        HARDCODED_NAIP_LIST).download_naips()
-    road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(
+    road_labels, naip_tiles, waymap = random_training_data(
         raster_data_paths, args.extract_type, args.band_list, args.tile_size)
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles,
                                                                 args.save_clippings)
