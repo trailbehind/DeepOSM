@@ -7,7 +7,7 @@ from osgeo import osr
 
 def latLonToPixel(raster_dataset, location):
     '''
-        from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
+    from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
     '''
     ds = raster_dataset
     gt = ds.GetGeoTransform()
@@ -26,7 +26,7 @@ def latLonToPixel(raster_dataset, location):
 
 def pixelToLatLng(raster_dataset, col, row):
     '''
-        from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
+    from http://zacharybears.com/using-python-to-translate-latlon-locations-to-pixels-on-a-geotiff/
     '''
     ds = raster_dataset
     gt = ds.GetGeoTransform()

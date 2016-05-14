@@ -21,7 +21,7 @@ NAIP_PIXEL_BUFFER = 300
 def read_naip(file_path, bands_to_use):
     '''
         read a NAIP from disk
-        bands_to_use is an array like [0,0,0,1], designating whether to use each band (R, G, B, and IR)
+        bands_to_use is an array like [0,0,0,1], designating whether to use each band (R, G, B, IR)
         from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
     '''
     raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
@@ -56,7 +56,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
     for col in range(NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, tile_size / tile_overlap):
         for row in range(NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER, tile_size / tile_overlap):
-            if row + tile_size < rows - NAIP_PIXEL_BUFFER and col + tile_size < cols - NAIP_PIXEL_BUFFER:
+            if row + tile_size < rows - NAIP_PIXEL_BUFFER and \
+               col + tile_size < cols - NAIP_PIXEL_BUFFER:
                 new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:on_band_count]
                 all_tiled_data.append((new_tile, (col, row), raster_data_path))
 
@@ -119,7 +120,8 @@ def bounds_for_naip(raster_dataset, rows, cols):
     '''
         clip the NAIP to 0 to cols, 0 to rows
     '''
-    left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
+    left_x, right_x, top_y, bottom_y = \
+        NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
     sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
     ne = pixelToLatLng(raster_dataset, right_x, top_y)
     return {'sw': sw, 'ne': ne}
@@ -199,7 +201,8 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size,
             way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols,
                                 pixels_to_fatten_roads))
 
-        left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
+        left_x, right_x, top_y, bottom_y = \
+            NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
         for col in range(left_x, right_x, tile_size / tile_overlap):
             for row in range(top_y, bottom_y, tile_size / tile_overlap):
                 if row + tile_size < bottom_y and col + tile_size < right_x:

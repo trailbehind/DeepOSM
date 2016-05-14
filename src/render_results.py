@@ -57,7 +57,8 @@ def render_results_as_image(raster_data_path,
     '''
     timestr = time.strftime("%Y%m%d-%H%M%S")
     outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".jpeg"
-    # TIF to JPEG bit from: from: http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
+    # TIF to JPEG bit from: from:
+    # http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
     im = Image.open(raster_data_path)
     print("GENERATING JPEG for %s" % raster_data_path)
     rows = len(way_bitmap)
