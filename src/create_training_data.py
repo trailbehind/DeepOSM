@@ -1,13 +1,14 @@
 from __future__ import print_function
 
-import numpy
 import os
 import pickle
 import sys
 import time
 from random import shuffle
+
 from osgeo import gdal
 from PIL import Image
+import numpy
 
 from download_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng

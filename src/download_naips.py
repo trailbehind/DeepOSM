@@ -2,10 +2,13 @@
     a class to download NAIP imagery from
     the s3://aws-naip RequesterPays bucket
 '''
+import os
+import subprocess
+import sys
+import time
+from random import shuffle
 
 import boto3
-from random import shuffle
-import sys, os, subprocess, time
 
 # set in Dockerfile as env variable
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")

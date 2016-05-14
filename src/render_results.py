@@ -1,6 +1,10 @@
 from __future__ import print_function
-import numpy, os, time
+import os
+import time
+
+import numpy
 from PIL import Image
+
 from src.create_training_data import way_bitmap_for_naip
 
 def render_results_for_analysis(raster_data_paths,

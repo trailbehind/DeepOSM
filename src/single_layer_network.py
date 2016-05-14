@@ -3,10 +3,9 @@
 '''
 from __future__ import division, print_function, absolute_import
 
+import numpy
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
-
-import numpy
 
 def train(bands_to_use,
           image_size,

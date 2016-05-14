@@ -1,6 +1,9 @@
 from __future__ import print_function
 
-import numpy, sys
+import sys
+
+import numpy
+
 import single_layer_network
 
 
