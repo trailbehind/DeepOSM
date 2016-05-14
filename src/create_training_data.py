@@ -79,14 +79,11 @@ def way_bitmap_for_naip(ways, raster_data_path, raster_dataset, rows, cols, pixe
   bounds = bounds_for_naip(raster_dataset, rows, cols)
   ways_on_naip = []
 
-  t0 = time.time()
-  print("FINDING WAYS on NAIP..."),
   for way in ways:
     for point_tuple in way['linestring']:
       if bounds_contains_point(bounds, point_tuple):
         ways_on_naip.append(way)
         break
-  print(" {0:.1f}s".format(time.time()-t0))
   print("EXTRACTED {} highways in NAIP bounds, of {} ways".format(len(ways_on_naip), len(ways)))
 
   print("MAKING BITMAP for way presence...", end="")
