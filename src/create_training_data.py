@@ -191,7 +191,7 @@ def random_training_data(raster_data_paths,
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
 
-    way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols))
+    way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols, pixels_to_fatten_roads))
 
     left_x, right_x, top_y, bottom_y = NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER
     for col in range(left_x, right_x, tile_size/tile_overlap):

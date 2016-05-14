@@ -44,6 +44,8 @@ class WayExtracter(o.SimpleHandler):
         self.extract_if_tennis_court(w)
       elif self.extract_type == 'highway':
         self.extract_if_highway(w)
+      elif self.extract_type == 'footway':
+        self.extract_if_footway(w)
       else:
         print "ERROR unknown type to extract from PBF file"
 
@@ -69,6 +71,36 @@ class WayExtracter(o.SimpleHandler):
 
       self.add_linestring(w, way_dict)
 
+    def extract_if_footway(self, w):
+      is_footway = False
+      is_big = False
+      name = ''
+      footway_type = None
+      for tag in w.tags:
+        if tag.k == 'name':
+          name = tag.v
+        if tag.k == 'footway':
+          footway_type = tag.v
+          is_footway = True
+
+      if not is_footway:
+        return
+      
+      if not footway_type in self.types:
+        self.types.append(footway_type)
+
+      way_dict = {'visible': w.visible,
+                  'deleted': w.deleted,
+                  'uid': w.uid,
+                  'footway_type': footway_type,
+                  'ends_have_same_id': w.ends_have_same_id(),
+                  'id': w.id,
+                  'tags':[]}
+      for tag in w.tags:
+        way_dict['tags'].append((tag.k, tag.v))
+
+      self.add_linestring(w, way_dict)
+
     def extract_if_highway(self, w):
       is_highway = False
       is_big = False
@@ -77,19 +109,10 @@ class WayExtracter(o.SimpleHandler):
       for tag in w.tags:
         if tag.k == 'name':
           name = tag.v
-        #  and tag.v in ['primary', 'secondary', 'tertiary', 'trunk']
         if tag.k == 'highway':
           highway_type = tag.v
           is_highway = True
-        #try:
-        #  if tag.k == 'lanes' and int(tag.v[len(tag.v)-1]) >= 2:
-        #    is_big = True
-        #  #    #for t in w.tags:
-        #  #    #  print "tag {} {}".format(t.k, t.v)
-        #except:
-        #  print("exception, weird lanes designation {}".format(tag.v))
 
-      #  or not is_big
       if not is_highway:
         return
       
