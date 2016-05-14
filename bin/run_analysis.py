@@ -29,6 +29,10 @@ def create_parser():
                         default='one_layer_relu',
                         choices=['one_layer_relu', 'one_layer_relu_conv'],
                         help="the neural network architecture to use")
+    parser.add_argument("--pixels-to-fatten-roads",
+                        default=3,
+                        type=int,
+                        help="the number of pixels to fatten a road centerline (e.g. the default 3 makes roads 7px wide)")
     return parser
 
 
@@ -45,7 +49,8 @@ def main():
                                     test_labels, 
                                     predictions, 
                                     args.band_list, 
-                                    args.tile_size)
+                                    args.tile_size,
+                                    args.pixels_to_fatten_roads)
 
 if __name__ == "__main__":
     main()

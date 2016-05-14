@@ -413,7 +413,6 @@ def load_data_from_disk():
         onehot_training_labels = pickle.load(infile)
     with open(CACHE_PATH + 'onehot_test_labels.pickle', 'r') as infile:
         onehot_test_labels = pickle.load(infile)
-
     print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
     return raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
            onehot_training_labels, onehot_test_labels
