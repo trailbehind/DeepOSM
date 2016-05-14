@@ -75,7 +75,7 @@ def main():
                                        NAIP_SPECTRUM, 
                                        NAIP_GRID,
                                        ).download_naips()
-    road_labels, naip_tiles, waymap, way_bitmap_npy = random_training_data(
+    road_labels, naip_tiles, waymap = random_training_data(
         raster_data_paths, args.extract_type, args.band_list, args.tile_size, args.pixels_to_fatten_roads, args.label_data_files, args.tile_overlap)
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles, args.save_clippings)
     test_labels, training_labels, test_images, training_images = split_train_test(
