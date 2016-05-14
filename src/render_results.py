@@ -100,7 +100,7 @@ def render_results_as_image(raster_data_path, way_bitmap, training_labels, test_
     for row in range(0, rows):
       for col in range(0, cols):
         if way_bitmap[row][col] != 0:
-          im.putpixel((col, row), (255,0,0))
+          im.putpixel((col, row), (255, 0, 0))
     t1 = time.time()
     print("{0:.1f}s to DRAW WAYS ON JPEG".format(t1-t0))
 

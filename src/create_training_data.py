@@ -55,8 +55,8 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
   for col in range(NAIP_PIXEL_BUFFER, cols-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
     for row in range(NAIP_PIXEL_BUFFER, rows-NAIP_PIXEL_BUFFER, tile_size/tile_overlap):
       if row+tile_size < rows-NAIP_PIXEL_BUFFER and col+tile_size < cols-NAIP_PIXEL_BUFFER:
-        new_tile = bands_data[row:row+tile_size, col:col+tile_size,0:on_band_count]
-        all_tiled_data.append((new_tile,(col, row),raster_data_path))
+        new_tile = bands_data[row:row+tile_size, col:col+tile_size, 0:on_band_count]
+        all_tiled_data.append((new_tile, (col, row), raster_data_path))
 
   return all_tiled_data
 
@@ -126,7 +126,7 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap, pixels_to
                    max(end_pixel[1], start_pixel[1])):
       safe_add_pixel(end_pixel[0], y, way_bitmap)
       # if configged, fatten lines
-      for x in range(1,pixels_to_fatten_roads+1):
+      for x in range(1, pixels_to_fatten_roads+1):
         safe_add_pixel(end_pixel[0]-x, y, way_bitmap)
         safe_add_pixel(end_pixel[0]+x, y, way_bitmap)
     return
@@ -137,8 +137,8 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap, pixels_to
   i = 0
   while i < cols:
     floatx = start_pixel[0] + (end_pixel[0] - start_pixel[0]) * i / float(cols)
-    p = (int(floatx),int(offset + slope * floatx))
-    safe_add_pixel(p[0],p[1], way_bitmap)
+    p = (int(floatx), int(offset + slope * floatx))
+    safe_add_pixel(p[0], p[1], way_bitmap)
     i += 1
     # if configged, fatten lines
     for x in range(1, pixels_to_fatten_roads+1):
@@ -195,7 +195,7 @@ def random_training_data(raster_data_paths,
       for row in range(top_y, bottom_y, tile_size/tile_overlap):
         if row+tile_size < bottom_y and col+tile_size < right_x:
           new_tile = way_bitmap_npy[row:row+tile_size, col:col+tile_size]
-          road_labels.append((new_tile,(col, row),raster_data_path))
+          road_labels.append((new_tile, (col, row), raster_data_path))
 
     for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size, tile_overlap):
       naip_tiles.append(tile)
@@ -223,9 +223,9 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
   way_indices = []
   for x in range(len(road_labels)):
     tile = road_labels[x][0]
-    if has_ways_in_center(tile,1):
+    if has_ways_in_center(tile, 1):
       way_indices.append(x)
-    elif not has_ways_in_center(tile,16):
+    elif not has_ways_in_center(tile, 16):
       wayless_indices.append(x)
 
   count_wayless = len(wayless_indices)
@@ -260,12 +260,12 @@ def save_image_clipping(tile, status):
   rgbir_matrix = tile[0]
   tile_height = len(rgbir_matrix)
 
-  r_img = numpy.empty([tile_height,tile_height])
+  r_img = numpy.empty([tile_height, tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
       r_img[x][y] = rgbir_matrix[x][y][0]
 
-  g_img = numpy.empty([tile_height,tile_height])
+  g_img = numpy.empty([tile_height, tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
       if len(rgbir_matrix[x][y]) > 1:
@@ -273,7 +273,7 @@ def save_image_clipping(tile, status):
       else:
         g_img[x][y] = rgbir_matrix[x][y][0]
 
-  b_img = numpy.empty([tile_height,tile_height])
+  b_img = numpy.empty([tile_height, tile_height])
   for x in range(len(rgbir_matrix)):
     for y in range(len(rgbir_matrix[x])):
       if len(rgbir_matrix[x][y]) > 2:
@@ -281,11 +281,13 @@ def save_image_clipping(tile, status):
       else:
         b_img[x][y] = rgbir_matrix[x][y][0]
 
-  im = Image.merge('RGB',(Image.fromarray(r_img).convert('L'),Image.fromarray(g_img).convert('L'),Image.fromarray(b_img).convert('L')))
+  im = Image.merge('RGB', (Image.fromarray(r_img).convert('L'),
+                           Image.fromarray(g_img).convert('L'),
+                           Image.fromarray(b_img).convert('L')))
   outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][1]) + '-' + '.jpg'
   im.save(outfile_path, "JPEG")
 
-def split_train_test(equal_count_tile_list,equal_count_way_list, percent_for_training_data):
+def split_train_test(equal_count_tile_list, equal_count_way_list, percent_for_training_data):
   test_labels = []
   training_labels = []
   test_images = []
@@ -325,11 +327,11 @@ def onehot_for_labels(labels):
 
   onehot_labels = []
   for label in labels:
-    if has_ways_in_center(label[0],1):
-      onehot_labels.append([0,1])
+    if has_ways_in_center(label[0], 1):
+      onehot_labels.append([0, 1])
       on_count += 1
-    elif not has_ways_in_center(label[0],16):
-      onehot_labels.append([1,0])
+    elif not has_ways_in_center(label[0], 16):
+      onehot_labels.append([1, 0])
       off_count += 1
 
   print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count/float(len(labels))))

@@ -83,7 +83,7 @@ class WayExtracter(o.SimpleHandler):
                   'way_type': way_type,
                   'ends_have_same_id': w.ends_have_same_id(),
                   'id': w.id,
-                  'tags':[]}
+                  'tags': []}
       for tag in w.tags:
         way_dict['tags'].append((tag.k, tag.v))
       self.add_linestring(w, way_dict)
@@ -97,7 +97,7 @@ class WayExtracter(o.SimpleHandler):
       line = wkblib.loads(wkb, hex=True)
       reverse_points = []
       for point in list(line.coords):
-        reverse_points.append([point[1],point[0]])
+        reverse_points.append([point[1], point[0]])
       way_dict['linestring'] = reverse_points
       self.ways.append(way_dict)
 

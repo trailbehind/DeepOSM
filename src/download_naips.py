@@ -32,7 +32,8 @@ class NAIPDownloader:
     self.spectrum = spectrum
     self.grid = grid
     self.bucket_url = 's3://aws-naip/'
-    self.url_base = '{}{}/{}/{}/{}/{}/'.format(self.bucket_url, self.state,self.year,self.resolution,self.spectrum,self.grid)
+    self.url_base = '{}{}/{}/{}/{}/{}/'.format(self.bucket_url, self.state, self.year, self.resolution,
+                                               self.spectrum, self.grid)
 
     self.make_directory(NAIP_DATA_DIR, full_path=True)
 
@@ -73,12 +74,12 @@ class NAIPDownloader:
         configure s3cmd with AWS credentials
     '''
     file_path = os.environ.get("HOME")+'/.s3cfg'
-    f = open(file_path,'r')
+    f = open(file_path, 'r')
     filedata = f.read()
     f.close()
-    newdata = filedata.replace("AWS_ACCESS_KEY",os.environ.get("AWS_ACCESS_KEY_ID"))
-    newdata = newdata.replace("AWS_SECRET_KEY",os.environ.get("AWS_SECRET_ACCESS_KEY"))
-    f = open(file_path,'w')
+    newdata = filedata.replace("AWS_ACCESS_KEY", os.environ.get("AWS_ACCESS_KEY_ID"))
+    newdata = newdata.replace("AWS_SECRET_KEY", os.environ.get("AWS_SECRET_ACCESS_KEY"))
+    f = open(file_path, 'w')
     f.write(newdata)
     f.close()
 
@@ -124,7 +125,7 @@ class NAIPDownloader:
           has_printed = True
         url_without_prefix = self.url_base.split(self.bucket_url)[1]
         s3_url = '{}{}'.format(url_without_prefix, filename)
-        s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer':'requester'})
+        s3_client.download_file('aws-naip', s3_url, full_path, {'RequestPayer': 'requester'})
       naip_local_paths.append(full_path)
     if time.time()-t0 > 0.01:
       print("downloads took {0:.1f}s".format(time.time()-t0))

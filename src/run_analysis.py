@@ -40,7 +40,7 @@ def analyze(onehot_training_labels,
                                            )
   return predictions
 
-def print_data_dimensions(training_labels,band_list):
+def print_data_dimensions(training_labels, band_list):
   tiles = len(training_labels)
   h = len(training_labels[0][0])
   w = len(training_labels[0][0][0])

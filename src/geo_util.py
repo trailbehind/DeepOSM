@@ -13,14 +13,14 @@ def latLonToPixel(raster_dataset, location):
   srs = osr.SpatialReference()
   srs.ImportFromWkt(ds.GetProjection())
   srsLatLong = srs.CloneGeogCS()
-  ct = osr.CoordinateTransformation(srsLatLong,srs)
-  new_location =[None, None]
+  ct = osr.CoordinateTransformation(srsLatLong, srs)
+  new_location = [None, None]
   # Change the point locations into the GeoTransform space
-  (new_location[1],new_location[0],holder) = ct.TransformPoint(location[1],location[0])
+  (new_location[1], new_location[0], holder) = ct.TransformPoint(location[1], location[0])
   # Translate the x and y coordinates into pixel values
   x = (new_location[1]-gt[0])/gt[1]
   y = (new_location[0]-gt[3])/gt[5]
-  return(int(x),int(y))
+  return(int(x), int(y))
 
 def pixelToLatLng(raster_dataset, col, row):
   '''
@@ -31,9 +31,9 @@ def pixelToLatLng(raster_dataset, col, row):
   srs = osr.SpatialReference()
   srs.ImportFromWkt(ds.GetProjection())
   srsLatLong = srs.CloneGeogCS()
-  ct = osr.CoordinateTransformation(srs,srsLatLong)
+  ct = osr.CoordinateTransformation(srs, srsLatLong)
   ulon = col*gt[1]+gt[0]
   ulat = row*gt[5]+gt[3]
   # Transform the point into the GeoTransform space
-  (lon,lat,holder) = ct.TransformPoint(ulon,ulat)
+  (lon, lat, holder) = ct.TransformPoint(ulon, ulat)
   return (lat, lon)
