@@ -5,7 +5,7 @@ import time
 import numpy
 from PIL import Image
 
-from src.create_training_data import way_bitmap_for_naip
+from src.training_data import way_bitmap_for_naip
 
 
 def render_results_for_analysis(raster_data_paths, training_labels, test_labels, predictions,

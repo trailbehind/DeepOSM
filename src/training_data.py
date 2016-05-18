@@ -1,3 +1,5 @@
+"""Create training data for a neural net, from NAIP images and OpenStreetMap data."""
+
 from __future__ import print_function
 
 import os
@@ -10,20 +12,20 @@ from osgeo import gdal
 from PIL import Image
 import numpy
 
-from download_labels import download_and_extract
+from openstreetmap_labels import download_and_extract
 from geo_util import latLonToPixel, pixelToLatLng
 
 # there is a 300 pixel buffer around NAIPs that should be trimmed off,
-# where NAIPs overlap... using overlapping images makes wonky train/test splits
+# where NAIPs overlap... otherwise using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
 
 
 def read_naip(file_path, bands_to_use):
-    '''
-        read a NAIP from disk
-        bands_to_use is an array like [0,0,0,1], designating whether to use each band (R, G, B, IR)
-        from http://www.machinalis.com/blog/python-for-geospatial-data-processing/
-    '''
+    """
+    Read in a NAIP, based on www.machinalis.com/blog/python-for-geospatial-data-processing.
+
+    Bands_to_use is an array like [0,0,0,1], designating whether to use each band (R, G, B, IR).
+    """
     raster_dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
 
     bands_data = []
@@ -39,10 +41,11 @@ def read_naip(file_path, bands_to_use):
 
 
 def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_size, tile_overlap):
-    '''
-        cut a 4-band raster image into tiles,
-        tiles are cubes - up to 4 bands, and N height x N width based on tile_size
-    '''
+    """
+    Cut a 4-band raster image into tiles.
+
+    Tiles are cubes - up to 4 bands, and N height x N width based on tile_size.
+    """
     on_band_count = 0
     for b in bands_to_use:
         if b == 1:
@@ -68,10 +71,11 @@ def way_bitmap_for_naip(
         ways, raster_data_path,
         raster_dataset,
         rows, cols, pixels_to_fatten_roads=None):
-    '''
-        generate a matrix of size rows x cols, initialized to all zeroes,
-        but set to 1 for any pixel where an OSM way runs over
-    '''
+    """
+    Generate a matrix of size rows x cols, initialized to all zeroes.
+
+    Set matrix to 1 for any pixel where an OSM way runs over.
+    """
     cache_filename = raster_data_path + '-ways.bitmap.npy'
 
     try:
@@ -117,9 +121,7 @@ def way_bitmap_for_naip(
 
 
 def bounds_for_naip(raster_dataset, rows, cols):
-    '''
-        clip the NAIP to 0 to cols, 0 to rows
-    '''
+    """Clip the NAIP to 0 to cols, 0 to rows."""
     left_x, right_x, top_y, bottom_y = \
         NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
     sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
@@ -128,10 +130,7 @@ def bounds_for_naip(raster_dataset, rows, cols):
 
 
 def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap, pixels_to_fatten_roads):
-    '''
-        add the pixels between the start and end to way_bitmap,
-        maybe thickened based on config
-    '''
+    """Add the pixels between the start and end to way_bitmap, maybe thickened based on config."""
     if end_pixel[0] - start_pixel[0] == 0:
         for y in range(min(end_pixel[1], start_pixel[1]), max(end_pixel[1], start_pixel[1])):
             safe_add_pixel(end_pixel[0], y, way_bitmap)
@@ -159,9 +158,7 @@ def add_pixels_between(start_pixel, end_pixel, cols, rows, way_bitmap, pixels_to
 
 
 def safe_add_pixel(x, y, way_bitmap):
-    '''
-        turn on a pixel in way_bitmap if its in bounds
-    '''
+    """Turn on a pixel in way_bitmap if its in bounds."""
     if x < NAIP_PIXEL_BUFFER or y < NAIP_PIXEL_BUFFER or x >= len(way_bitmap[
             0]) - NAIP_PIXEL_BUFFER or y >= len(way_bitmap) - NAIP_PIXEL_BUFFER:
         return
@@ -169,9 +166,7 @@ def safe_add_pixel(x, y, way_bitmap):
 
 
 def bounds_contains_point(bounds, point_tuple):
-    '''
-     returns True if the bounds geographically contains the point_tuple
-    '''
+    """Return True if the bounds geographically contains the point_tuple."""
     if point_tuple[0] > bounds['ne'][0]:
         return False
     if point_tuple[0] < bounds['sw'][0]:
@@ -185,6 +180,7 @@ def bounds_contains_point(bounds, point_tuple):
 
 def random_training_data(raster_data_paths, extract_type, band_list, tile_size,
                          pixels_to_fatten_roads, label_data_files, tile_overlap):
+    """Return lists of training images and matching labels."""
     road_labels = []
     naip_tiles = []
 
@@ -198,11 +194,11 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size,
         cols = bands_data.shape[1]
 
         way_bitmap_npy = numpy.asarray(
-            way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows, cols,
-                                pixels_to_fatten_roads))
+            way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows,
+                                cols, pixels_to_fatten_roads))
 
-        left_x, right_x, top_y, bottom_y = \
-            NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
+        left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
+        top_y, bottom_y = NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
         for col in range(left_x, right_x, tile_size / tile_overlap):
             for row in range(top_y, bottom_y, tile_size / tile_overlap):
                 if row + tile_size < bottom_y and col + tile_size < right_x:
@@ -220,9 +216,7 @@ def random_training_data(raster_data_paths, extract_type, band_list, tile_size,
 
 
 def shuffle_in_unison(a, b):
-    '''
-       http://stackoverflow.com/questions/11765061/better-way-to-shuffle-two-related-lists
-    '''
+    """See www.stackoverflow.com/questions/11765061/better-way-to-shuffle-two-related-lists."""
     a_shuf = []
     b_shuf = []
     index_shuf = range(len(a))
@@ -234,6 +228,7 @@ def shuffle_in_unison(a, b):
 
 
 def equalize_data(road_labels, naip_tiles, save_clippings):
+    """Make sure labeled data includes an equal set of ON and OFF tiles."""
     wayless_indices = []
     way_indices = []
     for x in range(len(road_labels)):
@@ -263,6 +258,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
 
 
 def has_ways_in_center(tile, tolerance):
+    """Return true if the tile has road pixels withing tolerance pixels of the tile center."""
     center_x = len(tile) / 2
     center_y = len(tile[0]) / 2
     for x in range(center_x - tolerance, center_x + tolerance):
@@ -274,6 +270,7 @@ def has_ways_in_center(tile, tolerance):
 
 
 def save_image_clipping(tile, status):
+    """Save a tile of training data to disk to visualize."""
     rgbir_matrix = tile[0]
     tile_height = len(rgbir_matrix)
 
@@ -307,6 +304,7 @@ def save_image_clipping(tile, status):
 
 
 def split_train_test(equal_count_tile_list, equal_count_way_list, percent_for_training_data):
+    """Allocate percent_for_training_data for train, and the rest for test."""
     test_labels = []
     training_labels = []
     test_images = []
@@ -323,10 +321,10 @@ def split_train_test(equal_count_tile_list, equal_count_way_list, percent_for_tr
 
 
 def format_as_onehot_arrays(types, training_labels, test_labels):
-    '''
-        each label gets converted from an NxN tile with way bits flipped,
-        into a one hot array of whether the tile contains ways (i.e. [0,1] or [1,0] for each)
-    '''
+    """Each label gets converted from an NxN tile with way bits flipped.
+
+    Converts to a one-hot array of whether the tile has ways (i.e. [0,1] or [1,0] for each).
+    """
     print("CREATING ONE-HOT LABELS...")
     t0 = time.time()
     print("CREATING TEST one-hot labels")
@@ -339,9 +337,7 @@ def format_as_onehot_arrays(types, training_labels, test_labels):
 
 
 def onehot_for_labels(labels):
-    '''
-        returns a list of one-hot array labels, for a list of tiles
-    '''
+    """Return a list of one-hot array labels, for a list of tiles."""
     on_count = 0
     off_count = 0
 
@@ -362,11 +358,9 @@ def onehot_for_labels(labels):
 CACHE_PATH = './data/cache/'
 
 
-def dump_data_to_disk(raster_data_paths, training_images, training_labels, test_images, test_labels,
-                      label_types, onehot_training_labels, onehot_test_labels):
-    '''
-        pickle/json everything, so the analysis app can use the data
-    '''
+def dump_data_to_disk(raster_data_paths, training_images, training_labels, test_images,
+                      test_labels, label_types, onehot_training_labels, onehot_test_labels):
+    """Pickle/json everything, so the analysis app can use the data."""
     print("SAVING DATA: pickling and saving to disk")
     t0 = time.time()
     try:
@@ -394,9 +388,7 @@ def dump_data_to_disk(raster_data_paths, training_images, training_labels, test_
 
 
 def load_data_from_disk():
-    '''
-        read training data into memory
-    '''
+    """Read training data into memory."""
     print("LOADING DATA: reading from disk and unpickling")
     t0 = time.time()
     with open(CACHE_PATH + 'training_images.pickle', 'r') as infile:
@@ -421,5 +413,5 @@ def load_data_from_disk():
 
 
 if __name__ == "__main__":
-    print("Instead of running this file, use bin/create_training_data.py instead.", file=sys.stderr)
+    print("Use bin/create_training_data.py instead of running this script.", file=sys.stderr)
     sys.exit(1)

@@ -36,5 +36,5 @@ def print_data_dimensions(training_labels, band_list):
 
 
 if __name__ == "__main__":
-    print("Instead of running this file, use bin/run_analysis.py instead.", file=sys.stderr)
+    print("Instead of running this file, use bin/train_neural_net.py instead.", file=sys.stderr)
     sys.exit(1)

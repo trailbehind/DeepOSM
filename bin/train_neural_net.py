@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+'''
+    train a neural network using OpenStreetMap labels and NAIP images
+'''
+
 import argparse
 
-from src.run_analysis import analyze
-from src.create_training_data import load_data_from_disk
-from src.render_results import render_results_for_analysis
+from src.analysis import analyze
+from src.training_data import load_data_from_disk
+from src.training_visualization import render_results_for_analysis
 
 
 def create_parser():
@@ -13,7 +17,7 @@ def create_parser():
                         default=64,
                         type=int,
                         help="tile the NAIP and training data into NxN tiles with this dimension")
-    parser.add_argument("--band-list",
+    parser.add_argument("--bands",
                         default=[0, 0, 0, 1],
                         nargs=4,
                         type=int,
@@ -41,7 +45,7 @@ def main():
         onehot_training_labels, onehot_test_labels = load_data_from_disk()
     predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels,
                           test_images, training_images, label_types, args.neural_net,
-                          args.band_list, args.tile_size, args.number_of_epochs)
+                          args.bands, args.tile_size, args.number_of_epochs)
     if args.render_results:
         render_results_for_analysis(raster_data_paths, training_labels, test_labels, predictions,
                                     args.band_list, args.tile_size)

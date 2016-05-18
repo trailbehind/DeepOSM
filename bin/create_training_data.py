@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+'''
+    create training data from OpenStreetMap labels and NAIP images
+'''
+
 import argparse
 
-from src.download_naips import NAIPDownloader
-from src.create_training_data import (random_training_data, equalize_data, split_train_test,
-                                      format_as_onehot_arrays, dump_data_to_disk)
+from src.naip_images import NAIPDownloader
+from src.training_data import (random_training_data, equalize_data, split_train_test,
+                               format_as_onehot_arrays, dump_data_to_disk)
 
 
 def create_parser():
@@ -30,18 +34,25 @@ def create_parser():
                         type=float,
                         help="how much data to allocate for training. the remainder is left for "
                              "test")
-    parser.add_argument("--band-list",
+    parser.add_argument("--bands",
                         default=[0, 0, 0, 1],
                         nargs=4,
                         type=int,
                         help="specify which bands to activate (R  G  B  IR)"
                              "--bands 0 0 0 1 (which activates only the IR band)")
+    parser.add_argument(
+        "--label-data-files",
+        default=[
+            'http://download.geofabrik.de/north-america/us/delaware-latest.osm.pbf',
+        ],
+        type=str,
+        help="PBF files to extract road/feature label info from")
     parser.add_argument("--naip-path",
-                        default=['md', '2013', '1m', 'rgbir', '38077'],
-                        nargs=5,
+                        default=['de', '2013'],
+                        nargs=2,
                         type=str,
-                        help="values to create the S3 bucket path for some NAIPs"
-                             "--naip-path md 2013 1m rgbir 38077 (defaults to some Maryland data)")
+                        help="specify the state and year for the NAIPs to analyze"
+                             "--naip-path md 2013 (defaults to some Maryland data)")
     parser.add_argument("--randomize-naips",
                         default=False,
                         action='store_false',
@@ -52,14 +63,6 @@ def create_parser():
                         type=int,
                         help="set this to a value between 1 and 14 or so, 10 segfaults on a "
                              "VirtualBox with 12GB, but runs on a Linux machine with 32GB")
-    parser.add_argument(
-        "--label-data-files",
-        default=[
-            'http://download.geofabrik.de/north-america/us/maryland-latest.osm.pbf',
-            'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
-        ],
-        type=str,
-        help="PBF files to extract road/feature label info from")
     parser.add_argument("--extract-type",
                         default='highway',
                         choices=['highway', 'tennis', 'footway', 'cycleway'],
@@ -73,18 +76,12 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    NAIP_STATE, NAIP_YEAR, NAIP_RESOLUTION, NAIP_SPECTRUM, NAIP_GRID = args.naip_path
-
-    raster_data_paths = NAIPDownloader(args.number_of_naips,
-                                       args.randomize_naips,
-                                       NAIP_STATE,
-                                       NAIP_YEAR,
-                                       NAIP_RESOLUTION,
-                                       NAIP_SPECTRUM,
-                                       NAIP_GRID, ).download_naips()
+    NAIP_STATE, NAIP_YEAR = args.naip_path
+    naiper = NAIPDownloader(args.number_of_naips, args.randomize_naips, NAIP_STATE, NAIP_YEAR)
+    raster_data_paths = naiper.download_naips()
 
     road_labels, naip_tiles, waymap = random_training_data(
-        raster_data_paths, args.extract_type, args.band_list, args.tile_size,
+        raster_data_paths, args.extract_type, args.bands, args.tile_size,
         args.pixels_to_fatten_roads, args.label_data_files, args.tile_overlap)
 
     equal_count_way_list, equal_count_tile_list = equalize_data(road_labels, naip_tiles,

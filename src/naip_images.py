@@ -1,7 +1,5 @@
-'''
-    a class to download NAIP imagery from
-    the s3://aws-naip RequesterPays bucket
-'''
+"""A class to download NAIP imagery from the s3://aws-naip RequesterPays bucket."""
+
 import os
 import subprocess
 import sys
@@ -16,29 +14,26 @@ NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
 
 
 class NAIPDownloader:
-    def __init__(self, number_of_naips, should_randomize, state, year, resolution, spectrum, grid):
-        '''
-            download some arbitrary NAIP images from the aws-naip S3 bucket
-        '''
+    """Downloads NAIP images from S3, by state/year."""
 
+    def __init__(self, number_of_naips, should_randomize, state, year):
+        """Download some arbitrary NAIP images from the aws-naip S3 bucket."""
         self.number_of_naips = number_of_naips
         self.should_randomize = should_randomize
 
         self.state = state
         self.year = year
-        self.resolution = resolution
-        self.spectrum = spectrum
-        self.grid = grid
+        self.resolution = '1m'
+        self.spectrum = 'rgbir'
         self.bucket_url = 's3://aws-naip/'
-        self.url_base = '{}{}/{}/{}/{}/{}/'.format(self.bucket_url, self.state, self.year,
-                                                   self.resolution, self.spectrum, self.grid)
+
+        self.url_base = '{}{}/{}/{}/{}/'.format(self.bucket_url, self.state, self.year,
+                                                self.resolution, self.spectrum)
 
         self.make_directory(NAIP_DATA_DIR, full_path=True)
 
     def make_directory(self, new_dir, full_path=False):
-        '''
-            make a new directory tree if it doesn't already exist
-        '''
+        """Make a new directory tree if it doesn't already exist."""
         if full_path:
             path = ''
             for token in new_dir.split('/'):
@@ -56,10 +51,7 @@ class NAIPDownloader:
         return new_dir
 
     def download_naips(self):
-        '''
-            download self.number_of_naips randomish NAIPs from aws-naip bucket
-        '''
-
+        """Download self.number_of_naips of the naips for a given state."""
         self.configure_s3cmd()
         naip_filenames = self.list_naips()
         if self.should_randomize:
@@ -68,9 +60,7 @@ class NAIPDownloader:
         return naip_local_paths
 
     def configure_s3cmd(self):
-        '''
-            configure s3cmd with AWS credentials
-        '''
+        """Configure s3cmd with AWS credentials."""
         file_path = os.environ.get("HOME") + '/.s3cfg'
         f = open(file_path, 'r')
         filedata = f.read()
@@ -82,10 +72,7 @@ class NAIPDownloader:
         f.close()
 
     def list_naips(self):
-        '''
-            make a list of NAIPs based on the init parameters for the class
-        '''
-
+        """Make a list of NAIPs based on the init parameters for the class."""
         # list the contents of the bucket directory
         bash_command = "s3cmd ls --recursive --skip-existing {} --requester-pays".format(
             self.url_base)
@@ -94,18 +81,21 @@ class NAIPDownloader:
         naip_filenames = []
         for line in output.split('\n'):
             parts = line.split(self.url_base)
+            # there may be subdirectories for each state, where directories need to be made
             if len(parts) == 2:
-                naip_filenames.append(parts[1])
+                naip_path = parts[1]
+                naip_filenames.append(naip_path)
+                naip_subpath = os.path.join(NAIP_DATA_DIR, naip_path.split('/')[0])
+                if not os.path.exists(naip_subpath):
+                    os.mkdir(naip_subpath)
             else:
                 pass
                 # skip non filename lines from response
+
         return naip_filenames
 
     def download_from_s3(self, naip_filenames):
-        '''
-            download the NAIPs and return a list of the file paths
-        '''
-
+        """Download the NAIPs and return a list of the file paths."""
         s3_client = boto3.client('s3')
         naip_local_paths = []
         max_range = self.number_of_naips

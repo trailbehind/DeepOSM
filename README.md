@@ -72,7 +72,7 @@ The default data is eight NAIPs, which gets tiled into NxNx4 bands of data (RGB-
 
 ```
 python bin/create_training_data.py
-python bin/run_analysis.py
+python bin/train_neural_net.py
 ```
 
 For output, it will produce some console logs, and then JPEGs of the ways, labels, and predictions overlaid on the tiff.

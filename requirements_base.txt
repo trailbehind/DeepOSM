@@ -11,3 +11,5 @@ Shapely==1.5.15
 
 # tflearn, pinned to an arbitrary commit
 git+https://github.com/tflearn/tflearn.git@4fef666
+
+# NOTE: pyosmium is included via the Dockerfile, because it has weird requirements to pip
