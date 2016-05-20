@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
-'''
-    train a neural network using OpenStreetMap labels and NAIP images
-'''
+"""Train a neural network using OpenStreetMap labels and NAIP images."""
 
 import argparse
+import pickle
 
-from src.analysis import analyze
-from src.training_data import load_data_from_disk
+from src.single_layer_network import train_on_cached_data, predictions_for_tiles
+from src.training_data import CACHE_PATH
 from src.training_visualization import render_results_for_analysis
 
 
 def create_parser():
+    """Create the argparse parser."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--tile-size",
                         default=64,
@@ -38,17 +38,17 @@ def create_parser():
 
 
 def main():
+    """Use local data to train the neural net, probably made by bin/create_training_data.py."""
     parser = create_parser()
     args = parser.parse_args()
-
-    raster_data_paths, training_images, training_labels, test_images, test_labels, label_types, \
-        onehot_training_labels, onehot_test_labels = load_data_from_disk()
-    predictions = analyze(onehot_training_labels, onehot_test_labels, test_labels, training_labels,
-                          test_images, training_images, label_types, args.neural_net,
-                          args.bands, args.tile_size, args.number_of_epochs)
+    with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as infile:
+        raster_data_paths = pickle.load(infile)
+    test_images, model = train_on_cached_data(raster_data_paths, args.neural_net, args.bands,
+                                              args.tile_size)
     if args.render_results:
-        render_results_for_analysis(raster_data_paths, training_labels, test_labels, predictions,
-                                    args.band_list, args.tile_size)
+        predictions = predictions_for_tiles(test_images, model)
+        render_results_for_analysis(raster_data_paths, predictions, test_images, args.bands,
+                                    args.tile_size)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+"""Visualize predictions from a neural net analyzing satellite imagery to extract features."""
+
 from __future__ import print_function
 import os
 import time
@@ -8,38 +10,31 @@ from PIL import Image
 from src.training_data import way_bitmap_for_naip
 
 
-def render_results_for_analysis(raster_data_paths, training_labels, test_labels, predictions,
-                                band_list, tile_size):
-
+def render_results_for_analysis(raster_data_paths, predictions, test_images, band_list, tile_size):
+    """Generate a JPEG for each TIFF showing predictions shaded."""
     for raster_data_path in raster_data_paths:
         way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None,
                                                            None))
-        render_predictions(raster_data_path, training_labels, test_labels, predictions,
-                           way_bitmap_npy, band_list, tile_size)
+        render_predictions(raster_data_path, predictions, test_images, way_bitmap_npy, band_list,
+                           tile_size)
 
 
-def render_predictions(raster_data_path, training_labels, test_labels, predictions, way_bitmap_npy,
-                       band_list, tile_size):
-    training_labels_by_naip = []
-    test_labels_by_naip = []
+def render_predictions(raster_data_path, predictions, test_images, way_bitmap_npy, band_list,
+                       tile_size):
+    """Generate a JPEG for the given raster_data_path, showing predictions shaded."""
+    test_images_by_naip = []
     predictions_by_naip = []
 
     index = 0
-    for label in test_labels:
-        if label[2] == raster_data_path:
+    for image_info in test_images:
+        if image_info[2] == raster_data_path:
             predictions_by_naip.append(predictions[index])
-            test_labels_by_naip.append(test_labels[index])
-        index += 1
-
-    index = 0
-    for label in training_labels:
-        training_labels_by_naip.append(training_labels[index])
+            test_images_by_naip.append(test_images[index])
         index += 1
 
     render_results_as_image(raster_data_path,
                             way_bitmap_npy,
-                            training_labels_by_naip,
-                            test_labels_by_naip,
+                            test_images_by_naip,
                             band_list,
                             tile_size,
                             predictions=predictions_by_naip)
@@ -47,14 +42,11 @@ def render_predictions(raster_data_path, training_labels, test_labels, predictio
 
 def render_results_as_image(raster_data_path,
                             way_bitmap,
-                            training_labels,
-                            test_labels,
+                            test_images,
                             band_list,
                             tile_size,
                             predictions=None):
-    '''
-        save the source TIFF as a JPEG, with labels and data overlaid
-    '''
+    """Save the source TIFF as a JPEG, with labels and data overlaid."""
     timestr = time.strftime("%Y%m%d-%H%M%S")
     outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".jpeg"
     # TIF to JPEG bit from: from:
@@ -89,7 +81,7 @@ def render_results_as_image(raster_data_path,
         band_list)))
 
     t0 = time.time()
-    shade_labels(im, test_labels, predictions, tile_size)
+    shade_labels(im, test_images, predictions, tile_size)
     t1 = time.time()
     print("{0:.1f}s to SHADE PREDICTIONS on JPEG".format(t1 - t0))
 
@@ -106,9 +98,7 @@ def render_results_as_image(raster_data_path,
 
 
 def shade_labels(image, labels, predictions, tile_size):
-    '''
-        visualize predicted ON labels as blue, OFF as green
-    '''
+    """Visualize predicted ON labels as blue, OFF as green."""
     label_index = 0
     for label in labels:
         start_x = label[1][0]

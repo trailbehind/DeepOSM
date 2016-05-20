@@ -2,22 +2,26 @@
 
 from __future__ import print_function
 
+import numpy
 import os
 import pickle
+import random
 import sys
 import time
-from random import shuffle
 
 from osgeo import gdal
 from PIL import Image
-import numpy
 
 from openstreetmap_labels import download_and_extract
-from geo_util import latLonToPixel, pixelToLatLng
+from geo_util import lat_lon_to_pixel, pixel_to_lat_lon
 
-# there is a 300 pixel buffer around NAIPs that should be trimmed off,
-# where NAIPs overlap... otherwise using overlapping images makes wonky train/test splits
+
+# there is a 300 pixel buffer around NAIPs to be trimmed off, where NAIPs overlap...
+# otherwise using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
+
+# where training data gets cached/retrieved
+CACHE_PATH = '/DeepOSM/data/cache/'
 
 
 def read_naip(file_path, bands_to_use):
@@ -106,8 +110,8 @@ def way_bitmap_for_naip(
             if not bounds_contains_point(bounds, current_point) or \
                not bounds_contains_point(bounds, next_point):
                 continue
-            current_pix = latLonToPixel(raster_dataset, current_point)
-            next_pix = latLonToPixel(raster_dataset, next_point)
+            current_pix = lat_lon_to_pixel(raster_dataset, current_point)
+            next_pix = lat_lon_to_pixel(raster_dataset, next_point)
             add_pixels_between(current_pix, next_pix, cols, rows, way_bitmap,
                                pixels_to_fatten_roads)
     print(" {0:.1f}s".format(time.time() - t0))
@@ -124,8 +128,8 @@ def bounds_for_naip(raster_dataset, rows, cols):
     """Clip the NAIP to 0 to cols, 0 to rows."""
     left_x, right_x, top_y, bottom_y = \
         NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER, NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
-    sw = pixelToLatLng(raster_dataset, left_x, bottom_y)
-    ne = pixelToLatLng(raster_dataset, right_x, top_y)
+    sw = pixel_to_lat_lon(raster_dataset, left_x, bottom_y)
+    ne = pixel_to_lat_lon(raster_dataset, right_x, top_y)
     return {'sw': sw, 'ne': ne}
 
 
@@ -178,41 +182,55 @@ def bounds_contains_point(bounds, point_tuple):
     return True
 
 
-def random_training_data(raster_data_paths, extract_type, band_list, tile_size,
-                         pixels_to_fatten_roads, label_data_files, tile_overlap):
+def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_size,
+                               pixels_to_fatten_roads, label_data_files, tile_overlap):
     """Return lists of training images and matching labels."""
-    road_labels = []
-    naip_tiles = []
-
     # tile images and labels
     waymap = download_and_extract(label_data_files, extract_type)
-    way_bitmap_npy = {}
 
     for raster_data_path in raster_data_paths:
+
+        path_parts = raster_data_path.split('/')
+        filename = path_parts[len(path_parts) - 1]
+        labels_path = CACHE_PATH + filename + '-labels.npy'
+        images_path = CACHE_PATH + filename + '-images.npy'
+        if os.path.exists(labels_path) and os.path.exists(images_path):
+            print("TRAINING DATA for {} already tiled".format(filename))
+            continue
+
+        road_labels = []
+        naip_tiles = []
         raster_dataset, bands_data = read_naip(raster_data_path, band_list)
         rows = bands_data.shape[0]
         cols = bands_data.shape[1]
 
-        way_bitmap_npy = numpy.asarray(
-            way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, raster_dataset, rows,
-                                cols, pixels_to_fatten_roads))
+        way_bitmap_npy = way_bitmap_for_naip(waymap.extracter.ways, raster_data_path,
+                                             raster_dataset, rows, cols, pixels_to_fatten_roads)
 
         left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
         top_y, bottom_y = NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
+
+        # tile the way bitmap
         for col in range(left_x, right_x, tile_size / tile_overlap):
             for row in range(top_y, bottom_y, tile_size / tile_overlap):
                 if row + tile_size < bottom_y and col + tile_size < right_x:
                     new_tile = way_bitmap_npy[row:row + tile_size, col:col + tile_size]
-                    road_labels.append((new_tile, (col, row), raster_data_path))
+                    road_labels.append((new_tile, col, row, raster_data_path))
 
+        # tile the NAIP
         for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size,
                               tile_overlap):
             naip_tiles.append(tile)
 
-    assert len(road_labels) == len(naip_tiles)
+        assert len(naip_tiles) == len(road_labels)
 
-    road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
-    return road_labels, naip_tiles, waymap
+        # dump the tiled labels from the way bitmap to disk
+        with open(labels_path, 'w') as outfile:
+            numpy.save(outfile, numpy.asarray(road_labels))
+
+        # dump the tiled i,ages from the NAIP to disk
+        with open(images_path, 'w') as outfile:
+            numpy.save(outfile, numpy.asarray(naip_tiles))
 
 
 def shuffle_in_unison(a, b):
@@ -220,7 +238,7 @@ def shuffle_in_unison(a, b):
     a_shuf = []
     b_shuf = []
     index_shuf = range(len(a))
-    shuffle(index_shuf)
+    random.shuffle(index_shuf)
     for i in index_shuf:
         a_shuf.append(a[i])
         b_shuf.append(b[i])
@@ -320,27 +338,15 @@ def split_train_test(equal_count_tile_list, equal_count_way_list, percent_for_tr
     return test_labels, training_labels, test_images, training_images
 
 
-def format_as_onehot_arrays(types, training_labels, test_labels):
-    """Each label gets converted from an NxN tile with way bits flipped.
+def format_as_onehot_arrays(labels):
+    """Return a list of one-hot array labels, for a list of tiles.
 
     Converts to a one-hot array of whether the tile has ways (i.e. [0,1] or [1,0] for each).
     """
     print("CREATING ONE-HOT LABELS...")
     t0 = time.time()
-    print("CREATING TEST one-hot labels")
-    onehot_test_labels = onehot_for_labels(test_labels)
-    print("CREATING TRAINING one-hot labels")
-    onehot_training_labels = onehot_for_labels(training_labels)
-    print("one-hotting took {0:.1f}s".format(time.time() - t0))
-
-    return onehot_training_labels, onehot_test_labels
-
-
-def onehot_for_labels(labels):
-    """Return a list of one-hot array labels, for a list of tiles."""
     on_count = 0
     off_count = 0
-
     onehot_labels = []
     for label in labels:
         if has_ways_in_center(label[0], 1):
@@ -352,64 +358,38 @@ def onehot_for_labels(labels):
 
     print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count / float(
         len(labels))))
+    print("one-hotting took {0:.1f}s".format(time.time() - t0))
     return onehot_labels
 
-# where training data gets cached/retrieved
-CACHE_PATH = './data/cache/'
 
-
-def dump_data_to_disk(raster_data_paths, training_images, training_labels, test_images,
-                      test_labels, label_types, onehot_training_labels, onehot_test_labels):
-    """Pickle/json everything, so the analysis app can use the data."""
-    print("SAVING DATA: pickling and saving to disk")
+def load_training_tiles(naip_path):
+    """Return the image and label tiles for the naip_path."""
+    print("LOADING DATA: reading from disk and unpickling")
     t0 = time.time()
+    path_parts = naip_path.split('/')
+    filename = path_parts[len(path_parts) - 1]
+    labels_path = CACHE_PATH + filename + '-labels.npy'
+    images_path = CACHE_PATH + filename + '-images.npy'
+    try:
+        with open(labels_path, 'r') as infile:
+            training_labels = numpy.load(infile)
+        with open(images_path, 'r') as infile:
+            training_images = numpy.load(infile)
+    except:
+        print("WARNING, skipping file because pickled data bad for {}".format(naip_path))
+        return [], []
+    print("DATA LOADED: time to deserialize test data {0:.1f}s".format(time.time() - t0))
+    return training_labels, training_images
+
+
+def cache_paths(raster_data_paths):
+    """Cache a list of naip image paths, to pass on to the train_neural_net script."""
     try:
         os.mkdir(CACHE_PATH)
     except:
         pass
-    with open(CACHE_PATH + 'training_images.pickle', 'w') as outfile:
-        pickle.dump(training_images, outfile)
-    with open(CACHE_PATH + 'training_labels.pickle', 'w') as outfile:
-        pickle.dump(training_labels, outfile)
-    with open(CACHE_PATH + 'test_images.pickle', 'w') as outfile:
-        pickle.dump(test_images, outfile)
-    with open(CACHE_PATH + 'test_labels.pickle', 'w') as outfile:
-        pickle.dump(test_labels, outfile)
-    with open(CACHE_PATH + 'label_types.pickle', 'w') as outfile:
-        pickle.dump(label_types, outfile)
     with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:
         pickle.dump(raster_data_paths, outfile)
-    with open(CACHE_PATH + 'onehot_training_labels.pickle', 'w') as outfile:
-        pickle.dump(onehot_training_labels, outfile)
-    with open(CACHE_PATH + 'onehot_test_labels.pickle', 'w') as outfile:
-        pickle.dump(onehot_test_labels, outfile)
-    print("SAVE DONE: time to pickle/json and save test data to disk {0:.1f}s".format(time.time() -
-                                                                                      t0))
-
-
-def load_data_from_disk():
-    """Read training data into memory."""
-    print("LOADING DATA: reading from disk and unpickling")
-    t0 = time.time()
-    with open(CACHE_PATH + 'training_images.pickle', 'r') as infile:
-        training_images = pickle.load(infile)
-    with open(CACHE_PATH + 'training_labels.pickle', 'r') as infile:
-        training_labels = pickle.load(infile)
-    with open(CACHE_PATH + 'test_images.pickle', 'r') as infile:
-        test_images = pickle.load(infile)
-    with open(CACHE_PATH + 'test_labels.pickle', 'r') as infile:
-        test_labels = pickle.load(infile)
-    with open(CACHE_PATH + 'label_types.pickle', 'r') as infile:
-        label_types = pickle.load(infile)
-    with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as infile:
-        raster_data_paths = pickle.load(infile)
-    with open(CACHE_PATH + 'onehot_training_labels.pickle', 'r') as infile:
-        onehot_training_labels = pickle.load(infile)
-    with open(CACHE_PATH + 'onehot_test_labels.pickle', 'r') as infile:
-        onehot_test_labels = pickle.load(infile)
-    print("DATA LOADED: time to unpickle/json test data {0:.1f}s".format(time.time() - t0))
-    return (raster_data_paths, training_images, training_labels, test_images, test_labels,
-            label_types, onehot_training_labels, onehot_test_labels)
 
 
 if __name__ == "__main__":
