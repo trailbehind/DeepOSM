@@ -247,6 +247,7 @@ def shuffle_in_unison(a, b):
 
 def equalize_data(road_labels, naip_tiles, save_clippings):
     """Make sure labeled data includes an equal set of ON and OFF tiles."""
+    road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
     wayless_indices = []
     way_indices = []
     for x in range(len(road_labels)):

@@ -3,9 +3,7 @@ GDAL==2.0.1
 h5py==2.6.0
 jupyter==1.0.0
 numpy==1.11.0
-# if we use 3.2.0, my Mac errors when calling im.save(outfile, "JPEG"):
-# 'Wrong JPEG library version: library is 90, caller expects 80'
-Pillow==3.1.1
+Pillow==3.2.0
 pyproj==1.9.5.1
 requests==2.10.0
 s3cmd==1.6.1

@@ -5,9 +5,11 @@
 import argparse
 import pickle
 
+# src.training_visualization must be included before src.single_layer_network,
+# in order to import PIL before TFLearn - or PIL errors tryig to save a JPEG
+from src.training_visualization import render_results_for_analysis
 from src.single_layer_network import train_on_cached_data, predictions_for_tiles
 from src.training_data import CACHE_PATH
-from src.training_visualization import render_results_for_analysis
 
 
 def create_parser():
