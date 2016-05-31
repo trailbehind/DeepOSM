@@ -110,7 +110,7 @@ best/recent paper on doing this, great success with these methods
     * [OSM-HOT-ConvNet](https://github.com/larsroemheld/OSM-HOT-ConvNet) - attempted use for disaster response, author thinks it's only 69% accurate at pixel level (fall 2016)
     * [Terrapattern](http://www.terrapattern.com/) - (spring 2016) - detect similar images, such as pools, boat wakes, or other patterns journalists/researchers might be interested in - Carnegie Mellon researchers, open source
     * [Skynet Data](https://github.com/developmentseed/skynet-data) - (spring 2016) - data pipeline for machine learning with OpenStreetMap
-    
+    * [Full implementation of Mnih's CNN with Massachusetts data](https://github.com/mitmul/ssai-cnn)
 
 * [Parsing Natural Scenes and Natural Language
 with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11-ParsingWithRecursiveNeuralNetworks.pdf)
@@ -122,6 +122,8 @@ with Recursive Neural Networks (RNNs)](http://ai.stanford.edu/~ang/papers/icml11
 [Also see a work journal here](http://trailbehind.github.io/DeepOSM/).
 
 ### Papers - Relevant Maybe
+
+* [Aerial image geolocalization from recognition and matching of roads and intersections - May 2016](https://arxiv.org/abs/1605.08323)
 
 * [Uses a large window to improve predictions, trying to capture broad network topology.](https://www.inf.ethz.ch/personal/ladickyl/roads_gcpr14.pdf)
 
