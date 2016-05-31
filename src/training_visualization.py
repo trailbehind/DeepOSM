@@ -27,9 +27,8 @@ def render_predictions(raster_data_path, predictions, test_images, way_bitmap_np
 
     index = 0
     for image_info in test_images:
-        if image_info[2] == raster_data_path:
-            predictions_by_naip.append(predictions[index])
-            test_images_by_naip.append(test_images[index])
+        predictions_by_naip.append(predictions[index])
+        test_images_by_naip.append(test_images[index])
         index += 1
 
     render_results_as_image(raster_data_path,

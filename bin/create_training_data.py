@@ -33,11 +33,11 @@ def create_parser():
                         help="how much data to allocate for training. the remainder is left for "
                              "test")
     parser.add_argument("--bands",
-                        default=[0, 0, 0, 1],
+                        default=[1, 1, 1, 1],
                         nargs=4,
                         type=int,
                         help="specify which bands to activate (R  G  B  IR)"
-                             "--bands 0 0 0 1 (which activates only the IR band)")
+                             "--bands 1 1 1 1 (which activates only all bands)")
     parser.add_argument(
         "--label-data-files",
         default=[
@@ -57,10 +57,9 @@ def create_parser():
                         help="turn on this arg if you don't want to get NAIPs in order from the "
                              "bucket path")
     parser.add_argument("--number-of-naips",
-                        default=5,
+                        default=6,
                         type=int,
-                        help="set this to a value between 1 and 14 or so, 10 segfaults on a "
-                             "VirtualBox with 12GB, but runs on a Linux machine with 32GB")
+                        help="the number of naip images to analyze, 30+ sq. km each")
     parser.add_argument("--extract-type",
                         default='highway',
                         choices=['highway', 'tennis', 'footway', 'cycleway'],

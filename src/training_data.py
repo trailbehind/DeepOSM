@@ -14,7 +14,7 @@ from PIL import Image
 
 from openstreetmap_labels import download_and_extract
 from geo_util import lat_lon_to_pixel, pixel_to_lat_lon
-
+from naip_images import NAIP_DATA_DIR
 
 # there is a 300 pixel buffer around NAIPs to be trimmed off, where NAIPs overlap...
 # otherwise using overlapping images makes wonky train/test splits
@@ -228,7 +228,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         with open(labels_path, 'w') as outfile:
             numpy.save(outfile, numpy.asarray(road_labels))
 
-        # dump the tiled i,ages from the NAIP to disk
+        # dump the tiled images from the NAIP to disk
         with open(images_path, 'w') as outfile:
             numpy.save(outfile, numpy.asarray(naip_tiles))
 
@@ -391,6 +391,25 @@ def cache_paths(raster_data_paths):
         pass
     with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:
         pickle.dump(raster_data_paths, outfile)
+
+
+def tag_with_locations(test_images, predictions, tile_size):
+    """Combine image data with label data, so info can be rendered in a map and list UI.
+
+    Add location data for convenience too.
+    """
+    combined_data = []
+    for idx, img_loc_tuple in enumerate(test_images):
+        raster_dataset = gdal.Open(os.path.join(NAIP_DATA_DIR, img_loc_tuple[2]), gdal.GA_ReadOnly)
+        ne_lat, ne_lon = pixel_to_lat_lon(raster_dataset, img_loc_tuple[1][0] * tile_size +
+                                          tile_size, img_loc_tuple[1][1] * tile_size)
+        sw_lat, sw_lon = pixel_to_lat_lon(raster_dataset, img_loc_tuple[1][0] * tile_size,
+                                          img_loc_tuple[1][1] * tile_size + tile_size)
+        new_tuple = (img_loc_tuple[0], img_loc_tuple[1], img_loc_tuple[2], predictions[idx],
+                     ne_lat, ne_lon, sw_lat, sw_lon)
+        print(new_tuple)
+        combined_data.append(new_tuple)
+    return combined_data
 
 
 if __name__ == "__main__":
