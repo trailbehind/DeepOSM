@@ -13,7 +13,7 @@ from osgeo import gdal
 from PIL import Image
 
 from openstreetmap_labels import download_and_extract
-from geo_util import lat_lon_to_pixel, pixel_to_lat_lon
+from geo_util import lat_lon_to_pixel, pixel_to_lat_lon, pixel_to_lat_lon_web_mercator
 from naip_images import NAIP_DATA_DIR
 
 # there is a 300 pixel buffer around NAIPs to be trimmed off, where NAIPs overlap...
@@ -401,13 +401,11 @@ def tag_with_locations(test_images, predictions, tile_size):
     combined_data = []
     for idx, img_loc_tuple in enumerate(test_images):
         raster_dataset = gdal.Open(os.path.join(NAIP_DATA_DIR, img_loc_tuple[2]), gdal.GA_ReadOnly)
-        ne_lat, ne_lon = pixel_to_lat_lon(raster_dataset, img_loc_tuple[1][0] * tile_size +
-                                          tile_size, img_loc_tuple[1][1] * tile_size)
-        sw_lat, sw_lon = pixel_to_lat_lon(raster_dataset, img_loc_tuple[1][0] * tile_size,
-                                          img_loc_tuple[1][1] * tile_size + tile_size)
-        new_tuple = (img_loc_tuple[0], img_loc_tuple[1], img_loc_tuple[2], predictions[idx],
-                     ne_lat, ne_lon, sw_lat, sw_lon)
-        print(new_tuple)
+        ne_lat, ne_lon = pixel_to_lat_lon_web_mercator(raster_dataset, img_loc_tuple[1][0] +
+                                                       tile_size, img_loc_tuple[1][1])
+        sw_lat, sw_lon = pixel_to_lat_lon_web_mercator(raster_dataset, img_loc_tuple[1][0],
+                                                       img_loc_tuple[1][1] + tile_size)
+        new_tuple = (predictions[idx][0], ne_lat, ne_lon, sw_lat, sw_lon)
         combined_data.append(new_tuple)
     return combined_data
 

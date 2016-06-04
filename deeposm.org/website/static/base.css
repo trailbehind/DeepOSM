@@ -1,0 +1,30 @@
+body, h1.main-header {
+  	padding:0;
+  	margin:0;	      	
+}
+
+
+h2.main-header {
+  	margin-top:15px;
+  	margin-bottom:0;
+}
+
+
+h3 {
+	margin-top:5px;
+}
+
+
+table {
+	border: 1px solid green;
+}
+
+
+td {
+  	padding: 10;
+}
+
+
+.gray-span {
+	color:gray;
+}

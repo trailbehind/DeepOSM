@@ -1,0 +1,27 @@
+<!-- List errors for a given region. User can clicm list to see details of each error.
+-->
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+		<h3>{{ analysis_title }} <span class=gray-span>({{ country_abbrev }}, {{ state_name|capfirst }})</span></h3>
+		<table>
+				{% for error in errors %}
+				    <tr>
+				        <td>
+				            <a href="/{{ analysis_type }}/view/{{ forloop.counter }}/">
+				                Likely Error: {% widthratio error.0 1 100 %}% - View on Map
+				            </a>
+				        </td>
+				        <td>
+				            <span class=gray-span>NE</span> {{error.1}}, {{error.2}}
+				        </td>
+				        <td>
+  				          <span class=gray-span>SW</span> {{error.3}}, {{error.4}}
+				        </td>
+		    	  </tr>
+				{% endfor %}
+		</table>
+
+{% endblock %}

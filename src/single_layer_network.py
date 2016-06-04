@@ -44,7 +44,7 @@ def train_on_cached_data(raster_data_paths, neural_net_type, bands, tile_size, n
         [onehot_test_labels.append(l) for l in format_as_onehot_arrays(new_test_labels)]
 
         # once we have 100 test_images, maybe from more than one NAIP, train on a mini batch
-        if len(test_images) >= 100:
+        if len(training_images) >= 100:
             # continue training the model with the new data set
             model = train_with_data(onehot_training_labels, onehot_test_labels, test_images,
                                     training_images, neural_net_type, bands, tile_size,
@@ -116,7 +116,7 @@ def train_with_data(onehot_training_labels, onehot_test_labels, test_images, tra
 
 
 def list_findings(labels, test_images, model):
-    """Serialize a list of high probability false negatives and positives in the OSM data."""
+    """Return lists of predicted false negative/positive labels/data."""
     npy_test_images = numpy.array([img_loc_tuple[0] for img_loc_tuple in test_images])
     npy_test_images = npy_test_images.astype(numpy.float32)
     npy_test_images = numpy.multiply(npy_test_images, 1.0 / 255.0)

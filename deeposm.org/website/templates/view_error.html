@@ -1,0 +1,47 @@
+<!-- View a DeepOSM predicted error on the map.
+-->
+
+{% extends 'base.html' %}
+
+{% block head_content %}
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+    <style> 
+        #mapid { height: 70%; margin-top:20px;}
+    </style>
+{% endblock%}
+
+
+{% block content %}
+    
+		<table>
+		  <tr>
+		  	  <td>
+		  	  	   <span class=gray-span>{{ analysis_title }}</span> - #{{ error_id }}
+		  	  </td>
+		      <td>
+		            Likely Error {% widthratio error.0 1 100 %}%
+		      </td>
+    	  </tr>
+		</table>
+    	<div id="mapid"></div>
+		
+		<script type="text/javascript">
+        var mymap = L.map('mapid').setView([{{error.4}}, {{error.3}}], 18);
+
+        var satLayer = L.tileLayer('http://a.tiles.mapbox.com/v3/trailbehind.map-e7o3271e/{z}/{x}/{y}.png', {
+            attribution: 'MapQuest',
+            maxZoom: 18, })
+        satLayer.addTo(mymap);
+
+        var osmLayer = L.tileLayer('http://b.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+            maxZoom: 22, })
+        osmLayer.addTo(mymap);
+        osmLayer.setOpacity(.25);
+        
+        // https://www.openstreetmap.org/edit#map=16/26.5626/-81.7465
+
+    </script>
+
+{% endblock %}

@@ -3,13 +3,14 @@
 """Train a neural network using OpenStreetMap labels and NAIP images."""
 
 import argparse
+import boto3
 import pickle
 
 # src.training_visualization must be included before src.single_layer_network,
 # in order to import PIL before TFLearn - or PIL errors tryig to save a JPEG
 from src.training_visualization import render_results_for_analysis
 from src.single_layer_network import train_on_cached_data, predictions_for_tiles, list_findings
-from src.training_data import CACHE_PATH, load_training_tiles
+from src.training_data import CACHE_PATH, load_training_tiles, tag_with_locations
 
 
 def create_parser():
@@ -51,6 +52,7 @@ def main():
     test_images, model = train_on_cached_data(raster_data_paths, args.neural_net, args.bands,
                                               args.tile_size, args.number_of_epochs)
     if not args.omit_findings:
+        findings = []
         for path in raster_data_paths:
             print path
             labels, images = load_training_tiles(path)
@@ -63,8 +65,21 @@ def main():
             filename = path_parts[len(path_parts) - 1]
             print("FINDINGS: {} false pos and {} false neg, of {} tiles, from {}".format(
                 len(false_positives), len(false_negatives), len(images), filename))
+            # render JPEGs showing findings
             render_results_for_analysis([path], false_positives, fp_images, args.bands,
                                         args.tile_size)
+
+            # combine findings for all NAIP images analyzed
+            [findings.append(f) for f in tag_with_locations(fp_images, false_positives,
+                                                            args.tile_size)]
+
+        # dump combined findings to disk as a pickle
+        with open(CACHE_PATH + 'findings.pickle', 'w') as outfile:
+            pickle.dump(findings, outfile)
+
+        # push pickle to S3
+        s3_client = boto3.client('s3')
+        s3_client.upload_file(CACHE_PATH + 'findings.pickle', 'deeposm', 'findings.pickle')
 
     if args.render_results:
         predictions = predictions_for_tiles(test_images, model)
