@@ -14,3 +14,4 @@ web:
   links:
     - db
   cpu_shares: 100
+  working_dir: /deeposmorg
