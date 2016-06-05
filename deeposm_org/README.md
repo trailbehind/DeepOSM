@@ -39,6 +39,6 @@ Bring up the Docker composed cluster, which includes web and database server:
 
     ecs-cli compose --file tmp-compose.yml service up
 
-You might want to delete the tm yml:
+You might want to delete tmp-compose.yml to clean up:
 
     rm tmp-compose.yml

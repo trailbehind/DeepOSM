@@ -6,3 +6,4 @@ ADD requirements.txt /deeposmorg/
 RUN pip install -r requirements.txt
 ADD . /deeposmorg/
 VOLUME /deeposmorg
+ENV PYTHONPATH /deeposmorg:$PYTHONPATH
