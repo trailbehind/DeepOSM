@@ -6,7 +6,7 @@ web:
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
   image: deeposm/deeposm.org
-  command: python manage.py runserver 0.0.0.0:80
+  entrypoint: ./entrypoint.sh 
   ports:
     - "80:80"
   links:
