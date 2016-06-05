@@ -1,0 +1,16 @@
+db:
+  image: postgres
+  cpu_shares: 100
+web: 
+  environment:
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+  image: deeposm/deeposm.org
+  command: python manage.py runserver 0.0.0.0:80
+  volumes:
+    - /deeposmorg
+  ports:
+    - "80:80"
+  links:
+    - db
+  cpu_shares: 100

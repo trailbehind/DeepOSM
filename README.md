@@ -1,6 +1,8 @@
 # DeepOSM
 
-Classify roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. DeepOSM lets you:
+Classify roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. 
+
+DeepOSM can:
 
 * Download a chunk of satellite imagery
 * Download OSM data that shows roads/features for that area
