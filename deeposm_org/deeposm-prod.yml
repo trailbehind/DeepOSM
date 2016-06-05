@@ -7,8 +7,6 @@ web:
     - AWS_SECRET_ACCESS_KEY
   image: deeposm/deeposm.org
   command: python manage.py runserver 0.0.0.0:80
-  volumes:
-    - /deeposmorg
   ports:
     - "80:80"
   links:
