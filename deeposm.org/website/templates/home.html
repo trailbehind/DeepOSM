@@ -1,0 +1,41 @@
+<!-- The home page for deeposm.org.
+-->
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <div id=main-banner>
+        <h1 class=main-header style="margin-bottom:30px; font-weight: bold;-webkit-text-stroke: 1px white;">
+            Improve OpenStreetMap with Neural Networks
+        </h1>
+        <a class="btn btn-lg btn-primary" href="/road-registration-errors/USA/delaware/list/" role="button">View Predicted Errors</a>
+    </div>
+    <h3>Recent Analyses</h3>
+		<p>Browse errors found by DeepOSM, and pop to iD editor on openstreetmap.org to correct.</p>
+		<ul>
+		    <li><a href=/road-registration-errors/USA/delaware/list/>Delaware - Road Registration Errors</a> - (<a style="color:orange" href=/road-registration-errors/USA/delaware/list/?json=True target=_new>as JSON</a>)</li>
+		</ul>
+		<h3>DeepOSM Code</h3>
+		Check out the <a target=_new href=https://github.com/trailbehind/DeepOSM>code for DeepOSM and deeposm.org</a>.
+		<style>
+  		#main-banner {
+  			height:400px;
+  			text-align: center;
+  			padding-top:150px !important;
+  			display: block;
+        position: relative; 
+  		}
+
+  		#main-banner ::before {
+			  content: "";
+			  background: url('/static/satellite-banner.jpg');
+			  opacity: 0.3;
+			  top: 0;
+			  left: 0;
+			  bottom: 0;
+			  right: 0;
+			  position: absolute;
+			  z-index: -1;   
+			}
+		</style>
+{% endblock %}

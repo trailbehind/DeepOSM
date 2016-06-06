@@ -1,6 +1,6 @@
 """Views for deeposm.org."""
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template import loader
 import boto3
 import json
@@ -21,12 +21,14 @@ def home(request):
 
 def view_error(request, analysis_type, error_id):
     """View the error with the given error_id."""
+
     cache_findings()
     template = loader.get_template('view_error.html')
     with open('website/static/findings.pickle', 'r') as infile:
         error = pickle.load(infile)[int(error_id)]
     context = {
         'error_id': error_id,
+        'center': ((error[4]+error[2])/2, (error[3]+error[1])/2),
         'error': error,
         'json_error': json.dumps(error),
         'analysis_title': analysis_type.replace('-', ' ').title(),
@@ -38,6 +40,7 @@ def view_error(request, analysis_type, error_id):
 def list_errors(request, analysis_type, country_abbrev, state_name):
     """List all the errors of a given type in the country/state."""
     cache_findings()
+
     template = loader.get_template('list_errors.html')
     with open('website/static/findings.pickle', 'r') as infile:
         errors = pickle.load(infile)
@@ -48,6 +51,10 @@ def list_errors(request, analysis_type, country_abbrev, state_name):
         'analysis_title': analysis_type.replace('-', ' ').title(),
         'errors': errors,
     }
+
+    if request.GET.get("json"):
+        return JsonResponse(context)
+
     return HttpResponse(template.render(context, request))
 
 

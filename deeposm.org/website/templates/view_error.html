@@ -22,6 +22,10 @@
 		      <td>
 		            Likely Error {% widthratio error.0 1 100 %}%
 		      </td>
+              <td>
+                 <a style="color:red" target=_new href=https://www.openstreetmap.org/edit#map=18/{{error.4}}/{{error.3}}
+>Fix on OpenStreetMap.org</a>
+              </td>
     	  </tr>
 		</table>
     	<div id="mapid"></div>
@@ -40,8 +44,6 @@
         osmLayer.addTo(mymap);
         osmLayer.setOpacity(.25);
         
-        // https://www.openstreetmap.org/edit#map=16/26.5626/-81.7465
-
     </script>
 
 {% endblock %}
