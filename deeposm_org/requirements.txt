@@ -2,4 +2,3 @@ boto3
 Django
 psycopg2
 numpy
-gunicorn
