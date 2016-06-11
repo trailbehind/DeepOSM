@@ -122,39 +122,32 @@ def list_findings(labels, test_images, model):
     npy_test_images = numpy.multiply(npy_test_images, 1.0 / 255.0)
 
     false_pos = []
-    false_neg = []
     fp_images = []
-    fn_images = []
     index = 0
     for x in range(0, len(npy_test_images) - 100, 100):
         images = npy_test_images[x:x + 100]
         image_tuples = test_images[x:x + 100]
-        index, false_pos, false_neg, fp_images, fn_images = sort_findings(model,
-                                                                          image_tuples,
-                                                                          images,
-                                                                          labels,
-                                                                          false_pos,
-                                                                          false_neg,
-                                                                          fp_images,
-                                                                          fn_images,
-                                                                          index)
+        index, false_pos, fp_images = sort_findings(model,
+                                                    image_tuples,
+                                                    images,
+                                                    labels,
+                                                    false_pos,
+                                                    fp_images,
+                                                    index)
     images = npy_test_images[index:]
     image_tuples = test_images[index:]
-    index, false_pos, false_neg, fp_images, fn_images = sort_findings(model,
-                                                                      image_tuples,
-                                                                      images,
-                                                                      labels,
-                                                                      false_pos,
-                                                                      false_neg,
-                                                                      fp_images,
-                                                                      fn_images,
-                                                                      index)
+    index, false_pos, fp_images = sort_findings(model,
+                                                image_tuples,
+                                                images,
+                                                labels,
+                                                false_pos,
+                                                fp_images,
+                                                index)
 
-    return false_pos, false_neg, fp_images, fn_images
+    return false_pos, fp_images
 
 
-def sort_findings(model, image_tuples, test_images, labels, false_positives, false_negatives,
-                  fp_images, fn_images, index):
+def sort_findings(model, image_tuples, test_images, labels, false_positives, fp_images, index):
     """False positive if model says road doesn't exist, but OpenStreetMap says it does.
 
     False negative if model says road exists, but OpenStreetMap doesn't list it.
@@ -165,12 +158,12 @@ def sort_findings(model, image_tuples, test_images, labels, false_positives, fal
         if has_ways_in_center(label, 1) and p[0] > .5:
             false_positives.append(p)
             fp_images.append(image_tuples[pred_index])
-        elif not has_ways_in_center(label, 16) and p[0] <= .5:
-            false_negatives.append(p)
-            fn_images.append(image_tuples[pred_index])
+        # elif not has_ways_in_center(label, 16) and p[0] <= .5:
+        #    false_negatives.append(p)
+        #    fn_images.append(image_tuples[pred_index])
         pred_index += 1
         index += 1
-    return index, false_positives, false_negatives, fp_images, fn_images
+    return index, false_positives, fp_images
 
 
 def predictions_for_tiles(test_images, model):

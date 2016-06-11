@@ -22,6 +22,10 @@ NAIP_PIXEL_BUFFER = 300
 
 # where training data gets cached/retrieved
 CACHE_PATH = '/DeepOSM/data/cache/'
+METADATA_PATH = 'training_metadata.pickle'
+
+# the name of the S3 bucket to post findings to
+FINDINGS_S3_BUCKET = 'deeposm'
 
 
 def read_naip(file_path, bands_to_use):
@@ -183,7 +187,7 @@ def bounds_contains_point(bounds, point_tuple):
 
 
 def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_size,
-                               pixels_to_fatten_roads, label_data_files, tile_overlap):
+                               pixels_to_fatten_roads, label_data_files, tile_overlap, naip_state):
     """Return lists of training images and matching labels."""
     # tile images and labels
     waymap = download_and_extract(label_data_files, extract_type)
@@ -231,6 +235,11 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         # dump the tiled images from the NAIP to disk
         with open(images_path, 'w') as outfile:
             numpy.save(outfile, numpy.asarray(naip_tiles))
+
+    # dump the metadata to disk for configuring the analysis script later
+    training_info = {'bands': band_list, 'tile_size': tile_size, 'naip_state': naip_state}
+    with open(CACHE_PATH + METADATA_PATH, 'w') as outfile:
+        pickle.dump(training_info, outfile)
 
 
 def shuffle_in_unison(a, b):

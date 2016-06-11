@@ -20,7 +20,7 @@
                    <span class=gray-span>{{ analysis_title }}</span> - #{{ error_id }}
               </td>
               <td>
-                    Likely Error {% widthratio error.0 1 100 %}%
+                    Likely Error {% widthratio error.0 1 85 %}%
               </td>
               <td>
                  <a style="color:red" target=_new href=https://www.openstreetmap.org/edit#map=18/{{error.4}}/{{error.3}}
@@ -31,18 +31,12 @@
         <div id="mapid"></div>
         
         <script type="text/javascript">
-        var mymap = L.map('mapid').setView([{{error.4}}, {{error.3}}], 18);
+        var mymap = L.map('mapid').setView([{{center.0}}, {{error.1}}], 18);
 
         var satLayer = L.tileLayer('http://a.tiles.mapbox.com/v3/trailbehind.map-e7o3271e/{z}/{x}/{y}.png', {
             attribution: 'Mapbox',
             maxZoom: 18, })
         satLayer.addTo(mymap);
-
-        var osmLayer = L.tileLayer('http://b.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap Contributors</a> ',
-            maxZoom: 22, })
-        osmLayer.addTo(mymap);
-        osmLayer.setOpacity(.25);
         
     </script>
 
