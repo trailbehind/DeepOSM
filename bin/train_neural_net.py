@@ -10,6 +10,7 @@ import pickle
 from src.training_data import CACHE_PATH, METADATA_PATH
 from src.s3_client_deeposm import post_findings_to_s3
 from src.single_layer_network import train_on_cached_data
+from src.training_visualization import render_errors
 
 
 def create_parser():
@@ -26,9 +27,6 @@ def create_parser():
     parser.add_argument("--render-results",
                         action='store_true',
                         help="output data/predictions to JPEG, in addition to normal JSON")
-    parser.add_argument("--post-findings-to-s3",
-                        action='store_true',
-                        help="post predicted errors JSON to an S3 bucket")
     return parser
 
 
@@ -45,10 +43,10 @@ def main():
     test_images, model = train_on_cached_data(raster_data_paths, args.neural_net,
                                               training_info['bands'], training_info['tile_size'],
                                               args.number_of_epochs)
-
     if post_findings_to_s3:
-        post_findings_to_s3(raster_data_paths, model, training_info, args.render_results)
 
+    if args.render_results:
+        render_errors(raster_data_paths, predictions, test_images, band_list, tile_size)
 
 if __name__ == "__main__":
     main()

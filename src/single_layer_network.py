@@ -2,11 +2,14 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy
+import pickle
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
 
-from src.training_data import load_training_tiles, equalize_data, \
+from src.training_data import CACHE_PATH, load_training_tiles, equalize_data, \
     split_train_test, format_as_onehot_arrays, shuffle_in_unison, has_ways_in_center
+
+MODEL_METADATA_PATH = 'model_metadata.pickle'
 
 
 def train_on_cached_data(raster_data_paths, neural_net_type, bands, tile_size, number_of_epochs):
@@ -59,6 +62,8 @@ def train_on_cached_data(raster_data_paths, neural_net_type, bands, tile_size, n
             test_images = test_images[:9000]
             onehot_test_labels = onehot_test_labels[:9000]
 
+    save_model(model, neural_net_type, bands, tile_size)
+
     return test_images, model
 
 
@@ -82,28 +87,9 @@ def train_with_data(onehot_training_labels, onehot_test_labels, test_images, tra
         for b in band_list:
             if b == 1:
                 on_band_count += 1
-
-        network = tflearn.input_data(shape=[None, tile_size, tile_size, on_band_count])
-        if neural_net_type == 'one_layer_relu':
-            network = tflearn.fully_connected(network, 32, activation='relu')
-        elif neural_net_type == 'one_layer_relu_conv':
-            network = conv_2d(network, 256, 16, activation='relu')
-            network = max_pool_2d(network, 3)
-        else:
-            print("ERROR: exiting, unknown layer type for neural net")
-
-        # classify as road or not road
-        softmax = tflearn.fully_connected(network, 2, activation='softmax')
-
-        # based on parameters from www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf
-        momentum = tflearn.optimizers.Momentum(
-            learning_rate=.005, momentum=0.9,
-            lr_decay=0.0002, name='Momentum')
-
-        net = tflearn.regression(softmax, optimizer=momentum, loss='categorical_crossentropy')
-
-        model = tflearn.DNN(net, tensorboard_verbose=0)
-
+        
+        model = model_for_type(neural_net_type, tile_size, on_band_count)
+   
     model.fit(norm_train_images,
               npy_training_labels,
               n_epoch=number_of_epochs,
@@ -112,6 +98,48 @@ def train_with_data(onehot_training_labels, onehot_test_labels, test_images, tra
               show_metric=True,
               run_id='mlp')
 
+    return model
+
+
+def model_for_type(neural_net_type, tile_size, on_band_count):
+    '''Type can be one_layer_relu or one_layer_relu_conv.'''
+    network = tflearn.input_data(shape=[None, tile_size, tile_size, on_band_count])
+    if neural_net_type == 'one_layer_relu':
+        network = tflearn.fully_connected(network, 32, activation='relu')
+    elif neural_net_type == 'one_layer_relu_conv':
+        network = conv_2d(network, 256, 16, activation='relu')
+        network = max_pool_2d(network, 3)
+    else:
+        print("ERROR: exiting, unknown layer type for neural net")
+
+    # classify as road or not road
+    softmax = tflearn.fully_connected(network, 2, activation='softmax')
+
+    # based on parameters from www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf
+    momentum = tflearn.optimizers.Momentum(
+        learning_rate=.005, momentum=0.9,
+        lr_decay=0.0002, name='Momentum')
+
+    net = tflearn.regression(softmax, optimizer=momentum, loss='categorical_crossentropy')
+
+    return tflearn.DNN(net, tensorboard_verbose=0)
+
+
+def save_model(model, neural_net_type, bands, tile_size):
+    """Save a DeepOSM tflearn model and its metadata. """
+    model.save(CACHE_PATH + 'model.pickle')
+    # dump the training metadata to disk, for later loading model from disk
+    training_info = {'neural_net_type': neural_net_type, 
+                     'bands': bands, 
+                     'tile_size': tile_size}
+    with open(CACHE_PATH + MODEL_METADATA_PATH, 'w') as outfile:
+        pickle.dump(training_info, outfile)
+
+
+def load_model(neural_net_type, tile_size, on_band_count):
+    '''Load the TensorFlow model serialized at path.'''
+    model = model_for_type(neural_net_type, tile_size, on_band_count)
+    model.load(CACHE_PATH + 'model.pickle')
     return model
 
 

@@ -402,20 +402,28 @@ def cache_paths(raster_data_paths):
         pickle.dump(raster_data_paths, outfile)
 
 
-def tag_with_locations(test_images, predictions, tile_size):
+def tag_with_locations(test_images, predictions, tile_size, state_abbrev):
     """Combine image data with label data, so info can be rendered in a map and list UI.
 
     Add location data for convenience too.
     """
     combined_data = []
     for idx, img_loc_tuple in enumerate(test_images):
-        raster_dataset = gdal.Open(os.path.join(NAIP_DATA_DIR, img_loc_tuple[2]), gdal.GA_ReadOnly)
-        ne_lat, ne_lon = pixel_to_lat_lon_web_mercator(raster_dataset, img_loc_tuple[1][0] +
-                                                       tile_size, img_loc_tuple[1][1])
-        sw_lat, sw_lon = pixel_to_lat_lon_web_mercator(raster_dataset, img_loc_tuple[1][0],
-                                                       img_loc_tuple[1][1] + tile_size)
-        new_tuple = (predictions[idx][0], ne_lat, ne_lon, sw_lat, sw_lon)
-        combined_data.append(new_tuple)
+        raster_filename = img_loc_tuple[2]
+        raster_dataset = gdal.Open(os.path.join(NAIP_DATA_DIR, raster_filename), gdal.GA_ReadOnly)
+        raster_tile_x = img_loc_tuple[1][0]
+        raster_tile_y = img_loc_tuple[1][1]
+        ne_lat, ne_lon = pixel_to_lat_lon_web_mercator(raster_dataset, raster_tile_x +
+                                                       tile_size, raster_tile_y)
+        sw_lat, sw_lon = pixel_to_lat_lon_web_mercator(raster_dataset, raster_tile_x,
+                                                       raster_tile_y + tile_size)
+        certainty = predictions[idx][0]
+        formatted_info = {'certainty': certainty, 'ne_lat': ne_lat, 'ne_lon': ne_lon, 
+                          'sw_lat': sw_lat, 'sw_lon': sw_lon, 'raster_tile_x': raster_tile_x, 
+                          'raster_tile_y': raster_tile_y, 'raster_filename': raster_filename, 
+                          'state_abbrev': state_abbrev
+                         }
+        combined_data.append(formatted_info)
     return combined_data
 
 

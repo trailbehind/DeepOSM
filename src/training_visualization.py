@@ -10,6 +10,22 @@ from PIL import Image
 from src.training_data import way_bitmap_for_naip
 
 
+def render_errors(raster_data_paths, model, training_info, render_results):
+    """Render JPEGs showing findings."""
+    for path in raster_data_paths:
+        labels, images = load_training_tiles(path)
+        if len(labels) == 0 or len(images) == 0:
+            print("WARNING, there is a borked naip image file")
+            continue
+        false_positives, fp_images = list_findings(labels, images, model)
+        path_parts = path.split('/')
+        filename = path_parts[len(path_parts) - 1]
+        print("FINDINGS: {} false pos of {} tiles, from {}".format(
+            len(false_positives), len(images), filename))
+        render_results_for_analysis([path], false_positives, fp_images, training_info['bands'],
+                                    training_info['tile_size'])
+
+
 def render_results_for_analysis(raster_data_paths, predictions, test_images, band_list, tile_size):
     """Generate a JPEG for each TIFF showing predictions shaded."""
     for raster_data_path in raster_data_paths:

@@ -10,15 +10,15 @@
 				{% for error in errors %}
 				    <tr>
 				        <td>
-				            <a href="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ forloop.counter0 }}/">
-				                Likely Error: {% widthratio error.0 1 85 %}% - View on Map
+				            <a href="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/">
+				                Likely Error: {% widthratio error.certainty 1 85 %}% - View on Map
 				            </a>
 				        </td>
 				        <td>
-				            <span class=gray-span>NE</span> {{error.1}}, {{error.2}}
+				            <span class=gray-span>NE</span> {{error.ne_lat}}, {{error.ne_lon}}
 				        </td>
 				        <td>
-  				          <span class=gray-span>SW</span> {{error.3}}, {{error.4}}
+  				          <span class=gray-span>SW</span> {{error.sw_lat}}, {{error.sw_lon}}
 				        </td>
 		    	  </tr>
 				{% endfor %}
