@@ -418,11 +418,11 @@ def tag_with_locations(test_images, predictions, tile_size, state_abbrev):
         sw_lat, sw_lon = pixel_to_lat_lon_web_mercator(raster_dataset, raster_tile_x,
                                                        raster_tile_y + tile_size)
         certainty = predictions[idx][0]
-        formatted_info = {'certainty': certainty, 'ne_lat': ne_lat, 'ne_lon': ne_lon, 
-                          'sw_lat': sw_lat, 'sw_lon': sw_lon, 'raster_tile_x': raster_tile_x, 
-                          'raster_tile_y': raster_tile_y, 'raster_filename': raster_filename, 
+        formatted_info = {'certainty': certainty, 'ne_lat': ne_lat, 'ne_lon': ne_lon,
+                          'sw_lat': sw_lat, 'sw_lon': sw_lon, 'raster_tile_x': raster_tile_x,
+                          'raster_tile_y': raster_tile_y, 'raster_filename': raster_filename,
                           'state_abbrev': state_abbrev
-                         }
+                          }
         combined_data.append(formatted_info)
     return combined_data
 

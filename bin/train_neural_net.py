@@ -8,9 +8,7 @@ import pickle
 # src.training_data must be included before src.single_layer_network,
 # in order to import PIL before TFLearn - or PIL errors tryig to save a JPEG
 from src.training_data import CACHE_PATH, METADATA_PATH
-from src.s3_client_deeposm import post_findings_to_s3
 from src.single_layer_network import train_on_cached_data
-from src.training_visualization import render_errors
 
 
 def create_parser():
@@ -43,10 +41,9 @@ def main():
     test_images, model = train_on_cached_data(raster_data_paths, args.neural_net,
                                               training_info['bands'], training_info['tile_size'],
                                               args.number_of_epochs)
-    if post_findings_to_s3:
 
-    if args.render_results:
-        render_errors(raster_data_paths, predictions, test_images, band_list, tile_size)
+    with open(CACHE_PATH + 'model.pickle', 'w') as outfile:
+        pickle.dump(model, outfile)
 
 if __name__ == "__main__":
     main()

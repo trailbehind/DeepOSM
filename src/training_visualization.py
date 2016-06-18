@@ -7,7 +7,7 @@ import time
 import numpy
 from PIL import Image
 
-from src.training_data import way_bitmap_for_naip
+from src.training_data import list_findings, load_training_tiles, way_bitmap_for_naip
 
 
 def render_errors(raster_data_paths, model, training_info, render_results):

@@ -4,8 +4,6 @@ from django.http import HttpResponse, JsonResponse
 from django.template import loader
 import boto3
 import datetime
-import json
-import operator
 import os
 import pickle
 from website import models, settings
@@ -59,10 +57,8 @@ def list_errors(request, analysis_type, country_abbrev, state_name):
 
 def sorted_findings(state_name):
     """Return a list of errors for the path, sorted by probability."""
-    return models.MapError.objects.filter(state_abbrev=STATE_NAMES_TO_ABBREVS[state_name], solved_date=None).order_by('-certainty')
-    with open(path, 'r') as infile:
-        errors = pickle.load(infile)
-    return errors
+    return models.MapError.objects.filter(state_abbrev=STATE_NAMES_TO_ABBREVS[state_name],
+                                          solved_date=None).order_by('-certainty')
 
 
 def cache_findings():
@@ -81,7 +77,7 @@ def cache_findings():
             s3_client.download_file(FINDINGS_S3_BUCKET, obj.key, local_path)
             with open(local_path, 'r') as infile:
                 errors = pickle.load(infile)
-            
+
             naip_errors = {}
             for e in errors:
                 try:
@@ -89,38 +85,40 @@ def cache_findings():
                 except:
                     break
                 filename = e['raster_filename']
-                
 
                 if filename in naip_errors:
-                    # keep track of which errors dont exist for the import, to mark as solved
-                    errors_for_naip = models.MapError.objects.filter(raster_filename = filename)
+                    # keep track of which errors dont exist for the import, to
+                    # mark as solved
+                    errors_for_naip = models.MapError.objects.filter(
+                        raster_filename=filename)
                     error_ids = []
                     for err in errors_for_naip:
-                      error_ids.append(err.id)
+                        error_ids.append(err.id)
                     naip_errors[filename] = error_ids
 
                 try:
-                    map_error = models.MapError.objects.get(raster_filename = filename,
-                                                raster_tile_x = e['raster_tile_x'],
-                                                raster_tile_y = e['raster_tile_y'],
-                                                )
+                    map_error = models.MapError.objects.get(raster_filename=filename,
+                                                            raster_tile_x=e['raster_tile_x'],
+                                                            raster_tile_y=e['raster_tile_y'],
+                                                            )
                     naip_errors[filename].remove(map_error.id)
                     map_error.solved_date = None
                 except:
-                    map_error = models.MapError(raster_filename = filename,
-                                                raster_tile_x = e['raster_tile_x'],
-                                                raster_tile_y = e['raster_tile_y'],
-                                                state_abbrev = e['state_abbrev'],
-                                                ne_lat = e['ne_lat'],
-                                                ne_lon = e['ne_lon'],
-                                                sw_lat = e['sw_lat'],
-                                                sw_lon = e['sw_lon']
-                                               )
+                    map_error = models.MapError(raster_filename=filename,
+                                                raster_tile_x=e['raster_tile_x'],
+                                                raster_tile_y=e['raster_tile_y'],
+                                                state_abbrev=e['state_abbrev'],
+                                                ne_lat=e['ne_lat'],
+                                                ne_lon=e['ne_lon'],
+                                                sw_lat=e['sw_lat'],
+                                                sw_lon=e['sw_lon']
+                                                )
                 map_error.certainty = e['certainty']
                 map_error.save()
-            
-            for key in naip_errors:                
-                fixed_errors = models.MapError.objects.filter(id__in=naip_errors[key])
+
+            for key in naip_errors:
+                fixed_errors = models.MapError.objects.filter(
+                    id__in=naip_errors[key])
                 for f in fixed_errors:
                     f.solved_date = datetime.date.utcnow()
                     f.save()

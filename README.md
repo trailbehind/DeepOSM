@@ -13,9 +13,9 @@ Running the code is as easy as install Docker, make dev, and run a script.
 
 Contributions are welcome. Open an issue if you want to discuss something to do, or [email me](mailto:andrew@gaiagps.com).
 
-## New Alpha Release: DeepOSM.org
+## New Alpha Release: www.DeepOSM.org
 
-[DeepOSM.org](http://www.deeposm.org/) now shows some predicted errors from DeepOSM. This is an *alpha release* - it only uses a shallow network, doesn't link up adjacent errors, and has other issues. 
+[www.DeepOSM.org](http://www.deeposm.org/) now shows some predicted errors from DeepOSM. This is an *alpha release* - it only uses a shallow network, doesn't link up adjacent errors, and has other issues. 
 
 ## Default Data/Accuracy
 

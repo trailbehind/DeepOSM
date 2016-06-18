@@ -87,9 +87,9 @@ def train_with_data(onehot_training_labels, onehot_test_labels, test_images, tra
         for b in band_list:
             if b == 1:
                 on_band_count += 1
-        
+
         model = model_for_type(neural_net_type, tile_size, on_band_count)
-   
+
     model.fit(norm_train_images,
               npy_training_labels,
               n_epoch=number_of_epochs,
@@ -129,8 +129,8 @@ def save_model(model, neural_net_type, bands, tile_size):
     """Save a DeepOSM tflearn model and its metadata. """
     model.save(CACHE_PATH + 'model.pickle')
     # dump the training metadata to disk, for later loading model from disk
-    training_info = {'neural_net_type': neural_net_type, 
-                     'bands': bands, 
+    training_info = {'neural_net_type': neural_net_type,
+                     'bands': bands,
                      'tile_size': tile_size}
     with open(CACHE_PATH + MODEL_METADATA_PATH, 'w') as outfile:
         pickle.dump(training_info, outfile)

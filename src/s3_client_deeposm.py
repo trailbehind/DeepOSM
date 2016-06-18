@@ -10,7 +10,7 @@ from src.single_layer_network import list_findings
 from src.training_visualization import render_results_for_analysis
 
 
-def post_findings_to_s3(raster_data_paths, model, training_info):
+def post_findings_to_s3(raster_data_paths, model, training_info, render_results):
     """Aggregate findings from all NAIPs into a pickled list, post to S3."""
     findings = []
     for path in raster_data_paths:
@@ -30,8 +30,7 @@ def post_findings_to_s3(raster_data_paths, model, training_info):
 
         # combine findings for all NAIP images analyzedfor the region
         [findings.append(f) for f in tag_with_locations(fp_images, false_positives,
-                                                        training_info['tile_size'], 
-                                                        training_info['naip_state'])]
+                                                        training_info['tile_size'])]
 
     # dump combined findings to disk as a pickle
     try:

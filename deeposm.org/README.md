@@ -17,31 +17,7 @@ Then, the site is live at your docker IP, similar to: http://192.168.99.100:8000
 
     docker-compose run web /usr/local/bin/python manage.py migrate  --run-syncdb
 
-## Deploy to Amazon Elastic Beanstalk (EBS)
-
-This is based on a [Python 3 Elastic Beanstalk tutorial](https://realpython.com/blog/python/deploying-a-django-app-and-postgresql-to-aws-elastic-beanstalk/). It goes like:
-
-Use the EBS command line tools to deploy:
-
-    pip install awsebcli
-
-Per tutorial, run
-
-    eb create --database.engine postgres
-
-Everything is otherwise all configured by files in .ebextensions, and there shouldn't be anything else to do.
-
-Then:
-
-    eb deploy
-
-Also, set your AWS credentials on EB:
-
-    eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-    eb setenv AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-    eb setenv DJANGO_SETTINGS_MODULE=website.settings
-
-## Data Displayed
+## Creating Production Findings
 
 The production findings are created and posted to S3 by running these commands, using DeepOSM. 
 

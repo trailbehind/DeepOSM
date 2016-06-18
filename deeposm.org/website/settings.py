@@ -96,8 +96,8 @@ else:
             'USER': 'postgres',
             'HOST': 'db',
             'PORT': 5432,
+        }
     }
-}
 
 
 # Password validation
