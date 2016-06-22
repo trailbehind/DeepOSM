@@ -421,7 +421,7 @@ def tag_with_locations(test_images, predictions, tile_size, state_abbrev):
         formatted_info = {'certainty': certainty, 'ne_lat': ne_lat, 'ne_lon': ne_lon,
                           'sw_lat': sw_lat, 'sw_lon': sw_lon, 'raster_tile_x': raster_tile_x,
                           'raster_tile_y': raster_tile_y, 'raster_filename': raster_filename,
-                          'state_abbrev': state_abbrev
+                          'state_abbrev': state_abbrev, 'country_abbrev': 'USA'
                           }
         combined_data.append(formatted_info)
     return combined_data

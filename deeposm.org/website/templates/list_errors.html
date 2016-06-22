@@ -5,7 +5,7 @@
 
 {% block content %}
 
-		<h3>{{ analysis_title }} <span class=gray-span>({{ country_abbrev }}, {{ state_name|capfirst }})</span> (<a style="color:orange" href=/road-registration-errors/{{ country_abbrev }}/{{ state_name}}/list/?json=True target=_new>as JSON</a>)</h3>
+		<h3>{{ analysis_title }} <span class=gray-span>({{ country_abbrev }}, <a style="color:orange" href=/road-registration-errors/{{ country_abbrev }}/{{ state_name}}/list/>{{ state_name|capfirst }})</a></span> (<a style="color:orange" href="/road-registration-errors/{{ country_abbrev }}/{{ state_name}}/list/?json=True&flagged={{request.GET.flagged}}&solved={{request.GET.solved}}" target=_new>as JSON</a>)</h3>
 		<table>
 				{% for error in errors %}
 				    <tr>

@@ -14,33 +14,57 @@
 
 {% block content %}
     
-        <table>
-          <tr>
-              <td>
-                   <span class=gray-span>{{ analysis_title }}</span> - #{{ error.id }}
-              </td>
-              <td>
-                    Likely Error {% widthratio error.certainty 1 85 %}%
-              </td>
-              <td>
-                 <a style="color:red" target=_new href=https://www.openstreetmap.org/edit#map=18/{{center.0}}/{{center.1}}
->Fix on OpenStreetMap.org</a>
-              </td>
-              <td>
-                 <a target=_new href=/flag/{{ error.id }}/>Flag Bad Predicton</a>
-              </td>
-          </tr>
-        </table>
-        <div id="mapid"></div>
-        
-        <script type="text/javascript">
+    {% if request.GET.flag_error %}
+    <div class="alert alert-danger" role="alert">
+        Good job! You have successfully flagged a prediction as terrible. DeepOSM wil be told to try harder next time, and this error will get removed from the main list.
+    </div>
+    {% endif %}
+
+    {% if request.GET.post_to_maproulette %}
+    <div class="alert alert-warning" role="alert">
+        You posted a DeepOSM predictions to <a href='http://MapRoulette.org'>MapRoulette.org</a>. Maybe someone will fix it now.
+    </div>
+    {% endif %}
+
+    <table>
+      <tr>
+          <td>
+               <span class=gray-span>{{ analysis_title }}</span> - <a href="/road-registration-errors/USA/{{state_name}}/list/">{{ state_title }}</a> - <a href="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/">#{{ error.id }}</a>
+          </td>
+          <td>
+                Likely Error {% widthratio error.certainty 1 85 %}%
+          </td>
+          <td>
+             <a class="btn btn-success" target=_new href=https://www.openstreetmap.org/edit#map=18/{{center.0}}/{{center.1}}
+>Fix in OpenStreetMap</a>
+          </td>
+          {% if error.flagged_count <= 0 %}
+          <td>
+             <form method="POST" action="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/?post_to_maproulette=True" style="margin:0">
+                 {% csrf_token %}
+                 <input class="btn btn-warning" type="submit" value="Add to MapRoulette"></input>
+              </form>
+          </td>
+          {% endif %}
+
+          <td>
+             <form method="POST" action="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/?flag_error=True" style="margin:0">
+                 {% csrf_token %}
+                 <input class="btn btn-danger" type="submit" value="Flag Bad Predicton ({{error.flagged_count}})"></input>
+              </form>
+          </td>
+      </tr>
+    </table>
+
+    <div id="mapid"></div>
+    
+    <script type="text/javascript">
         var mymap = L.map('mapid').setView([{{center.0}}, {{center.1}}], 18);
 
         var satLayer = L.tileLayer('http://a.tiles.mapbox.com/v3/trailbehind.map-e7o3271e/{z}/{x}/{y}.png', {
             attribution: 'Mapbox',
             maxZoom: 18, })
         satLayer.addTo(mymap);
-        
     </script>
 
 {% endblock %}

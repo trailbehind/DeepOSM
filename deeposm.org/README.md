@@ -17,6 +17,12 @@ Then, the site is live at your docker IP, similar to: http://192.168.99.100:8000
 
     docker-compose run web /usr/local/bin/python manage.py migrate  --run-syncdb
 
+## Server Setup
+
+Follow this tutorial: https://realpython.com/blog/python/deploying-a-django-app-and-postgresql-to-aws-elastic-beanstalk/
+
+Some of the work is already done and checked in (i.e. the .ebextensions config files).
+
 ## Creating Production Findings
 
 The production findings are created and posted to S3 by running these commands, using DeepOSM. 
