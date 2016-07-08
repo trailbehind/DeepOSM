@@ -6,18 +6,23 @@ import boto3
 import datetime
 import os
 import pickle
-import requests
 from website import models, settings
-from requests_oauthlib import OAuth1
 
 
 FINDINGS_S3_BUCKET = 'deeposm'
 
 STATE_NAMES_TO_ABBREVS = {
     'delaware': 'de',
+    'iowa': 'ia',
     'maine': 'me',
     'new-hampshire': 'nh',  # nh is unused
 }
+
+
+def refresh_findings(request):
+    """Call this view to update findigs from S3."""
+    cache_findings()
+    return home(request)
 
 
 def home(request):
@@ -56,35 +61,6 @@ def view_error(request, analysis_type, country_abbrev, state_name, error_id):
         if request.GET.get('flag_error'):
             error.flagged_count += 1
             error.save()
-        elif request.GET.get('post_to_maproulette'):
-            error = models.MapError.objects.get(id=error_id)
-            lon, lat = (error.ne_lon + error.sw_lon) / 2, (error.ne_lat + error.sw_lat) / 2
-            key = "2-aEE4Mt5+0b/s2jevPT5CjdBAULJG1sAFZJQMLmh0G2L820gkiTm8RjIRgx3kv8fvBShD74wxgg=="
-            instructions = "DeepOSM detected a mis-registered road. Align the road."
-            challenge_info = {'instruction': instructions,
-                              'geometries': {
-                                              'type': 'FeatureCollection',
-                                              'features': [{'type': "Feature",
-                                                            'geometry': {'type': 'Point',
-                                                                         'coordinates': [lon, lat]
-                                                                         }
-                                                            }]
-                                            }
-                              }
-            print(challenge_info)
-            slug = 'deeposm-{}'.format(error_id)
-
-            maproulette_api_url = 'http://maproulette.org:8080/api/v2/project'
-            project = {
-                       "name": slug,
-                       "description": "Errors from DeepOSM."
-                       }
-
-            auth = OAuth1(key)
-            response = requests.post(maproulette_api_url, json=project, auth=auth)
-            print(response)
-            print(response.text)
-
     context = {
         'center': ((error.ne_lon + error.sw_lon) / 2, (error.ne_lat + error.sw_lat) / 2),
         'error': error,
@@ -100,7 +76,6 @@ def view_error(request, analysis_type, country_abbrev, state_name, error_id):
 
 def list_errors(request, analysis_type, country_abbrev, state_name):
     """List all the errors of a given type in the country/state."""
-    cache_findings()
     template = loader.get_template('list_errors.html')
     analysis_title = analysis_type.replace('-', ' ').title()
     if request.GET.get('flagged'):
@@ -150,9 +125,13 @@ def cache_findings():
         except:
             pass
         if True or not os.path.exists(local_path):
-            s3_client = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                                     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-            s3_client.download_file(FINDINGS_S3_BUCKET, obj.key, local_path)
+            try:
+                s3_client = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+                s3_client.download_file(FINDINGS_S3_BUCKET, obj.key, local_path)
+            except:
+                # catch 'Not a directory: 'website/static/ia/.AbB78a64' -> 'website/static/ia/'
+                continue
             with open(local_path, 'rb') as infile:
                 errors = pickle.load(infile)
 
@@ -190,7 +169,7 @@ def cache_findings():
                 fixed_errors = models.MapError.objects.filter(
                     id__in=naip_errors[key])
                 for f in fixed_errors:
-                    f.solved_date = datetime.date.utcnow()
+                    f.solved_date = datetime.datetime.utcnow()
                     f.save()
 
             print("DOWNLOADED {}".format(obj.key))

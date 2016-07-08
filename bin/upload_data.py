@@ -21,7 +21,7 @@ def main():
 
     model = load_model(model_info['neural_net_type'], model_info['tile_size'],
                        len(model_info['bands']))
-    post_findings_to_s3(raster_data_paths, model, training_info)
+    post_findings_to_s3(raster_data_paths, model, training_info, model_info['bands'], False)
 
 
 if __name__ == "__main__":

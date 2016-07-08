@@ -23,6 +23,8 @@ NAIP_PIXEL_BUFFER = 300
 # where training data gets cached/retrieved
 CACHE_PATH = '/DeepOSM/data/cache/'
 METADATA_PATH = 'training_metadata.pickle'
+LABEL_CACHE_DIRECTORY = 'training_labels/'
+IMAGE_CACHE_DIRECTORY = 'training_images/'
 
 # the name of the S3 bucket to post findings to
 FINDINGS_S3_BUCKET = 'deeposm'
@@ -188,22 +190,19 @@ def bounds_contains_point(bounds, point_tuple):
 
 def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_size,
                                pixels_to_fatten_roads, label_data_files, tile_overlap, naip_state):
-    """Return lists of training images and matching labels."""
+    """Save tiles for training data to disk, file names are padded with 16 0s.
+
+    Images are named 0000000000000000.colors.
+    Labels are named 0000000000000000.lbl.
+    """
     # tile images and labels
     waymap = download_and_extract(label_data_files, extract_type)
 
+    tile_index = 0
+
     for raster_data_path in raster_data_paths:
 
-        path_parts = raster_data_path.split('/')
-        filename = path_parts[len(path_parts) - 1]
-        labels_path = CACHE_PATH + filename + '-labels.npy'
-        images_path = CACHE_PATH + filename + '-images.npy'
-        if os.path.exists(labels_path) and os.path.exists(images_path):
-            print("TRAINING DATA for {} already tiled".format(filename))
-            continue
-
-        road_labels = []
-        naip_tiles = []
+        # TODO need new code to check cache
         raster_dataset, bands_data = read_naip(raster_data_path, band_list)
         rows = bands_data.shape[0]
         cols = bands_data.shape[1]
@@ -215,26 +214,27 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         top_y, bottom_y = NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
 
         # tile the way bitmap
+        origin_tile_index = tile_index
         for col in range(left_x, right_x, tile_size / tile_overlap):
             for row in range(top_y, bottom_y, tile_size / tile_overlap):
                 if row + tile_size < bottom_y and col + tile_size < right_x:
+                    file_suffix = '{0:016d}'.format(tile_index)
+                    label_filepath = "{}{}{}.lbl".format(CACHE_PATH, LABEL_CACHE_DIRECTORY,
+                                                         file_suffix)
                     new_tile = way_bitmap_npy[row:row + tile_size, col:col + tile_size]
-                    road_labels.append((new_tile, col, row, raster_data_path))
+                    with open(label_filepath, 'w') as outfile:
+                        numpy.save(outfile, numpy.asarray((new_tile, col, row, raster_data_path)))
+                    tile_index += 1
 
+        tile_index = origin_tile_index
         # tile the NAIP
         for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size,
                               tile_overlap):
-            naip_tiles.append(tile)
-
-        assert len(naip_tiles) == len(road_labels)
-
-        # dump the tiled labels from the way bitmap to disk
-        with open(labels_path, 'w') as outfile:
-            numpy.save(outfile, numpy.asarray(road_labels))
-
-        # dump the tiled images from the NAIP to disk
-        with open(images_path, 'w') as outfile:
-            numpy.save(outfile, numpy.asarray(naip_tiles))
+            file_suffix = '{0:016d}'.format(tile_index)
+            img_filepath = "{}{}{}.colors".format(CACHE_PATH, IMAGE_CACHE_DIRECTORY, file_suffix)
+            with open(img_filepath, 'w') as outfile:
+                numpy.save(outfile, tile)
+            tile_index += 1
 
     # dump the metadata to disk for configuring the analysis script later
     training_info = {'bands': band_list, 'tile_size': tile_size, 'naip_state': naip_state}
@@ -242,28 +242,14 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         pickle.dump(training_info, outfile)
 
 
-def shuffle_in_unison(a, b):
-    """See www.stackoverflow.com/questions/11765061/better-way-to-shuffle-two-related-lists."""
-    a_shuf = []
-    b_shuf = []
-    index_shuf = range(len(a))
-    random.shuffle(index_shuf)
-    for i in index_shuf:
-        a_shuf.append(a[i])
-        b_shuf.append(b[i])
-    return a_shuf, b_shuf
-
-
 def equalize_data(road_labels, naip_tiles, save_clippings):
     """Make sure labeled data includes an equal set of ON and OFF tiles."""
-    road_labels, naip_tiles = shuffle_in_unison(road_labels, naip_tiles)
     wayless_indices = []
     way_indices = []
-    for x in range(len(road_labels)):
-        tile = road_labels[x][0]
-        if has_ways_in_center(tile, 1):
+    for x in range(0, len(road_labels)):
+        if road_labels[x][0] == 0:
             way_indices.append(x)
-        elif not has_ways_in_center(tile, 16):
+        else:
             wayless_indices.append(x)
 
     count_wayless = len(wayless_indices)
@@ -348,46 +334,86 @@ def split_train_test(equal_count_tile_list, equal_count_way_list, percent_for_tr
     return test_labels, training_labels, test_images, training_images
 
 
-def format_as_onehot_arrays(labels):
+'''
+    for x in range(0, number_of_tiles):
+        label_path = random.choice(os.listdir(labels_path))
+        training_labels.append(numpy.load(labels_path + label_path))
+        file_suffix = parts[len(parts)-1]
+        img_path = "{}{}.colors".format(imgs_path, file_suffix)
+        training_images.append(numpy.load(img_path))
+'''
+
+
+def format_as_onehot_arrays(new_label_paths):
     """Return a list of one-hot array labels, for a list of tiles.
 
     Converts to a one-hot array of whether the tile has ways (i.e. [0,1] or [1,0] for each).
     """
+    training_images, onehot_training_labels = [], []
     print("CREATING ONE-HOT LABELS...")
     t0 = time.time()
     on_count = 0
     off_count = 0
-    onehot_labels = []
-    for label in labels:
+    for filename in new_label_paths:
+
+        full_path = "{}{}{}".format(CACHE_PATH, LABEL_CACHE_DIRECTORY, filename)
+        label = numpy.load(full_path)
+
+        parts = full_path.split('.')[0].split('/')
+        file_suffix = parts[len(parts)-1]
+        img_path = "{}{}{}.colors".format(CACHE_PATH, IMAGE_CACHE_DIRECTORY, file_suffix)
+
         if has_ways_in_center(label[0], 1):
-            onehot_labels.append([0, 1])
+            onehot_training_labels.append([0, 1])
             on_count += 1
+            training_images.append(numpy.load(img_path))
         elif not has_ways_in_center(label[0], 16):
-            onehot_labels.append([1, 0])
+            onehot_training_labels.append([1, 0])
             off_count += 1
+            training_images.append(numpy.load(img_path))
 
-    print("ONE-HOT labels: {} on, {} off ({:.1%} on)".format(on_count, off_count, on_count / float(
-        len(labels))))
     print("one-hotting took {0:.1f}s".format(time.time() - t0))
-    return onehot_labels
+    return training_images, onehot_training_labels
 
 
-def load_training_tiles(naip_path):
+def load_training_tiles(number_of_tiles):
+    """Return number_of_tiles worth of training_label_paths."""
+    print("LOADING DATA: reading from disk and unpickling")
+    t0 = time.time()
+    training_label_paths = []
+    labels_path = "{}{}".format(CACHE_PATH, LABEL_CACHE_DIRECTORY)
+    all_paths = os.listdir(labels_path)
+    for x in range(0, number_of_tiles):
+        label_path = random.choice(all_paths)
+        training_label_paths.append(label_path)
+    print("DATA LOADED: time to deserialize test data {0:.1f}s".format(time.time() - t0))
+    return training_label_paths
+
+
+def load_all_training_tiles(naip_path, bands):
     """Return the image and label tiles for the naip_path."""
     print("LOADING DATA: reading from disk and unpickling")
     t0 = time.time()
-    path_parts = naip_path.split('/')
-    filename = path_parts[len(path_parts) - 1]
-    labels_path = CACHE_PATH + filename + '-labels.npy'
-    images_path = CACHE_PATH + filename + '-images.npy'
-    try:
-        with open(labels_path, 'r') as infile:
-            training_labels = numpy.load(infile)
-        with open(images_path, 'r') as infile:
-            training_images = numpy.load(infile)
-    except:
-        print("WARNING, skipping file because pickled data bad for {}".format(naip_path))
-        return [], []
+    tile_size = 64
+    tile_overlap = 1
+    raster_dataset, bands_data = read_naip(naip_path, bands)
+    training_images = tile_naip(naip_path, raster_dataset, bands_data, bands, tile_size,
+                                tile_overlap)
+    rows = bands_data.shape[0]
+    cols = bands_data.shape[1]
+    cache_filename = naip_path + '-ways.bitmap.npy'
+    way_bitmap_npy = numpy.load(cache_filename)
+
+    left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
+    top_y, bottom_y = NAIP_PIXEL_BUFFER, rows - NAIP_PIXEL_BUFFER
+
+    training_labels = []
+    for col in range(left_x, right_x, tile_size / tile_overlap):
+        for row in range(top_y, bottom_y, tile_size / tile_overlap):
+            if row + tile_size < bottom_y and col + tile_size < right_x:
+                new_tile = way_bitmap_npy[row:row + tile_size, col:col + tile_size]
+                training_labels.append(numpy.asarray((new_tile, col, row, naip_path)))
+
     print("DATA LOADED: time to deserialize test data {0:.1f}s".format(time.time() - t0))
     return training_labels, training_images
 
@@ -396,6 +422,14 @@ def cache_paths(raster_data_paths):
     """Cache a list of naip image paths, to pass on to the train_neural_net script."""
     try:
         os.mkdir(CACHE_PATH)
+    except:
+        pass
+    try:
+        os.mkdir(CACHE_PATH + LABEL_CACHE_DIRECTORY)
+    except:
+        pass
+    try:
+        os.mkdir(CACHE_PATH + IMAGE_CACHE_DIRECTORY)
     except:
         pass
     with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:

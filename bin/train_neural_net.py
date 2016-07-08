@@ -16,7 +16,7 @@ def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--neural-net",
                         default='one_layer_relu',
-                        choices=['one_layer_relu', 'one_layer_relu_conv'],
+                        choices=['one_layer_relu', 'one_layer_relu_conv', 'two_layer_relu_conv'],
                         help="the neural network architecture to use")
     parser.add_argument("--number-of-epochs",
                         default=5,
@@ -38,12 +38,8 @@ def main():
     with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
         training_info = pickle.load(infile)
 
-    test_images, model = train_on_cached_data(raster_data_paths, args.neural_net,
-                                              training_info['bands'], training_info['tile_size'],
-                                              args.number_of_epochs)
-
-    with open(CACHE_PATH + 'model.pickle', 'w') as outfile:
-        pickle.dump(model, outfile)
+    train_on_cached_data(raster_data_paths, args.neural_net, training_info['bands'],
+                         training_info['tile_size'], args.number_of_epochs)
 
 if __name__ == "__main__":
     main()

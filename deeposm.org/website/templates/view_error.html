@@ -20,12 +20,6 @@
     </div>
     {% endif %}
 
-    {% if request.GET.post_to_maproulette %}
-    <div class="alert alert-warning" role="alert">
-        You posted a DeepOSM predictions to <a href='http://MapRoulette.org'>MapRoulette.org</a>. Maybe someone will fix it now.
-    </div>
-    {% endif %}
-
     <table>
       <tr>
           <td>
@@ -38,15 +32,6 @@
              <a class="btn btn-success" target=_new href=https://www.openstreetmap.org/edit#map=18/{{center.0}}/{{center.1}}
 >Fix in OpenStreetMap</a>
           </td>
-          {% if error.flagged_count <= 0 %}
-          <td>
-             <form method="POST" action="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/?post_to_maproulette=True" style="margin:0">
-                 {% csrf_token %}
-                 <input class="btn btn-warning" type="submit" value="Add to MapRoulette"></input>
-              </form>
-          </td>
-          {% endif %}
-
           <td>
              <form method="POST" action="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/?flag_error=True" style="margin:0">
                  {% csrf_token %}

@@ -4,17 +4,17 @@ import boto3
 import os
 import pickle
 
-from src.training_data import CACHE_PATH, FINDINGS_S3_BUCKET, load_training_tiles, \
+from src.training_data import CACHE_PATH, FINDINGS_S3_BUCKET, load_all_training_tiles, \
     tag_with_locations
 from src.single_layer_network import list_findings
 from src.training_visualization import render_results_for_analysis
 
 
-def post_findings_to_s3(raster_data_paths, model, training_info, render_results):
+def post_findings_to_s3(raster_data_paths, model, training_info, bands, render_results):
     """Aggregate findings from all NAIPs into a pickled list, post to S3."""
     findings = []
     for path in raster_data_paths:
-        labels, images = load_training_tiles(path)
+        labels, images = load_all_training_tiles(path, bands)
         if len(labels) == 0 or len(images) == 0:
             print("WARNING, there is a borked naip image file")
             continue
@@ -30,7 +30,8 @@ def post_findings_to_s3(raster_data_paths, model, training_info, render_results)
 
         # combine findings for all NAIP images analyzedfor the region
         [findings.append(f) for f in tag_with_locations(fp_images, false_positives,
-                                                        training_info['tile_size'])]
+                                                        training_info['tile_size'],
+                                                        training_info['naip_state'])]
 
     # dump combined findings to disk as a pickle
     try:
