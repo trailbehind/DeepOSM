@@ -30,7 +30,7 @@ def render_errors(raster_data_paths, model, training_info, render_results):
 def render_results_for_analysis(raster_data_paths, predictions, test_images, band_list, tile_size):
     """Generate a JPEG for each TIFF showing predictions shaded."""
     for raster_data_path in raster_data_paths:
-        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, 
+        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None,
                                                            None))
         render_predictions(raster_data_path, predictions, test_images, way_bitmap_npy, band_list,
                            tile_size)
