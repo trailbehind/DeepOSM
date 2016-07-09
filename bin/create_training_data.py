@@ -3,9 +3,11 @@
 """Create training data from OpenStreetMap labels and NAIP images."""
 
 import argparse
+import os
+import shutil
 
 from src.naip_images import NAIPDownloader
-from src.training_data import create_tiled_training_data, cache_paths
+from src.training_data import CACHE_PATH, GEO_DATA_DIR, create_tiled_training_data, cache_paths
 
 
 def create_parser():
@@ -76,6 +78,16 @@ def main():
     args = create_parser().parse_args()
     naip_state, naip_year = args.naip_path
     naiper = NAIPDownloader(args.number_of_naips, args.randomize_naips, naip_state, naip_year)
+    shutil.rmtree(CACHE_PATH)
+    shutil.rmtree(GEO_DATA_DIR + '/openstreetmap')
+    try:
+        os.mkdir(CACHE_PATH)
+    except:
+        pass
+    try:
+        os.mkdir(CACHE_PATH + 'way_bitmaps')
+    except:
+        pass
     raster_data_paths = naiper.download_naips()
     cache_paths(raster_data_paths)
     create_tiled_training_data(raster_data_paths, args.extract_type, args.bands, args.tile_size,

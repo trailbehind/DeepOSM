@@ -20,8 +20,9 @@ from naip_images import NAIP_DATA_DIR
 # otherwise using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
 
+GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 # where training data gets cached/retrieved
-CACHE_PATH = '/DeepOSM/data/cache/'
+CACHE_PATH = GEO_DATA_DIR + '/generated/'
 METADATA_PATH = 'training_metadata.pickle'
 LABEL_CACHE_DIRECTORY = 'training_labels/'
 IMAGE_CACHE_DIRECTORY = 'training_images/'
@@ -78,7 +79,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
 
 def way_bitmap_for_naip(
-        ways, raster_data_path,
+        ways, raster_data_path, naip_state, 
         raster_dataset,
         rows, cols, pixels_to_fatten_roads=None):
     """
@@ -86,7 +87,10 @@ def way_bitmap_for_naip(
 
     Set matrix to 1 for any pixel where an OSM way runs over.
     """
-    cache_filename = raster_data_path + '-ways.bitmap.npy'
+    parts = raster_data_path.split('/')
+    naip_grid = parts[len(parts)-2]
+    naip_filename = parts[len(parts)-1]
+    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
 
     try:
         arr = numpy.load(cache_filename)
@@ -207,7 +211,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         rows = bands_data.shape[0]
         cols = bands_data.shape[1]
 
-        way_bitmap_npy = way_bitmap_for_naip(waymap.extracter.ways, raster_data_path,
+        way_bitmap_npy = way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, naip_state, 
                                              raster_dataset, rows, cols, pixels_to_fatten_roads)
 
         left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
@@ -390,7 +394,7 @@ def load_training_tiles(number_of_tiles):
     return training_label_paths
 
 
-def load_all_training_tiles(naip_path, bands):
+def load_all_training_tiles(naip_path, bands, naip_state):
     """Return the image and label tiles for the naip_path."""
     print("LOADING DATA: reading from disk and unpickling")
     t0 = time.time()
@@ -401,7 +405,10 @@ def load_all_training_tiles(naip_path, bands):
                                 tile_overlap)
     rows = bands_data.shape[0]
     cols = bands_data.shape[1]
-    cache_filename = naip_path + '-ways.bitmap.npy'
+    parts = naip_path.split('/')
+    naip_grid = parts[len(parts)-2]
+    naip_filename = parts[len(parts)-1]
+    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_state + '/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
     way_bitmap_npy = numpy.load(cache_filename)
 
     left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
@@ -421,15 +428,15 @@ def load_all_training_tiles(naip_path, bands):
 def cache_paths(raster_data_paths):
     """Cache a list of naip image paths, to pass on to the train_neural_net script."""
     try:
-        os.mkdir(CACHE_PATH)
-    except:
-        pass
-    try:
         os.mkdir(CACHE_PATH + LABEL_CACHE_DIRECTORY)
     except:
         pass
     try:
         os.mkdir(CACHE_PATH + IMAGE_CACHE_DIRECTORY)
+    except:
+        pass
+    try:
+        os.mkdir(GEO_DATA_DIR + '/openstreetmap')
     except:
         pass
     with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:

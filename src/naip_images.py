@@ -1,16 +1,18 @@
 """A class to download NAIP imagery from the s3://aws-naip RequesterPays bucket."""
 
+import boto3
 import os
 import subprocess
 import sys
 import time
 from random import shuffle
 
-import boto3
 
 # set in Dockerfile as env variable
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
+CACHE_PATH = GEO_DATA_DIR + '/generated/'
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
+LABELS_DATA_DIR = os.path.join(CACHE_PATH, "way_bitmaps")
 
 
 class NAIPDownloader:
@@ -88,6 +90,9 @@ class NAIPDownloader:
                 naip_subpath = os.path.join(NAIP_DATA_DIR, naip_path.split('/')[0])
                 if not os.path.exists(naip_subpath):
                     os.mkdir(naip_subpath)
+                labels_subpath = os.path.join(LABELS_DATA_DIR, naip_path.split('/')[0])
+                if not os.path.exists(labels_subpath):
+                    os.mkdir(labels_subpath)
             else:
                 pass
                 # skip non filename lines from response

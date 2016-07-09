@@ -5,14 +5,16 @@ import pickle
 from src.naip_images import NAIPDownloader
 from src.s3_client_deeposm import post_findings_to_s3
 from src.single_layer_network import MODEL_METADATA_PATH, train_on_cached_data, load_model
-from src.training_data import CACHE_PATH, METADATA_PATH, create_tiled_training_data, cache_paths
+from src.training_data import CACHE_PATH, GEO_DATA_DIR, METADATA_PATH, create_tiled_training_data, 
+    cache_paths
 
 
 def main():
     """Do each state one by one."""
-    # randomize_naips = False
+
     naip_year = 2013
     naip_states = {'de': ['http://download.geofabrik.de/north-america/us/delaware-latest.osm.pbf'],
+                   'ia': ['http://download.geofabrik.de/north-america/us/iowa-latest.osm.pbf'],
                    'me': ['http://download.geofabrik.de/north-america/us/maine-latest.osm.pbf']}
     number_of_naips = 25
 
@@ -22,27 +24,44 @@ def main():
     pixels_to_fatten_roads = 3
     tile_overlap = 1
 
-    neural_net = 'one_layer_relu_conv'
-    number_of_epochs = 25
+    neural_net = 'two_layer_relu_conv'
+    number_of_epochs = 10
 
-    for state, filenames in naip_states:
-        naiper = NAIPDownloader(number_of_naips, state, naip_year)
+    for state in naip_states:
+        filenames = naip_states[state]
+        randomize_naips = False
+        naiper = NAIPDownloader(number_of_naips, randomize_naips, state, naip_year)
+        shutil.rmtree(CACHE_PATH)
+        shutil.rmtree(GEO_DATA_DIR + '/openstreetmap')
+        try:
+            os.mkdir(CACHE_PATH)
+        except:
+            pass
+        try:
+            print(CACHE_PATH + '/way_bitmaps/')
+            os.mkdir(CACHE_PATH + '/way_bitmaps/')
+        except:
+            pass
         raster_data_paths = naiper.download_naips()
         cache_paths(raster_data_paths)
         create_tiled_training_data(raster_data_paths, extract_type, bands, tile_size,
                                    pixels_to_fatten_roads, filenames,
                                    tile_overlap, state)
 
-    with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
-        training_info = pickle.load(infile)
+        with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
+            training_info = pickle.load(infile)
 
-    test_images, model = train_on_cached_data(raster_data_paths, neural_net,
-                                              training_info['bands'], training_info['tile_size'],
-                                              number_of_epochs)
+        test_images, model = train_on_cached_data(raster_data_paths, neural_net,
+                                                  training_info['bands'], training_info['tile_size'],
+                                                  number_of_epochs)
 
-    with open(CACHE_PATH + MODEL_METADATA_PATH, 'r') as infile:
-        model_info = pickle.load(infile)
+        with open(CACHE_PATH + MODEL_METADATA_PATH, 'r') as infile:
+            model_info = pickle.load(infile)
 
-    model = load_model(model_info['neural_net_type'], model_info['tile_size'],
-                       len(model_info['bands']))
-    post_findings_to_s3(raster_data_paths, model, training_info)
+        model = load_model(model_info['neural_net_type'], model_info['tile_size'],
+                           len(model_info['bands']))
+        post_findings_to_s3(raster_data_paths, model, training_info, training_info['bands'], False)
+
+
+if __name__ == "__main__":
+    main()
