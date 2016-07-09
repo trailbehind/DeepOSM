@@ -1,11 +1,13 @@
 """Create data for all states, and upload to deeposm.org's S3 bucket."""
 
+import os
 import pickle
+import shutil
 
 from src.naip_images import NAIPDownloader
 from src.s3_client_deeposm import post_findings_to_s3
 from src.single_layer_network import MODEL_METADATA_PATH, train_on_cached_data, load_model
-from src.training_data import CACHE_PATH, GEO_DATA_DIR, METADATA_PATH, create_tiled_training_data, 
+from src.training_data import CACHE_PATH, GEO_DATA_DIR, METADATA_PATH, create_tiled_training_data, \
     cache_paths
 
 
@@ -16,7 +18,7 @@ def main():
     naip_states = {'de': ['http://download.geofabrik.de/north-america/us/delaware-latest.osm.pbf'],
                    'ia': ['http://download.geofabrik.de/north-america/us/iowa-latest.osm.pbf'],
                    'me': ['http://download.geofabrik.de/north-america/us/maine-latest.osm.pbf']}
-    number_of_naips = 25
+    number_of_naips = 175
 
     extract_type = 'highway'
     bands = [1, 1, 1, 1]
@@ -31,8 +33,14 @@ def main():
         filenames = naip_states[state]
         randomize_naips = False
         naiper = NAIPDownloader(number_of_naips, randomize_naips, state, naip_year)
-        shutil.rmtree(CACHE_PATH)
-        shutil.rmtree(GEO_DATA_DIR + '/openstreetmap')
+        try:
+            shutil.rmtree(CACHE_PATH)
+        except:
+            pass
+        try:
+            shutil.rmtree(GEO_DATA_DIR + '/openstreetmap')
+        except:
+            pass
         try:
             os.mkdir(CACHE_PATH)
         except:
