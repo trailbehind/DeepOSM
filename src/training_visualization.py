@@ -24,15 +24,14 @@ def render_errors(raster_data_paths, model, training_info, render_results):
         print("FINDINGS: {} false pos of {} tiles, from {}".format(
             len(false_positives), len(images), filename))
         render_results_for_analysis([path], false_positives, fp_images, training_info['bands'],
-                                    training_info['tile_size'], training_info['naip_state'])
+                                    training_info['tile_size'])
 
 
-def render_results_for_analysis(raster_data_paths, predictions, test_images, band_list, tile_size,
-                                naip_state):
+def render_results_for_analysis(raster_data_paths, predictions, test_images, band_list, tile_size):
     """Generate a JPEG for each TIFF showing predictions shaded."""
     for raster_data_path in raster_data_paths:
-        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, naip_state, None,
-                                                           None, None))
+        way_bitmap_npy = numpy.asarray(way_bitmap_for_naip(None, raster_data_path, None, None, 
+                                                           None))
         render_predictions(raster_data_path, predictions, test_images, way_bitmap_npy, band_list,
                            tile_size)
 
