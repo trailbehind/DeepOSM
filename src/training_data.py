@@ -79,7 +79,7 @@ def tile_naip(raster_data_path, raster_dataset, bands_data, bands_to_use, tile_s
 
 
 def way_bitmap_for_naip(
-        ways, raster_data_path, naip_state, 
+        ways, raster_data_path, naip_state,
         raster_dataset,
         rows, cols, pixels_to_fatten_roads=None):
     """
@@ -90,7 +90,8 @@ def way_bitmap_for_naip(
     parts = raster_data_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
+    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_grid + '/' + naip_filename 
+                     + '-ways.bitmap.npy'
 
     try:
         arr = numpy.load(cache_filename)
@@ -211,7 +212,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         rows = bands_data.shape[0]
         cols = bands_data.shape[1]
 
-        way_bitmap_npy = way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, naip_state, 
+        way_bitmap_npy = way_bitmap_for_naip(waymap.extracter.ways, raster_data_path, naip_state,
                                              raster_dataset, rows, cols, pixels_to_fatten_roads)
 
         left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
@@ -408,7 +409,8 @@ def load_all_training_tiles(naip_path, bands, naip_state):
     parts = naip_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_state + '/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
+    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_state + '/' + naip_grid + '/' + 
+                     naip_filename + '-ways.bitmap.npy'
     way_bitmap_npy = numpy.load(cache_filename)
 
     left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
