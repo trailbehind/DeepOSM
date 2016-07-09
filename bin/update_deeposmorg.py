@@ -46,7 +46,6 @@ def main():
         except:
             pass
         try:
-            print(CACHE_PATH + '/way_bitmaps/')
             os.mkdir(CACHE_PATH + '/way_bitmaps/')
         except:
             pass
