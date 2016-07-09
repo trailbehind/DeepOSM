@@ -14,18 +14,13 @@ from PIL import Image
 
 from openstreetmap_labels import download_and_extract
 from geo_util import lat_lon_to_pixel, pixel_to_lat_lon, pixel_to_lat_lon_web_mercator
-from naip_images import NAIP_DATA_DIR
+from naip_images import NAIP_DATA_DIR, NAIPDownloader
+from src.config import CACHE_PATH, LABEL_CACHE_DIRECTORY, IMAGE_CACHE_DIRECTORY, METADATA_PATH
+
 
 # there is a 300 pixel buffer around NAIPs to be trimmed off, where NAIPs overlap...
 # otherwise using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
-
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
-# where training data gets cached/retrieved
-CACHE_PATH = GEO_DATA_DIR + '/generated/'
-METADATA_PATH = 'training_metadata.pickle'
-LABEL_CACHE_DIRECTORY = 'training_labels/'
-IMAGE_CACHE_DIRECTORY = 'training_images/'
 
 # the name of the S3 bucket to post findings to
 FINDINGS_S3_BUCKET = 'deeposm'
@@ -90,8 +85,8 @@ def way_bitmap_for_naip(
     parts = raster_data_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_grid + '/' + naip_filename \
-                     + '-ways.bitmap.npy'
+    cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_grid + '/' + naip_filename + \
+        '-ways.bitmap.npy'
 
     try:
         arr = numpy.load(cache_filename)
@@ -410,7 +405,7 @@ def load_all_training_tiles(naip_path, bands, naip_state):
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
     cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_state + '/' + naip_grid + '/' + \
-                     naip_filename + '-ways.bitmap.npy'
+        naip_filename + '-ways.bitmap.npy'
     way_bitmap_npy = numpy.load(cache_filename)
 
     left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
@@ -425,24 +420,6 @@ def load_all_training_tiles(naip_path, bands, naip_state):
 
     print("DATA LOADED: time to deserialize test data {0:.1f}s".format(time.time() - t0))
     return training_labels, training_images
-
-
-def cache_paths(raster_data_paths):
-    """Cache a list of naip image paths, to pass on to the train_neural_net script."""
-    try:
-        os.mkdir(CACHE_PATH + LABEL_CACHE_DIRECTORY)
-    except:
-        pass
-    try:
-        os.mkdir(CACHE_PATH + IMAGE_CACHE_DIRECTORY)
-    except:
-        pass
-    try:
-        os.mkdir(GEO_DATA_DIR + '/openstreetmap')
-    except:
-        pass
-    with open(CACHE_PATH + 'raster_data_paths.pickle', 'w') as outfile:
-        pickle.dump(raster_data_paths, outfile)
 
 
 def tag_with_locations(test_images, predictions, tile_size, state_abbrev):
@@ -468,6 +445,33 @@ def tag_with_locations(test_images, predictions, tile_size, state_abbrev):
                           }
         combined_data.append(formatted_info)
     return combined_data
+
+
+def download_and_serialize(number_of_naips,
+                           randomize_naips,
+                           naip_state,
+                           naip_year,
+                           extract_type,
+                           bands,
+                           tile_size,
+                           pixels_to_fatten_roads,
+                           label_data_files,
+                           tile_overlap):
+    """Download NAIP images, PBF files, and serialize training data."""
+    raster_data_paths = NAIPDownloader(number_of_naips,
+                                       randomize_naips,
+                                       naip_state,
+                                       naip_year).download_naips()
+
+    create_tiled_training_data(raster_data_paths,
+                               extract_type,
+                               bands,
+                               tile_size,
+                               pixels_to_fatten_roads,
+                               label_data_files,
+                               tile_overlap,
+                               naip_state)
+    return raster_data_paths
 
 
 if __name__ == "__main__":
