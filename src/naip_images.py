@@ -6,13 +6,7 @@ import subprocess
 import sys
 import time
 from random import shuffle
-
-
-# set in Dockerfile as env variable
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
-CACHE_PATH = GEO_DATA_DIR + '/generated/'
-NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
-LABELS_DATA_DIR = os.path.join(CACHE_PATH, "way_bitmaps")
+from src.config import cache_paths, create_cache_directories, NAIP_DATA_DIR, LABELS_DATA_DIR
 
 
 class NAIPDownloader:
@@ -54,11 +48,13 @@ class NAIPDownloader:
 
     def download_naips(self):
         """Download self.number_of_naips of the naips for a given state."""
+        create_cache_directories()
         self.configure_s3cmd()
         naip_filenames = self.list_naips()
         if self.should_randomize:
             shuffle(naip_filenames)
         naip_local_paths = self.download_from_s3(naip_filenames)
+        cache_paths(naip_local_paths)
         return naip_local_paths
 
     def configure_s3cmd(self):

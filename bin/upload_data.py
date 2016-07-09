@@ -3,9 +3,9 @@
 """Post test results to S3. This class is probably not relevant to you, it's for deeposm.org."""
 
 import pickle
+from src.config import CACHE_PATH, METADATA_PATH
 from src.s3_client_deeposm import post_findings_to_s3
 from src.single_layer_network import load_model, MODEL_METADATA_PATH
-from src.training_data import CACHE_PATH, METADATA_PATH
 
 
 def main():
