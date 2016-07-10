@@ -5,8 +5,8 @@ import os
 import pickle
 
 from src.config import CACHE_PATH, FINDINGS_S3_BUCKET
-from src.config import load_all_training_tiles, tag_with_locations
 from src.single_layer_network import list_findings
+from src.training_data import load_all_training_tiles, tag_with_locations
 from src.training_visualization import render_results_for_analysis
 
 
