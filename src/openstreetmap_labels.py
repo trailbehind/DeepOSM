@@ -79,6 +79,9 @@ class WayExtracter(o.SimpleHandler):
             if tag.k == self.extract_type:
                 way_type = tag.v
                 should_extract = True
+            # for roads analysis, don't extract ways that don't allow vehicle access
+            if self.extract_type == 'highway' and tag.k == 'motor_vehicle' and tag.v == 'no':
+                return
 
         if not should_extract:
             return
