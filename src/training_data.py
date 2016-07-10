@@ -1,29 +1,21 @@
 """Create training data for a neural net, from NAIP images and OpenStreetMap data."""
 
 from __future__ import print_function
-
 import numpy
 import os
 import pickle
 import random
 import sys
 import time
-
 from osgeo import gdal
-from PIL import Image
-
 from openstreetmap_labels import download_and_extract
 from geo_util import lat_lon_to_pixel, pixel_to_lat_lon, pixel_to_lat_lon_web_mercator
 from naip_images import NAIP_DATA_DIR, NAIPDownloader
 from src.config import CACHE_PATH, LABEL_CACHE_DIRECTORY, IMAGE_CACHE_DIRECTORY, METADATA_PATH
 
-
 # there is a 300 pixel buffer around NAIPs to be trimmed off, where NAIPs overlap...
 # otherwise using overlapping images makes wonky train/test splits
 NAIP_PIXEL_BUFFER = 300
-
-# the name of the S3 bucket to post findings to
-FINDINGS_S3_BUCKET = 'deeposm'
 
 
 def read_naip(file_path, bands_to_use):
@@ -263,11 +255,7 @@ def equalize_data(road_labels, naip_tiles, save_clippings):
         equal_count_way_list.append(road_labels[way_index])
         equal_count_way_list.append(road_labels[wayless_index])
         equal_count_tile_list.append(naip_tiles[way_index])
-        if save_clippings:
-            save_image_clipping(naip_tiles[way_index], 'ON')
         equal_count_tile_list.append(naip_tiles[wayless_index])
-        if save_clippings:
-            save_image_clipping(naip_tiles[wayless_index], 'OFF')
     return equal_count_way_list, equal_count_tile_list
 
 
@@ -281,67 +269,6 @@ def has_ways_in_center(tile, tolerance):
             if pixel_value != 0:
                 return True
     return False
-
-
-def save_image_clipping(tile, status):
-    """Save a tile of training data to disk to visualize."""
-    rgbir_matrix = tile[0]
-    tile_height = len(rgbir_matrix)
-
-    r_img = numpy.empty([tile_height, tile_height])
-    for x in range(len(rgbir_matrix)):
-        for y in range(len(rgbir_matrix[x])):
-            r_img[x][y] = rgbir_matrix[x][y][0]
-
-    g_img = numpy.empty([tile_height, tile_height])
-    for x in range(len(rgbir_matrix)):
-        for y in range(len(rgbir_matrix[x])):
-            if len(rgbir_matrix[x][y]) > 1:
-                g_img[x][y] = rgbir_matrix[x][y][1]
-            else:
-                g_img[x][y] = rgbir_matrix[x][y][0]
-
-    b_img = numpy.empty([tile_height, tile_height])
-    for x in range(len(rgbir_matrix)):
-        for y in range(len(rgbir_matrix[x])):
-            if len(rgbir_matrix[x][y]) > 2:
-                b_img[x][y] = rgbir_matrix[x][y][2]
-            else:
-                b_img[x][y] = rgbir_matrix[x][y][0]
-
-    im = Image.merge('RGB',
-                     (Image.fromarray(r_img).convert('L'), Image.fromarray(g_img).convert('L'),
-                      Image.fromarray(b_img).convert('L')))
-    outfile_path = tile[2] + '-' + status + '-' + str(tile[1][0]) + ',' + str(tile[1][
-        1]) + '-' + '.jpg'
-    im.save(outfile_path, "JPEG")
-
-
-def split_train_test(equal_count_tile_list, equal_count_way_list, percent_for_training_data):
-    """Allocate percent_for_training_data for train, and the rest for test."""
-    test_labels = []
-    training_labels = []
-    test_images = []
-    training_images = []
-
-    for x in range(0, len(equal_count_way_list)):
-        if percent_for_training_data > float(x) / len(equal_count_tile_list):
-            training_images.append(equal_count_tile_list[x])
-            training_labels.append(equal_count_way_list[x])
-        else:
-            test_images.append(equal_count_tile_list[x])
-            test_labels.append(equal_count_way_list[x])
-    return test_labels, training_labels, test_images, training_images
-
-
-'''
-    for x in range(0, number_of_tiles):
-        label_path = random.choice(os.listdir(labels_path))
-        training_labels.append(numpy.load(labels_path + label_path))
-        file_suffix = parts[len(parts)-1]
-        img_path = "{}{}.colors".format(imgs_path, file_suffix)
-        training_images.append(numpy.load(img_path))
-'''
 
 
 def format_as_onehot_arrays(new_label_paths):
@@ -405,7 +332,7 @@ def load_all_training_tiles(naip_path, bands):
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
     cache_filename = CACHE_PATH + 'way_bitmaps/' + naip_grid + '/' + naip_filename \
-                     + '-ways.bitmap.npy'
+        + '-ways.bitmap.npy'
     way_bitmap_npy = numpy.load(cache_filename)
 
     left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER

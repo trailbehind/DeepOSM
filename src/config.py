@@ -4,6 +4,9 @@ import os
 import pickle
 import shutil
 
+# the name of the S3 bucket to post findings to
+FINDINGS_S3_BUCKET = 'deeposm'
+
 # set in Dockerfile as env variable
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 

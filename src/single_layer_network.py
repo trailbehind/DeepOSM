@@ -1,16 +1,14 @@
 """A simple 1 layer network."""
 
 from __future__ import division, print_function, absolute_import
-
 import numpy
 import pickle
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
-
 from src.training_data import CACHE_PATH, METADATA_PATH, load_training_tiles, equalize_data, \
     format_as_onehot_arrays, has_ways_in_center
 
-MODEL_METADATA_PATH = 'model_metadata.pickle'
+MODEL_METADATA_FILENAME = 'model_metadata.pickle'
 
 
 def train_on_cached_data(neural_net_type, number_of_epochs):
@@ -25,12 +23,12 @@ def train_on_cached_data(neural_net_type, number_of_epochs):
     onehot_training_labels = []
     model = None
 
-    # the number of times to pull 10K images from disk, which produce about 200 training images
-    # because we want half on, half off
-    NUMBER_OF_BATCHES = 100
-
     # there are usually 100+ images with road through the middle, out of every 10,000
     EQUALIZATION_BATCH_SIZE = 10000
+
+    # the number of times to pull 10K images from disk, which produce about 100+ training images
+    # because we want half on, half off, and discard most images
+    NUMBER_OF_BATCHES = 100
 
     for x in range(0, NUMBER_OF_BATCHES):
         new_label_paths = load_training_tiles(EQUALIZATION_BATCH_SIZE)
@@ -122,7 +120,7 @@ def save_model(model, neural_net_type, bands, tile_size):
     training_info = {'neural_net_type': neural_net_type,
                      'bands': bands,
                      'tile_size': tile_size}
-    with open(CACHE_PATH + MODEL_METADATA_PATH, 'w') as outfile:
+    with open(CACHE_PATH + MODEL_METADATA_FILENAME, 'w') as outfile:
         pickle.dump(training_info, outfile)
 
 

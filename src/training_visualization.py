@@ -1,12 +1,10 @@
 """Visualize predictions from a neural net analyzing satellite imagery to extract features."""
 
 from __future__ import print_function
+import numpy
 import os
 import time
-
-import numpy
 from PIL import Image
-
 from src.training_data import load_training_tiles, way_bitmap_for_naip
 from src.single_layer_network import list_findings
 
@@ -65,7 +63,7 @@ def render_results_as_image(raster_data_path,
     """Save the source TIFF as a JPEG, with labels and data overlaid."""
     timestr = time.strftime("%Y%m%d-%H%M%S")
     outfile = os.path.splitext(raster_data_path)[0] + '-' + timestr + ".jpeg"
-    # TIF to JPEG bit from: from:
+    # TIF to JPEG bit from:
     # http://stackoverflow.com/questions/28870504/converting-tiff-to-jpeg-in-python
     im = Image.open(raster_data_path)
     print("GENERATING JPEG for %s" % raster_data_path)
