@@ -12,8 +12,9 @@ def main():
 
     naip_year = 2013
     naip_states = {'de': ['http://download.geofabrik.de/north-america/us/delaware-latest.osm.pbf'],
-                   'ia': ['http://download.geofabrik.de/north-america/us/iowa-latest.osm.pbf'],
-                   'me': ['http://download.geofabrik.de/north-america/us/maine-latest.osm.pbf']}
+                   #'ia': ['http://download.geofabrik.de/north-america/us/iowa-latest.osm.pbf'],
+                   #'me': ['http://download.geofabrik.de/north-america/us/maine-latest.osm.pbf']
+                   }
     number_of_naips = 175
 
     extract_type = 'highway'

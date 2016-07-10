@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 import pickle
+import time
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
 
@@ -71,14 +72,14 @@ def train_with_data(onehot_training_labels, training_images,
                 on_band_count += 1
 
         model = model_for_type(neural_net_type, tile_size, on_band_count)
-
+    
     model.fit(norm_train_images,
               npy_training_labels,
               n_epoch=number_of_epochs,
               shuffle=False,
               validation_set=.1,
               show_metric=True,
-              run_id='mlp')
+              run_id=time.strftime("%Y%m%d-%H%M%S"))
 
     return model
 
