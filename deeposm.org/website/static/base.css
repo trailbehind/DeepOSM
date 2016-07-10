@@ -30,11 +30,17 @@ td {
 }
 
 
-a {
+a:link {
 	text-decoration: underline;
 }
 
+/* visited link */
 a:visited {
 	text-decoration: none;
-    color: lightgray;
+    color: gray;
+}
+
+/* mouse over link */
+a:hover {
+	text-decoration: none;
 }
