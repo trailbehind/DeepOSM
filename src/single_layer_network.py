@@ -70,7 +70,7 @@ def train_with_data(onehot_training_labels, training_images,
                 on_band_count += 1
 
         model = model_for_type(neural_net_type, tile_size, on_band_count)
-    
+
     model.fit(norm_train_images,
               npy_training_labels,
               n_epoch=number_of_epochs,
