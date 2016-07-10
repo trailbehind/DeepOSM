@@ -3,11 +3,6 @@
 """Train a neural network using OpenStreetMap labels and NAIP images."""
 
 import argparse
-import pickle
-
-# src.training_data must be included before src.single_layer_network,
-# in order to import PIL before TFLearn - or PIL errors tryig to save a JPEG
-from src.config import CACHE_PATH, METADATA_PATH
 from src.single_layer_network import train_on_cached_data
 
 
@@ -32,15 +27,8 @@ def main():
     """Use local data to train the neural net, probably made by bin/create_training_data.py."""
     parser = create_parser()
     args = parser.parse_args()
+    train_on_cached_data(args.neural_net, args.number_of_epochs)
 
-    with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as infile:
-        raster_data_paths = pickle.load(infile)
-
-    with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
-        training_info = pickle.load(infile)
-
-    train_on_cached_data(raster_data_paths, args.neural_net, training_info['bands'],
-                         training_info['tile_size'], args.number_of_epochs)
 
 if __name__ == "__main__":
     main()

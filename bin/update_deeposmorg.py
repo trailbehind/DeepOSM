@@ -8,7 +8,7 @@ from src.training_data import CACHE_PATH, METADATA_PATH, download_and_serialize
 
 
 def main():
-    """Do each state one by one."""
+    """Analyze each state and publish results to deeposm.org."""
 
     naip_year = 2013
     naip_states = {'de': ['http://download.geofabrik.de/north-america/us/delaware-latest.osm.pbf'],
@@ -38,16 +38,9 @@ def main():
                                                    pixels_to_fatten_roads,
                                                    filenames,
                                                    tile_overlap)
-
+        model = train_on_cached_data(neural_net, number_of_epochs)
         with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
             training_info = pickle.load(infile)
-
-        model = train_on_cached_data(raster_data_paths,
-                                     neural_net,
-                                     training_info['bands'],
-                                     training_info['tile_size'],
-                                     number_of_epochs)
-
         post_findings_to_s3(raster_data_paths, model, training_info, training_info['bands'], False)
 
 

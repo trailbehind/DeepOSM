@@ -3,7 +3,6 @@
 """Create training data from OpenStreetMap labels and NAIP images."""
 
 import argparse
-
 from src.training_data import download_and_serialize
 
 
@@ -71,7 +70,7 @@ def create_parser():
 
 
 def main():
-    """Download and create data."""
+    """Download and serialize training data."""
     args = create_parser().parse_args()
     naip_state, naip_year = args.naip_path
     download_and_serialize(args.number_of_naips,
@@ -84,6 +83,7 @@ def main():
                            args.pixels_to_fatten_roads,
                            args.label_data_files,
                            args.tile_overlap)
+
 
 if __name__ == "__main__":
     main()
