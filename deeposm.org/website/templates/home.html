@@ -34,7 +34,7 @@
 
     {% if any_solved %}
     <h3>Solved</h3>
-	<p>Errors detected by DeepOSM that seem fixed.</p>
+	<p>Errors detected by DeepOSM that seem solved. Most of these are errors that DeepOSM detected, but then decided later weren't errors after all.</p>
 	<ul>
 	    {% for state in states %}
 	    <li><a href=/road-registration-errors/USA/{{state.slug}}/list/?solved=True>{{state.name}}, USA - Road Registration Errors ({{state.solved}})</a> - (<a style="color:orange" href="/road-registration-errors/USA/{{state.slug}}/list/?solved=True&json=True" target=_new>as JSON</a>)</li>
