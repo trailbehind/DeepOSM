@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import pickle
 import time
+import tensorflow as tf
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from src.training_data import CACHE_PATH, METADATA_PATH, load_training_tiles, equalize_data, \
@@ -29,7 +30,7 @@ def train_on_cached_data(neural_net_type, number_of_epochs):
 
     # the number of times to pull 10K images from disk, which produce about 100+ training images
     # because we want half on, half off, and discard most images
-    NUMBER_OF_BATCHES = 100
+    NUMBER_OF_BATCHES = 50
 
     for x in range(0, NUMBER_OF_BATCHES):
         new_label_paths = load_training_tiles(EQUALIZATION_BATCH_SIZE)
@@ -63,21 +64,22 @@ def train_with_data(onehot_training_labels, training_images,
     norm_train_images = norm_training_images.astype(numpy.float32)
     norm_train_images = numpy.multiply(norm_train_images, 1.0 / 255.0)
 
-    if not model:
-        on_band_count = 0
-        for b in band_list:
-            if b == 1:
-                on_band_count += 1
+    with tf.Graph().as_default():
+        if not model:
+            on_band_count = 0
+            for b in band_list:
+                if b == 1:
+                    on_band_count += 1
 
-        model = model_for_type(neural_net_type, tile_size, on_band_count)
+            model = model_for_type(neural_net_type, tile_size, on_band_count)
 
-    model.fit(norm_train_images,
-              npy_training_labels,
-              n_epoch=number_of_epochs,
-              shuffle=False,
-              validation_set=.1,
-              show_metric=True,
-              run_id=time.strftime("%Y%m%d-%H%M%S"))
+        model.fit(norm_train_images,
+                  npy_training_labels,
+                  n_epoch=number_of_epochs,
+                  shuffle=False,
+                  validation_set=.1,
+                  show_metric=True,
+                  run_id=time.strftime("%Y%m%d-%H%M%S"))
 
     return model
 
