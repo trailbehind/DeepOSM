@@ -5,13 +5,11 @@ import time
 import osmium as o
 import requests
 import shapely.wkb as wkblib
+from src.config import GEO_DATA_DIR
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html
 # A global factory that creates WKB from a osmium geometry
 wkbfab = o.geom.WKBFactory()
-
-# set in Dockerfile as env variable
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 
 
 class WayMap():
