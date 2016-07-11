@@ -26,13 +26,11 @@ dev: build
 
 dev-gpu: 
 	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-	export UPDATE_DEEPOSM_ORG=false 
-	sh ./docker_run_gpu.sh
+	./docker_run_gpu.sh false
 
 update-deeposmorg: 
 	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-	export UPDATE_DEEPOSM_ORG=true 
-	sh ./docker_run_gpu.sh
+	./docker_run_gpu.sh true
 
 notebook: build
 	docker run -p 8888:8888 \

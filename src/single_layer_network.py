@@ -30,7 +30,7 @@ def train_on_cached_data(neural_net_type, number_of_epochs):
 
     # the number of times to pull 10K images from disk, which produce about 100+ training images
     # because we want half on, half off, and discard most images
-    NUMBER_OF_BATCHES = 50
+    NUMBER_OF_BATCHES = 10
 
     for x in range(0, NUMBER_OF_BATCHES):
         new_label_paths = load_training_tiles(EQUALIZATION_BATCH_SIZE)
