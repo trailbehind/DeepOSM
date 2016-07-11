@@ -39,11 +39,11 @@ def create_cache_directories():
     except:
         pass
     try:
-        os.mkdir(CACHE_PATH + LABEL_CACHE_DIRECTORY)
+        os.mkdir(LABEL_CACHE_DIRECTORY)
     except:
         pass
     try:
-        os.mkdir(CACHE_PATH + IMAGE_CACHE_DIRECTORY)
+        os.mkdir(IMAGE_CACHE_DIRECTORY)
     except:
         pass
     try:
