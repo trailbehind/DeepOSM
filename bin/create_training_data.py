@@ -3,9 +3,7 @@
 """Create training data from OpenStreetMap labels and NAIP images."""
 
 import argparse
-
-from src.naip_images import NAIPDownloader
-from src.training_data import create_tiled_training_data, cache_paths
+from src.training_data import download_and_serialize
 
 
 def create_parser():
@@ -72,15 +70,19 @@ def create_parser():
 
 
 def main():
-    """Download NAIP images, PBF files, and serialize training data."""
+    """Download and serialize training data."""
     args = create_parser().parse_args()
     naip_state, naip_year = args.naip_path
-    naiper = NAIPDownloader(args.number_of_naips, args.randomize_naips, naip_state, naip_year)
-    raster_data_paths = naiper.download_naips()
-    cache_paths(raster_data_paths)
-    create_tiled_training_data(raster_data_paths, args.extract_type, args.bands, args.tile_size,
-                               args.pixels_to_fatten_roads, args.label_data_files,
-                               args.tile_overlap, naip_state)
+    download_and_serialize(args.number_of_naips,
+                           args.randomize_naips,
+                           naip_state,
+                           naip_year,
+                           args.extract_type,
+                           args.bands,
+                           args.tile_size,
+                           args.pixels_to_fatten_roads,
+                           args.label_data_files,
+                           args.tile_overlap)
 
 
 if __name__ == "__main__":

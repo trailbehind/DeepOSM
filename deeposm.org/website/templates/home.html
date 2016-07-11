@@ -17,7 +17,7 @@
     </div>
 
     <h3>Recent Analyses</h3>
-	<p>Browse errors found by DeepOSM, and pop to iD editor on openstreetmap.org to correct.</p>
+	<p>{{recent_message}}</p>
 	<ul>
 	    {% for state in states %}
 	    <li><a href=/road-registration-errors/USA/{{state.slug}}/list/>{{state.name}}, USA - Road Registration Errors ({{state.recent}})</a> - (<a style="color:green" href="/road-registration-errors/USA/{{state.slug}}/list/?json=True" target=_new>as JSON</a>)</li>
@@ -25,7 +25,7 @@
 	</ul>
 
     <h3>Flagged as Wrong</h3>
-	<p>Browse errors users have flagged as bad (not actually an error).</p>
+	<p>{{flagged_message}}</p>
 	<ul>
 	    {% for state in states %}
 	    <li><a href=/road-registration-errors/USA/{{state.slug}}/list/?flagged=True>{{state.name}}, USA - Road Registration Errors ({{state.flagged}})</a> - (<a style="color:green" href="/road-registration-errors/USA/{{state.slug}}/list/?flagged=True&json=True" target=_new>as JSON</a>)</li>
@@ -34,7 +34,7 @@
 
     {% if any_solved %}
     <h3>Solved</h3>
-	<p>Errors detected by DeepOSM that seem fixed.</p>
+	<p>{{solved_message}}</p>
 	<ul>
 	    {% for state in states %}
 	    <li><a href=/road-registration-errors/USA/{{state.slug}}/list/?solved=True>{{state.name}}, USA - Road Registration Errors ({{state.solved}})</a> - (<a style="color:orange" href="/road-registration-errors/USA/{{state.slug}}/list/?solved=True&json=True" target=_new>as JSON</a>)</li>
@@ -45,14 +45,16 @@
 	<h3>DeepOSM Code</h3>
 	Check out the <a target=_new href=https://github.com/trailbehind/DeepOSM>code for DeepOSM and deeposm.org</a>.
 	<style>
+		#main-banner a {
+			color: white
+		}
 		#main-banner {
 			height:400px;
 			text-align: center;
 			padding-top:150px !important;
 			display: block;
-    position: relative; 
+            position: relative; 
 		}
-
 		#main-banner ::before {
 		  content: "";
 		  background: url('{% static 'satellite-banner.jpg' %}');

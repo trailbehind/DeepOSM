@@ -5,13 +5,11 @@ import time
 import osmium as o
 import requests
 import shapely.wkb as wkblib
+from src.config import RAW_LABEL_DATA_DIR
 
 # http://docs.osmcode.org/pyosmium/latest/intro.html
 # A global factory that creates WKB from a osmium geometry
 wkbfab = o.geom.WKBFactory()
-
-# set in Dockerfile as env variable
-GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 
 
 class WayMap():
@@ -81,6 +79,9 @@ class WayExtracter(o.SimpleHandler):
             if tag.k == self.extract_type:
                 way_type = tag.v
                 should_extract = True
+            # for roads analysis, don't extract ways that don't allow vehicle access
+            if self.extract_type == 'highway' and tag.k == 'motor_vehicle' and tag.v == 'no':
+                return
 
         if not should_extract:
             return
@@ -125,7 +126,7 @@ def download_and_extract(file_urls_to_download, extract_type='highway'):
 def download_file(url):
     """Download a large file in chunks and return its local path."""
     local_filename = url.split('/')[-1]
-    full_local_filename = os.path.join(GEO_DATA_DIR, local_filename)
+    full_local_filename = os.path.join(RAW_LABEL_DATA_DIR, local_filename)
     r = requests.get(url, stream=True)
     with open(full_local_filename, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
@@ -141,7 +142,7 @@ def download_files(url_list):
     t0 = time.time()
     for url in url_list:
         local_filename = url.split('/')[-1]
-        full_local_filename = os.path.join(GEO_DATA_DIR, local_filename)
+        full_local_filename = os.path.join(RAW_LABEL_DATA_DIR, local_filename)
         if not os.path.exists(full_local_filename):
             paths.append(download_file(url))
         else:

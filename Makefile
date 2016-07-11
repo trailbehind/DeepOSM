@@ -12,7 +12,7 @@ help:
 
 IMAGE_NAME = deeposm
 
-build:
+build: 
 	docker build -t $(IMAGE_NAME) .
 
 dev: build
@@ -26,7 +26,11 @@ dev: build
 
 dev-gpu: 
 	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-	sh ./docker_run_gpu.sh
+	./docker_run_gpu.sh false
+
+update-deeposmorg: 
+	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
+	./docker_run_gpu.sh true
 
 notebook: build
 	docker run -p 8888:8888 \

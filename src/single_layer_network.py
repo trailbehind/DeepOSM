@@ -1,30 +1,36 @@
 """A simple 1 layer network."""
 
 from __future__ import division, print_function, absolute_import
-
 import numpy
 import pickle
+import time
+import tensorflow as tf
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
-
-from src.training_data import CACHE_PATH, load_training_tiles, equalize_data, \
+from src.training_data import CACHE_PATH, METADATA_PATH, load_training_tiles, equalize_data, \
     format_as_onehot_arrays, has_ways_in_center
 
-MODEL_METADATA_PATH = 'model_metadata.pickle'
+MODEL_METADATA_FILENAME = 'model_metadata.pickle'
 
 
-def train_on_cached_data(raster_data_paths, neural_net_type, bands, tile_size, number_of_epochs):
+def train_on_cached_data(neural_net_type, number_of_epochs):
     """Load tiled/cached training data in batches, and train the neural net."""
+
+    with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
+        training_info = pickle.load(infile)
+    bands = training_info['bands']
+    tile_size = training_info['tile_size']
+
     training_images = []
     onehot_training_labels = []
     model = None
 
-    # the number of times to pull 10K images from disk, which produce about 200 training images
-    # because we want half on, half off
-    NUMBER_OF_BATCHES = 100
-
     # there are usually 100+ images with road through the middle, out of every 10,000
+    # because we want half on, half off, and discard most images
     EQUALIZATION_BATCH_SIZE = 10000
+
+    # the number of times to pull EQUALIZATION_BATCH_SIZE images from disk
+    NUMBER_OF_BATCHES = 10
 
     for x in range(0, NUMBER_OF_BATCHES):
         new_label_paths = load_training_tiles(EQUALIZATION_BATCH_SIZE)
@@ -58,21 +64,22 @@ def train_with_data(onehot_training_labels, training_images,
     norm_train_images = norm_training_images.astype(numpy.float32)
     norm_train_images = numpy.multiply(norm_train_images, 1.0 / 255.0)
 
-    if not model:
-        on_band_count = 0
-        for b in band_list:
-            if b == 1:
-                on_band_count += 1
+    with tf.Graph().as_default():
+        if not model:
+            on_band_count = 0
+            for b in band_list:
+                if b == 1:
+                    on_band_count += 1
 
-        model = model_for_type(neural_net_type, tile_size, on_band_count)
+            model = model_for_type(neural_net_type, tile_size, on_band_count)
 
-    model.fit(norm_train_images,
-              npy_training_labels,
-              n_epoch=number_of_epochs,
-              shuffle=False,
-              validation_set=.1,
-              show_metric=True,
-              run_id='mlp')
+        model.fit(norm_train_images,
+                  npy_training_labels,
+                  n_epoch=number_of_epochs,
+                  shuffle=False,
+                  validation_set=.1,
+                  show_metric=True,
+                  run_id=time.strftime("%Y%m%d-%H%M%S"))
 
     return model
 
@@ -116,7 +123,7 @@ def save_model(model, neural_net_type, bands, tile_size):
     training_info = {'neural_net_type': neural_net_type,
                      'bands': bands,
                      'tile_size': tile_size}
-    with open(CACHE_PATH + MODEL_METADATA_PATH, 'w') as outfile:
+    with open(CACHE_PATH + MODEL_METADATA_FILENAME, 'w') as outfile:
         pickle.dump(training_info, outfile)
 
 
