@@ -35,7 +35,7 @@ def create_cache_directories():
     except:
         pass
     try:
-        os.mkdir(CACHE_PATH + 'way_bitmaps')
+        os.mkdir(LABELS_DATA_DIR)
     except:
         pass
     try:
@@ -47,6 +47,6 @@ def create_cache_directories():
     except:
         pass
     try:
-        os.mkdir(GEO_DATA_DIR + '/openstreetmap')
+        os.mkdir(RAW_LABEL_DATA_DIR)
     except:
         pass
