@@ -6,19 +6,22 @@
 {% block content %}
 
 		<h3>{{ analysis_title }} <span class=gray-span>({{ country_abbrev }}, <a style="color:orange" href=/road-registration-errors/{{ country_abbrev }}/{{ state_name}}/list/>{{ state_name|capfirst }})</a></span> (<a style="color:orange" href="/road-registration-errors/{{ country_abbrev }}/{{ state_name}}/list/?json=True&flagged={{request.GET.flagged}}&solved={{request.GET.solved}}" target=_new>as JSON</a>)</h3>
+		<p>{{list_description}}</p>
 		<table>
 				{% for error in errors %}
 				    <tr>
 				        <td>
 				            <a href="/{{ analysis_type }}/{{ country_abbrev }}/{{ state_name }}/view/{{ error.id }}/">
-				                Likely Error: {% widthratio error.certainty 1 85 %}% - View on Map
-				            </a>
+				              View on Map</a>
+				        </td>
+				        <td>				            
+				            {%if error.solved_date%}<span class=gray-span>Solved:</span> {{error.solved_date}}{%endif%} <span class=gray-span>Created:</span> {{error.created_date}}
 				        </td>
 				        <td>
-				            <span class=gray-span>NE</span> {{error.ne_lat}}, {{error.ne_lon}}
+				            <span class=gray-span>NE</span> {{error.ne_lat|floatformat:3}}, {{error.ne_lon|floatformat:3}}
 				        </td>
 				        <td>
-  				          <span class=gray-span>SW</span> {{error.sw_lat}}, {{error.sw_lon}}
+  				          <span class=gray-span>SW</span> {{error.sw_lat|floatformat:3}}, {{error.sw_lon|floatformat:3}}
 				        </td>
 		    	  </tr>
 				{% endfor %}

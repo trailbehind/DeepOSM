@@ -18,6 +18,12 @@ STATE_NAMES_TO_ABBREVS = {
     'new-hampshire': 'nh',  # nh is unused
 }
 
+FLAGGED_MESSAGE = "Browse errors users have flagged as bad (not actually an error)."
+SOLVED_MESSAGE = "Errors detected by DeepOSM that seem solved. Most of these are errors that " \
+                 "DeepOSM detected,"" but then decided later weren't errors after all."
+RECENT_MESSAGE = "Browse errors found by DeepOSM, and pop to iD editor on openstreetmap.org to " \
+                 "correct."
+
 
 def refresh_findings(request):
     """Call this view to update findigs from S3."""
@@ -51,7 +57,11 @@ def home(request):
     states = []
     for key in sorted(state_map.keys()):
         states.append(state_map[key])
-    return HttpResponse(template.render({'states': states, 'any_solved': any_solved}, request))
+    return HttpResponse(template.render({'recent_message': RECENT_MESSAGE,
+                                         'solved_message': SOLVED_MESSAGE,
+                                         'flagged_message': FLAGGED_MESSAGE,
+                                         'states': states,
+                                         'any_solved': any_solved}, request))
 
 
 def view_error(request, analysis_type, country_abbrev, state_name, error_id):
@@ -78,20 +88,25 @@ def list_errors(request, analysis_type, country_abbrev, state_name):
     """List all the errors of a given type in the country/state."""
     template = loader.get_template('list_errors.html')
     analysis_title = analysis_type.replace('-', ' ').title()
+    list_description = None
     if request.GET.get('flagged'):
         analysis_title = 'Flagged ' + analysis_title
         errors = sorted_findings(state_name, flagged_count=1)
+        list_description = FLAGGED_MESSAGE
     elif request.GET.get('solved'):
         analysis_title = 'Solved ' + analysis_title
         errors = sorted_findings(state_name, open_bug=False)
+        list_description = SOLVED_MESSAGE
     else:
         errors = sorted_findings(state_name)
+        list_description = RECENT_MESSAGE
 
     context = {
         'country_abbrev': country_abbrev,
         'state_name': state_name,
         'analysis_type': analysis_type,
         'analysis_title': analysis_title,
+        'list_description': list_description,
         'errors': errors,
     }
 

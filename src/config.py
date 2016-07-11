@@ -11,14 +11,13 @@ FINDINGS_S3_BUCKET = 'deeposm'
 GEO_DATA_DIR = os.environ.get("GEO_DATA_DIR")
 
 # where training data gets cached/retrieved
-CACHE_PATH = GEO_DATA_DIR + '/generated/'
-
+RAW_LABEL_DATA_DIR = os.path.join(GEO_DATA_DIR, "openstreetmap")
 NAIP_DATA_DIR = os.path.join(GEO_DATA_DIR, "naip")
+CACHE_PATH = GEO_DATA_DIR + '/generated/'
 LABELS_DATA_DIR = os.path.join(CACHE_PATH, "way_bitmaps")
-
+LABEL_CACHE_DIRECTORY = os.path.join(CACHE_PATH, "training_labels")
+IMAGE_CACHE_DIRECTORY = os.path.join(CACHE_PATH, "training_images")
 METADATA_PATH = 'training_metadata.pickle'
-LABEL_CACHE_DIRECTORY = 'training_labels/'
-IMAGE_CACHE_DIRECTORY = 'training_images/'
 
 
 def cache_paths(raster_data_paths):
@@ -30,7 +29,7 @@ def cache_paths(raster_data_paths):
 def create_cache_directories():
     """Cache a list of naip image paths, to pass on to the train_neural_net script."""
     shutil.rmtree(CACHE_PATH)
-    shutil.rmtree(GEO_DATA_DIR + '/openstreetmap')
+    shutil.rmtree(RAW_LABEL_DATA_DIR)
     try:
         os.mkdir(CACHE_PATH)
     except:
