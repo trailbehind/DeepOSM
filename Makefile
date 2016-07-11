@@ -12,11 +12,10 @@ help:
 
 IMAGE_NAME = deeposm
 
-build:
+build: 
 	docker build -t $(IMAGE_NAME) .
 
-dev: 
-	build
+dev: build
 	docker run -v `pwd`:/DeepOSM \
                -w /DeepOSM \
                -e CPLUS_INCLUDE_PATH=/usr/include/gdal \
@@ -27,16 +26,15 @@ dev:
 
 dev-gpu: 
 	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-    export UPDATE_DEEPOSM_ORG=false 
+	export UPDATE_DEEPOSM_ORG=false 
 	sh ./docker_run_gpu.sh
 
 update-deeposmorg: 
 	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-    export UPDATE_DEEPOSM_ORG=true 
+	export UPDATE_DEEPOSM_ORG=true 
 	sh ./docker_run_gpu.sh
 
-notebook: 
-	build
+notebook: build
 	docker run -p 8888:8888 \
                -e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
                -e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
