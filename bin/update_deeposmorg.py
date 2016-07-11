@@ -1,6 +1,7 @@
 """Create data for all states, and upload to deeposm.org's S3 bucket."""
 
 import pickle
+import requests
 
 from src.s3_client_deeposm import post_findings_to_s3
 from src.single_layer_network import train_on_cached_data
@@ -43,6 +44,8 @@ def main():
         with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
             training_info = pickle.load(infile)
         post_findings_to_s3(raster_data_paths, model, training_info, training_info['bands'], False)
+
+    requests.get('http://www.deeposm.org/refresh_findings/')
 
 
 if __name__ == "__main__":
