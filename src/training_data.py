@@ -78,7 +78,7 @@ def way_bitmap_for_naip(
     parts = raster_data_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = LABELS_DATA_DIR + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
+    cache_filename = LABELS_DATA_DIR + '/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
 
     try:
         arr = numpy.load(cache_filename)
@@ -211,7 +211,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
             for row in range(top_y, bottom_y, tile_size / tile_overlap):
                 if row + tile_size < bottom_y and col + tile_size < right_x:
                     file_suffix = '{0:016d}'.format(tile_index)
-                    label_filepath = "{}{}.lbl".format(LABEL_CACHE_DIRECTORY, file_suffix)
+                    label_filepath = "{}/{}.lbl".format(LABEL_CACHE_DIRECTORY, file_suffix)
                     new_tile = way_bitmap_npy[row:row + tile_size, col:col + tile_size]
                     with open(label_filepath, 'w') as outfile:
                         numpy.save(outfile, numpy.asarray((new_tile, col, row, raster_data_path)))
@@ -222,7 +222,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size,
                               tile_overlap):
             file_suffix = '{0:016d}'.format(tile_index)
-            img_filepath = "{}{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
+            img_filepath = "{}/{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
             with open(img_filepath, 'w') as outfile:
                 numpy.save(outfile, tile)
             tile_index += 1
@@ -329,7 +329,7 @@ def load_all_training_tiles(naip_path, bands):
     parts = naip_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = LABELS_DATA_DIR + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
+    cache_filename = LABELS_DATA_DIR + '/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
     way_bitmap_npy = numpy.load(cache_filename)
 
     left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER
