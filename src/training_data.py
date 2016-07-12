@@ -282,12 +282,12 @@ def format_as_onehot_arrays(new_label_paths):
     off_count = 0
     for filename in new_label_paths:
 
-        full_path = "{}{}".format(LABEL_CACHE_DIRECTORY, filename)
+        full_path = "{}/{}".format(LABEL_CACHE_DIRECTORY, filename)
         label = numpy.load(full_path)
 
         parts = full_path.split('.')[0].split('/')
         file_suffix = parts[len(parts)-1]
-        img_path = "{}{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
+        img_path = "{}/{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
 
         if has_ways_in_center(label[0], 1):
             onehot_training_labels.append([0, 1])
