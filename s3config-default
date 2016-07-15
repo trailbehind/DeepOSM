@@ -1,5 +1,5 @@
 access_key = AWS_ACCESS_KEY
-access_token = AWS_SECRET_KEY
+access_token = 
 add_encoding_exts = 
 add_headers = 
 bucket_location = US
