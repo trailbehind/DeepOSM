@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Based on: https://github.com/tensorflow/tensorflow/blob/fe056f0b5e52db86766761f5e6446a89c1aa3938/tensorflow/tools/docker/docker_run_gpu.sh
 
 set -e
@@ -21,6 +23,7 @@ fi
 export IMAGE_NAME=deeposm
 
 if "$1" = "true"; then
+  source /home/andrew/.profile
   docker run $CUDA_SO $DEVICES \
                 -v `pwd`:/DeepOSM \
                  -w /DeepOSM \

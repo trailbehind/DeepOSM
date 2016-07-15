@@ -63,8 +63,11 @@ class NAIPDownloader:
         f = open(file_path, 'r')
         filedata = f.read()
         f.close()
-        newdata = filedata.replace("AWS_ACCESS_KEY", os.environ.get("AWS_ACCESS_KEY_ID"))
-        newdata = newdata.replace("AWS_SECRET_KEY", os.environ.get("AWS_SECRET_ACCESS_KEY"))
+        access =  os.environ.get("AWS_ACCESS_KEY_ID")
+        secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        print ("{} {}".format(access, secret))
+        newdata = filedata.replace("AWS_ACCESS_KEY", access)
+        newdata = newdata.replace("AWS_SECRET_KEY", secret)
         f = open(file_path, 'w')
         f.write(newdata)
         f.close()
@@ -74,7 +77,7 @@ class NAIPDownloader:
         # list the contents of the bucket directory
         bash_command = "s3cmd ls --recursive --skip-existing {} --requester-pays".format(
             self.url_base)
-        process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+        process = subprocess.Popen(bash_command.split(" "), stdout=subprocess.PIPE)
         output = process.communicate()[0]
         naip_filenames = []
         for line in output.split('\n'):
