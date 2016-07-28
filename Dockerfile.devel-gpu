@@ -151,9 +151,7 @@ RUN mkdir /bazel && \
     rm -f /bazel/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
 # Download and build TensorFlow.
-RUN git clone --recursive https://github.com/tensorflow/tensorflow.git && \
-    cd tensorflow && \
-    git checkout r0.8
+RUN git clone -b r0.8 --recursive https://github.com/tensorflow/tensorflow.git
 WORKDIR /tensorflow
 
 # Set up CUDA variables
