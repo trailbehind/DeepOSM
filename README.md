@@ -1,4 +1,4 @@
-# DeepOSM
+# DeepOSM [![Build Status](https://travis-ci.org/trailbehind/DeepOSM.svg?branch=master)](https://travis-ci.org/trailbehind/DeepOSM)
 
 Classify roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. 
 
