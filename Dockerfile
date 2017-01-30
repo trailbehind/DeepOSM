@@ -27,7 +27,7 @@ RUN apt-get -q update && \
 ADD requirements_base.txt /DeepOSM/requirements_base.txt
 ADD requirements_cpu.txt /DeepOSM/requirements_cpu.txt
 # fix an issue with the Travis build
-RUN install --upgrade pip
+RUN pip install --upgrade pip
 # ignore-installed is needed to overwrite six
 RUN pip install --ignore-installed -r /DeepOSM/requirements_cpu.txt
 RUN ln -s /home/vmagent/src /DeepOSM
