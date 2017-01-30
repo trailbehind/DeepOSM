@@ -7,7 +7,7 @@ Pillow==3.2.0
 pyproj==1.9.5.1
 requests==2.10.0
 s3cmd==1.6.1
-packaging
+packaging==16.8
 Shapely==1.5.15
 
 # tflearn, pinned to an arbitrary commit
