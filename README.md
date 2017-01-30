@@ -1,4 +1,4 @@
-# DeepOSM
+# DeepOSM [![Build Status](https://travis-ci.org/trailbehind/DeepOSM.svg?branch=master)](https://travis-ci.org/trailbehind/DeepOSM)
 
 Classify roads and features in satellite imagery, by training neural networks with OpenStreetMap (OSM) data. 
 
@@ -63,6 +63,12 @@ I also needed to set my VirtualBox default memory to 4GB, when running on a Mac.
 ### Run Scripts
 
 Start Docker, then run:
+
+```bash
+make dev-gpu
+```
+
+Or if you don't have a capable GPU, run:
 
 ```bash
 make dev

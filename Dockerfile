@@ -26,6 +26,8 @@ RUN apt-get -q update && \
 # copy requirements.txt and run pip to install all dependencies into the virtualenv.
 ADD requirements_base.txt /DeepOSM/requirements_base.txt
 ADD requirements_cpu.txt /DeepOSM/requirements_cpu.txt
+# fix an issue with the Travis build
+RUN pip install --upgrade pip
 # ignore-installed is needed to overwrite six
 RUN pip install --ignore-installed -r /DeepOSM/requirements_cpu.txt
 RUN ln -s /home/vmagent/src /DeepOSM
@@ -48,7 +50,7 @@ COPY jupyter_notebook_config.py /root/.jupyter/
 EXPOSE 8888
 
 # install s3cmd, used to ls the RequesterPays bucket 
-RUN apt-get --no-install-recommends -y -q install wget
+RUN apt-get update && apt-get --no-install-recommends -y -q install wget
 RUN wget http://netix.dl.sourceforge.net/project/s3tools/s3cmd/1.6.0/s3cmd-1.6.0.tar.gz && tar xvfz s3cmd-1.6.0.tar.gz && cd s3cmd-1.6.0 && python setup.py install
 
 # copy s3cmd config defaults to docker, which will later be

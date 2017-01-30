@@ -16,7 +16,7 @@ def main():
                    'ia': ['http://download.geofabrik.de/north-america/us/iowa-latest.osm.pbf'],
                    'me': ['http://download.geofabrik.de/north-america/us/maine-latest.osm.pbf']
                    }
-    number_of_naips = 10
+    number_of_naips = 175
 
     extract_type = 'highway'
     bands = [1, 1, 1, 1]

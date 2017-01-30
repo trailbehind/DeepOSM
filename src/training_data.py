@@ -78,7 +78,7 @@ def way_bitmap_for_naip(
     parts = raster_data_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = LABELS_DATA_DIR + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
+    cache_filename = LABELS_DATA_DIR + '/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
 
     try:
         arr = numpy.load(cache_filename)
@@ -335,7 +335,7 @@ def load_all_training_tiles(naip_path, bands):
     parts = naip_path.split('/')
     naip_grid = parts[len(parts)-2]
     naip_filename = parts[len(parts)-1]
-    cache_filename = LABELS_DATA_DIR + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
+    cache_filename = LABELS_DATA_DIR + '/' + naip_grid + '/' + naip_filename + '-ways.bitmap.npy'
     way_bitmap_npy = numpy.load(cache_filename)
 
     left_x, right_x = NAIP_PIXEL_BUFFER, cols - NAIP_PIXEL_BUFFER

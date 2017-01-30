@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Based on: https://github.com/tensorflow/tensorflow/blob/fe056f0b5e52db86766761f5e6446a89c1aa3938/tensorflow/tools/docker/docker_run_gpu.sh
 
 set -e
@@ -28,7 +30,7 @@ if "$1" = "true"; then
                  -e C_INCLUDE_PATH=/usr/include/gdal \
                  -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
                  -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                 -it ${IMAGE_NAME} python bin/update_deeposmorg.py
+                 -t ${IMAGE_NAME} python bin/update_deeposmorg.py
 else
   docker run $CUDA_SO $DEVICES \
               -v `pwd`:/DeepOSM \

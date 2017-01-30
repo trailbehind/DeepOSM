@@ -30,7 +30,7 @@ def train_on_cached_data(neural_net_type, number_of_epochs):
     EQUALIZATION_BATCH_SIZE = 10000
 
     # the number of times to pull EQUALIZATION_BATCH_SIZE images from disk
-    NUMBER_OF_BATCHES = 10
+    NUMBER_OF_BATCHES = 50
 
     for x in range(0, NUMBER_OF_BATCHES):
         new_label_paths = load_training_tiles(EQUALIZATION_BATCH_SIZE)
