@@ -116,6 +116,12 @@ def way_bitmap_for_naip(
 
     print("CACHING %s..." % cache_filename, end="")
     t0 = time.time()
+    # make sure cache_filename's parent folder exists
+    try:
+        os.makedirs(os.path.dirname(cache_filename))
+    except:
+        pass
+    # then save file to cache_filename
     numpy.save(cache_filename, way_bitmap)
     print(" {0:.1f}s".format(time.time() - t0))
 
@@ -211,7 +217,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
             for row in range(top_y, bottom_y, tile_size / tile_overlap):
                 if row + tile_size < bottom_y and col + tile_size < right_x:
                     file_suffix = '{0:016d}'.format(tile_index)
-                    label_filepath = "{}{}.lbl".format(LABEL_CACHE_DIRECTORY, file_suffix)
+                    label_filepath = "{}/{}.lbl".format(LABEL_CACHE_DIRECTORY, file_suffix)
                     new_tile = way_bitmap_npy[row:row + tile_size, col:col + tile_size]
                     with open(label_filepath, 'w') as outfile:
                         numpy.save(outfile, numpy.asarray((new_tile, col, row, raster_data_path)))
@@ -222,7 +228,7 @@ def create_tiled_training_data(raster_data_paths, extract_type, band_list, tile_
         for tile in tile_naip(raster_data_path, raster_dataset, bands_data, band_list, tile_size,
                               tile_overlap):
             file_suffix = '{0:016d}'.format(tile_index)
-            img_filepath = "{}{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
+            img_filepath = "{}/{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
             with open(img_filepath, 'w') as outfile:
                 numpy.save(outfile, tile)
             tile_index += 1
@@ -282,12 +288,12 @@ def format_as_onehot_arrays(new_label_paths):
     off_count = 0
     for filename in new_label_paths:
 
-        full_path = "{}{}".format(LABEL_CACHE_DIRECTORY, filename)
+        full_path = "{}/{}".format(LABEL_CACHE_DIRECTORY, filename)
         label = numpy.load(full_path)
 
         parts = full_path.split('.')[0].split('/')
         file_suffix = parts[len(parts)-1]
-        img_path = "{}{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
+        img_path = "{}/{}.colors".format(IMAGE_CACHE_DIRECTORY, file_suffix)
 
         if has_ways_in_center(label[0], 1):
             onehot_training_labels.append([0, 1])
