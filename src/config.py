@@ -28,8 +28,16 @@ def cache_paths(raster_data_paths):
 
 def create_cache_directories():
     """Cache a list of naip image paths, to pass on to the train_neural_net script."""
-    shutil.rmtree(CACHE_PATH)
-    shutil.rmtree(RAW_LABEL_DATA_DIR)
+    try:
+        shutil.rmtree(CACHE_PATH)
+    except:
+        pass
+
+    try:
+        shutil.rmtree(RAW_LABEL_DATA_DIR)
+    except:
+        pass
+
     try:
         os.mkdir(CACHE_PATH)
     except:

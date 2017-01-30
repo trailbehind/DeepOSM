@@ -116,6 +116,12 @@ def way_bitmap_for_naip(
 
     print("CACHING %s..." % cache_filename, end="")
     t0 = time.time()
+    # make sure cache_filename's parent folder exists
+    try:
+        os.makedirs(os.path.dirname(cache_filename))
+    except:
+        pass
+    # then save file to cache_filename
     numpy.save(cache_filename, way_bitmap)
     print(" {0:.1f}s".format(time.time() - t0))
 
