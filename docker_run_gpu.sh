@@ -23,7 +23,6 @@ fi
 export IMAGE_NAME=deeposm
 
 if "$1" = "true"; then
-  sh /home/andrew/.profile
   docker run $CUDA_SO $DEVICES \
                 -v `pwd`:/DeepOSM \
                  -w /DeepOSM \
