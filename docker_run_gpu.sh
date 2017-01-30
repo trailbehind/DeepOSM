@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Based on: https://github.com/tensorflow/tensorflow/blob/fe056f0b5e52db86766761f5e6446a89c1aa3938/tensorflow/tools/docker/docker_run_gpu.sh
 
 set -e

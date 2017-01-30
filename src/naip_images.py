@@ -64,7 +64,9 @@ class NAIPDownloader:
         filedata = f.read()
         f.close()
         access = os.environ.get("AWS_ACCESS_KEY_ID")
+        secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
         newdata = filedata.replace("AWS_ACCESS_KEY", access)
+        newdata = newdata.replace("AWS_SECRET_KEY", secret)
         f = open(file_path, 'w')
         f.write(newdata)
         f.close()
@@ -77,8 +79,10 @@ class NAIPDownloader:
         process = subprocess.Popen(bash_command.split(" "), stdout=subprocess.PIPE)
         output = process.communicate()[0]
         naip_filenames = []
+        print(output)
         for line in output.split('\n'):
             parts = line.split(self.url_base)
+            print(parts)
             # there may be subdirectories for each state, where directories need to be made
             if len(parts) == 2:
                 naip_path = parts[1]
