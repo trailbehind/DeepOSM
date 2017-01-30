@@ -78,6 +78,8 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_P
 
 # https://github.com/NVIDIA/nvidia-docker/blob/master/ubuntu-14.04/cuda/7.5/devel/Dockerfile
 
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F60F4B3D7FA2AF80
+
 RUN apt-get update && apt-get install -y --no-install-recommends --force-yes \
         cuda-core-$CUDA_PKG_VERSION \
         cuda-misc-headers-$CUDA_PKG_VERSION \
@@ -110,7 +112,7 @@ ENV CUDA_REPO_PKG=cuda-repo-ubuntu1404_6.5-14_amd64.deb
 RUN wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG && \
   dpkg -i $CUDA_REPO_PKG
 
-ENV ML_REPO_PKG=nvidia-machine-learning-repo_4.0-2_amd64.deb 
+ENV ML_REPO_PKG=nvidia-machine-learning-repo-ubuntu1404_4.0-2_amd64.deb
 
 RUN wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/$ML_REPO_PKG && \
   dpkg -i $ML_REPO_PKG && \
@@ -153,7 +155,7 @@ RUN mkdir /bazel && \
 # Download and build TensorFlow.
 RUN git clone --recursive https://github.com/tensorflow/tensorflow.git && \
     cd tensorflow && \
-    git checkout r0.8
+    git checkout r0.9
 WORKDIR /tensorflow
 
 # Set up CUDA variables
