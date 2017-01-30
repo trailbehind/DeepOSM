@@ -10,6 +10,7 @@ from src.config import CACHE_PATH, METADATA_PATH
 from src.single_layer_network import list_findings, load_model
 from src.training_data import load_all_training_tiles, load_training_tiles, way_bitmap_for_naip
 
+
 def render_result_jpegs(neural_net_type):
     """Render jpegs from cached results."""
     with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as raster_list_file:
