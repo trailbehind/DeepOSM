@@ -43,7 +43,7 @@ def main():
         model = train_on_cached_data(neural_net, number_of_epochs)
         with open(CACHE_PATH + METADATA_PATH, 'r') as infile:
             training_info = pickle.load(infile)
-        post_findings_to_s3(raster_data_paths, model, training_info, training_info['bands'], False)
+        post_findings_to_s3(raster_data_paths, model, training_info, training_info['bands'])
 
     requests.get('http://www.deeposm.org/refresh_findings/')
 

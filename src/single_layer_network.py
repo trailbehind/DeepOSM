@@ -127,8 +127,12 @@ def save_model(model, neural_net_type, bands, tile_size):
         pickle.dump(training_info, outfile)
 
 
-def load_model(neural_net_type, tile_size, on_band_count):
+def load_model(neural_net_type, tile_size, bands):
     """Load the TensorFlow model serialized at path."""
+    on_band_count = 0
+    for b in bands:
+        if b == 1:
+            on_band_count += 1
     model = model_for_type(neural_net_type, tile_size, on_band_count)
     model.load(CACHE_PATH + 'model.pickle')
     return model

@@ -19,9 +19,8 @@ def main():
     with open(CACHE_PATH + MODEL_METADATA_PATH, 'r') as infile:
         model_info = pickle.load(infile)
 
-    model = load_model(model_info['neural_net_type'], model_info['tile_size'],
-                       len(model_info['bands']))
-    post_findings_to_s3(raster_data_paths, model, training_info, model_info['bands'], False)
+    model = load_model(model_info['neural_net_type'], model_info['tile_size'], model_info['bands'])
+    post_findings_to_s3(raster_data_paths, model, training_info, model_info['bands'])
 
 
 if __name__ == "__main__":

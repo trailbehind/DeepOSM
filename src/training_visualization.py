@@ -3,10 +3,33 @@
 from __future__ import print_function
 import numpy
 import os
+import pickle
 import time
 from PIL import Image
-from src.training_data import load_training_tiles, way_bitmap_for_naip
-from src.single_layer_network import list_findings
+from src.config import CACHE_PATH, METADATA_PATH
+from src.single_layer_network import list_findings, load_model
+from src.training_data import load_all_training_tiles, load_training_tiles, way_bitmap_for_naip
+
+def render_result_jpegs(neural_net_type):
+    """Render jpegs from cached results."""
+    with open(CACHE_PATH + 'raster_data_paths.pickle', 'r') as raster_list_file:
+        raster_data_paths = pickle.load(raster_list_file)
+    with open(CACHE_PATH + METADATA_PATH, 'r') as training_data_file:
+        training_info = pickle.load(training_data_file)
+    model = load_model(neural_net_type, training_info['tile_size'], training_info['bands'])
+
+    for path in raster_data_paths:
+        labels, images = load_all_training_tiles(path, training_info['bands'])
+        if len(labels) == 0 or len(images) == 0:
+            print("WARNING, there is a borked naip image file")
+            continue
+        false_positives, fp_images = list_findings(labels, images, model)
+        path_parts = path.split('/')
+        filename = path_parts[len(path_parts) - 1]
+        print("FINDINGS: {} false pos of {} tiles, from {}".format(
+            len(false_positives), len(images), filename))
+        render_results_for_analysis([path], false_positives, fp_images, training_info['bands'],
+                                    training_info['tile_size'])
 
 
 def render_errors(raster_data_paths, model, training_info, render_results):

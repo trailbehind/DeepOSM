@@ -4,7 +4,7 @@
 
 import argparse
 from src.single_layer_network import train_on_cached_data
-
+from src.training_visualization import render_result_jpegs
 
 def create_parser():
     """Create the argparse parser."""
@@ -28,7 +28,8 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
     train_on_cached_data(args.neural_net, args.number_of_epochs)
-
+    if args.render_results:
+        render_result_jpegs(args.neural_net)
 
 if __name__ == "__main__":
     main()
