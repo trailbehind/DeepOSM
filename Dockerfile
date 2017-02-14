@@ -1,5 +1,5 @@
 # https://hub.docker.com/r/homme/gdal/
-FROM geodata/gdal
+FROM geodata/gdal:2.0.0
 
 # geodata/gdal sets the user to noboby, so reset to root
 USER root
