@@ -213,20 +213,17 @@ For output, DeepOSM will produce some console logs, and then JPEGs of the ways, 
 
 There is a very limited test suite available at the moment, that can be accessed (from the host system) by running:
 
-```make test
-```
+`make test`
 
 ### Jupyter Notebook
 
 Alternately, development/research can be done via jupyter notebooks:
 
-```bash
-make notebook
-```
+`make notebook`
 
 To access the notebook via a browser on your host machine, find the IP VirtualBox is giving your default docker container by running:
 
-```bash
+```
 docker-machine ls
 
 NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER    ERRORS
