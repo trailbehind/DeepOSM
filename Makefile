@@ -12,29 +12,38 @@ help:
 
 IMAGE_NAME = deeposm
 
-build: 
-	docker build -t $(IMAGE_NAME) .
+Dockerfile.cpu: Dockerfile.base
+	cp $< $@ 
 
-dev: build
-	docker run -v `pwd`:/DeepOSM \
-               -w /DeepOSM \
-               -e CPLUS_INCLUDE_PATH=/usr/include/gdal \
-               -e C_INCLUDE_PATH=/usr/include/gdal \
-               -e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
-               -e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
-               -it $(IMAGE_NAME) /bin/bash
+build-cpu: Dockerfile.cpu
+	docker build -f $< -t $(IMAGE_NAME):latest .
 
-dev-gpu: 
-	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-	./docker_run_gpu.sh false
+Dockerfile.gpu: Dockerfile.base
+	sed 's|^FROM tensorflow/tensorflow:.*$$|\0-gpu|' $< > $@
 
-update-deeposmorg: 
-	docker build -f Dockerfile.devel-gpu -t $(IMAGE_NAME) .
-	./docker_run_gpu.sh true
+build-gpu: Dockerfile.gpu
+	docker build -f $< -t $(IMAGE_NAME):latest-gpu .
 
-notebook: build
-	docker run -p 8888:8888 \
-               -e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
-               -e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
-               -v `pwd`:/DeepOSM \
-               -it $(IMAGE_NAME) /run_jupyter.sh
+build: build-cpu
+
+dev-cpu: build-cpu
+	./docker_run.sh cpu
+
+dev-gpu: build-gpu
+	./docker_run.sh gpu
+
+dev: dev-cpu
+
+test: build-cpu
+	./docker_run.sh cpu python -m unittest discover
+
+update-deeposmorg: build-gpu
+	./docker_run.sh gpu python bin/update_deeposm.org
+
+notebook-cpu: build-cpu
+	./docker_run.sh cpu ./run_jupyter.sh
+
+notebook-gpu: build-gpu
+	./docker_run.sh gpu ./run_jupyter.sh
+
+notebook: notebook-cpu

@@ -1,6 +1,0 @@
--r requirements_base.txt
-
-# needed this six version on my iMac for Tensorflow to work in Docker
-six==1.10.0
-
-https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl

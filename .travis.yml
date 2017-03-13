@@ -17,4 +17,4 @@ install:
    - "make build"
 
 script:
-   - echo "TODO - add tests"
+   - "make test"

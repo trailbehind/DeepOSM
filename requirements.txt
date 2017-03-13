@@ -1,5 +1,4 @@
 boto3==1.3.1
-GDAL==2.0.1
 h5py==2.6.0
 jupyter==1.0.0
 numpy==1.11.0
@@ -13,4 +12,3 @@ Shapely==1.5.15
 # tflearn, pinned to an arbitrary commit
 git+https://github.com/tflearn/tflearn.git@4fef666
 
-# NOTE: pyosmium is included via the Dockerfile, because it has weird requirements to pip

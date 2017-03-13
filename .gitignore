@@ -71,3 +71,5 @@ data/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+Dockerfile.cpu
+Dockerfile.gpu
